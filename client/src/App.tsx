@@ -13,6 +13,7 @@ import Kits from "./pages/Kits";
 import Pedidos from "./pages/Pedidos";
 import Financeiro from "./pages/Financeiro";
 import Calendario from "./pages/Calendario";
+import Logistica from "./pages/Logistica";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -27,6 +28,7 @@ function Router() {
       <Route path={"/kits"} component={Kits} />
       <Route path={"/pedidos"} component={Pedidos} />
       <Route path={"/financeiro"} component={Financeiro} />
+      <Route path={"/logistica"} component={Logistica} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

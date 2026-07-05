@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, UserCheck, Package, Layers, ShoppingCart, DollarSign, Calendar as CalendarIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, UserCheck, Package, Layers, ShoppingCart, DollarSign, Calendar as CalendarIcon, Truck } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -36,6 +36,7 @@ const menuItems = [
   { icon: Layers, label: "Kits", path: "/kits" },
   { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+  { icon: Truck, label: "Logística", path: "/logistica" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
