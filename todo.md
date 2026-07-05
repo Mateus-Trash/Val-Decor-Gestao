@@ -33,8 +33,8 @@
 - [x] Página de clientes com CRUD
 - [x] Página de colaboradores com CRUD
 - [x] Página de catálogo (itens)
-- [ ] Página de kits
-- [ ] Página de pedidos
+- [x] Página de kits com CRUD e composição
+- [x] Página de pedidos com CRUD, filtros, status inline e composição de itens/kits
 - [ ] Página de entregas/coletas
 - [ ] Página de financeiro
 - [ ] Página de comissões
