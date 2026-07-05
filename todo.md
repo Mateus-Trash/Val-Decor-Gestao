@@ -49,3 +49,11 @@
 - [ ] Testes unitários para routers de transações financeiras
 - [ ] Testes unitários para routers de comissões
 - [ ] Testes unitários para routers de entregas/coletas
+
+## Controle de Estoque Automático
+- [x] pedidosRouter.create: verificar estoque antes de inserir, subtrair após inserir (itens + kits)
+- [x] pedidosRouter.delete: devolver estoque de itens e kits
+- [x] pedidosRouter.updateStatus: nenhuma ação de estoque para mudanças de status (preparado para futuro Cancelado)
+- [x] itensRouter.delete: bloquear se item em pedidos ativos
+- [x] Itens.tsx: tooltip "Nenhuma unidade disponível para novos pedidos" no badge Sem Estoque
+- [x] Pedidos.tsx: mostrar disponibilidade no dialog, bloquear se estoque insuficiente

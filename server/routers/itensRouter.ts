@@ -1,6 +1,6 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { itens, itensPedido } from "../../drizzle/schema";
+import { itens, itensPedido, pedidos } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -59,15 +59,21 @@ export const itensRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Verificar se o item tem registros em itensPedido
+      // Verificar se o item está em pedidos ativos (status diferente de Concluido)
       const registros = await db
         .select({ count: sql<number>`COUNT(*)`.as("count") })
         .from(itensPedido)
-        .where(eq(itensPedido.itemId, input.id));
+        .innerJoin(pedidos, eq(itensPedido.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(itensPedido.itemId, input.id),
+            notInArray(pedidos.status, ["Concluido"])  // Quando "Cancelado" existir, adicionar aqui
+          )
+        );
 
       const count = Number(registros[0]?.count) || 0;
       if (count > 0) {
-        throw new Error("Item possui pedidos vinculados e não pode ser excluído");
+        throw new Error("Item está em uso em pedidos ativos");
       }
 
       return db.delete(itens).where(eq(itens.id, input.id));

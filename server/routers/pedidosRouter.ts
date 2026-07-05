@@ -146,6 +146,38 @@ export const pedidosRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
+      // ─── Consolidar demanda total por item (diretos + kits) ───
+      const demandaPorItem = new Map<number, number>();
+
+      for (const item of input.itens) {
+        demandaPorItem.set(item.itemId, (demandaPorItem.get(item.itemId) || 0) + item.quantidade);
+      }
+
+      for (const kit of input.kits) {
+        const kitItensResult = await db
+          .select({ itemId: kitItens.itemId, quantidade: kitItens.quantidade })
+          .from(kitItens)
+          .where(eq(kitItens.kitId, kit.kitId));
+
+        for (const ki of kitItensResult) {
+          const qtdNecessaria = kit.quantidade * ki.quantidade;
+          demandaPorItem.set(ki.itemId, (demandaPorItem.get(ki.itemId) || 0) + qtdNecessaria);
+        }
+      }
+
+      // ─── Verificar estoque consolidado ───
+      for (const [itemId, qtdTotal] of Array.from(demandaPorItem.entries())) {
+        const [itemDb] = await db
+          .select({ nome: itens.nome, quantidadeDisponivel: itens.quantidadeDisponivel })
+          .from(itens)
+          .where(eq(itens.id, itemId))
+          .limit(1);
+        if (!itemDb) throw new Error(`Item com id ${itemId} não encontrado`);
+        if (itemDb.quantidadeDisponivel < qtdTotal) {
+          throw new Error(`Estoque insuficiente: ${itemDb.nome}`);
+        }
+      }
+
       // Calcular valorTotal
       const totalItens = input.itens.reduce(
         (acc, i) => acc + i.valorUnitario * i.quantidade,
@@ -333,6 +365,10 @@ export const pedidosRouter = router({
             )
           );
       }
+
+      // Se mudar para status que cancela o pedido (futuro "Cancelado"): devolver estoque
+      // Preparado para quando o enum incluir "Cancelado"
+      // Por agora, nenhuma ação de estoque para outras transições de status
 
       // Atualizar status
       return db.update(pedidos).set({ status: input.status }).where(eq(pedidos.id, input.id));

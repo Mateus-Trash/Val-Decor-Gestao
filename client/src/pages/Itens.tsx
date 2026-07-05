@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -129,7 +130,16 @@ export default function Itens() {
 
   function getSituacao(disponivel: number) {
     if (disponivel === 0) {
-      return <Badge variant="destructive">Sem Estoque</Badge>;
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="destructive" className="cursor-help">Sem Estoque</Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Nenhuma unidade disponível para novos pedidos</p>
+          </TooltipContent>
+        </Tooltip>
+      );
     } else if (disponivel <= 2) {
       return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Baixo</Badge>;
     } else {

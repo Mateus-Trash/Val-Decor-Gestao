@@ -71,6 +71,7 @@ export default function Pedidos() {
   const [kitsComposicao, setKitsComposicao] = useState<KitPedido[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
   const [qtdItem, setQtdItem] = useState<number>(1);
+  const [erroQtdItem, setErroQtdItem] = useState<string>("");
   const [kitSelecionado, setKitSelecionado] = useState<string>("");
   const [qtdKit, setQtdKit] = useState<number>(1);
 
@@ -197,6 +198,17 @@ export default function Pedidos() {
     const id = Number(itemSelecionado);
     const itemInfo = itensList.find((i) => i.id === id);
     if (!itemInfo) return;
+
+    // Verificar disponibilidade
+    const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
+    const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
+    const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
+
+    if (qtdItem > maxDisponivel) {
+      setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
+      return;
+    }
+    setErroQtdItem("");
 
     const existente = itensComposicao.findIndex((c) => c.itemId === id);
     if (existente >= 0) {
@@ -501,27 +513,62 @@ export default function Pedidos() {
               <>
                 <div className="space-y-3 border rounded-md p-3">
                   <p className="font-medium text-sm">Itens</p>
-                  <div className="flex gap-2">
-                    <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
+                  <div className="flex gap-2 items-start">
+                    <Select value={itemSelecionado} onValueChange={(v) => { setItemSelecionado(v); setErroQtdItem(""); }}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Selecionar item..." />
                       </SelectTrigger>
                       <SelectContent>
                         {itensList.map((item) => (
-                          <SelectItem key={item.id} value={String(item.id)}>
-                            {item.nome} — {formatCurrency(item.valorAluguel)}
+                          <SelectItem
+                            key={item.id}
+                            value={String(item.id)}
+                            disabled={item.quantidadeDisponivel === 0}
+                          >
+                            <span className={item.quantidadeDisponivel === 0 ? "text-muted-foreground" : ""}>
+                              {item.nome} — {formatCurrency(item.valorAluguel)}
+                              <span className="text-xs text-muted-foreground ml-1">({item.quantidadeDisponivel} disponíveis)</span>
+                            </span>
+                            {item.quantidadeDisponivel === 0 && (
+                              <span className="ml-2 text-xs bg-red-100 text-red-700 rounded px-1">Sem estoque</span>
+                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={qtdItem}
-                      onChange={(e) => setQtdItem(Math.max(1, Number(e.target.value)))}
-                      className="w-20"
-                    />
-                    <Button type="button" variant="outline" onClick={adicionarItem} disabled={!itemSelecionado}>
+                    <div className="flex flex-col">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={qtdItem}
+                        onChange={(e) => {
+                          const val = Math.max(1, Number(e.target.value));
+                          setQtdItem(val);
+                          // Validar reativamente
+                          if (itemSelecionado) {
+                            const id = Number(itemSelecionado);
+                            const itemInfo = itensList.find((i) => i.id === id);
+                            if (itemInfo) {
+                              const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
+                              const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
+                              const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
+                              if (val > maxDisponivel) {
+                                setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
+                              } else {
+                                setErroQtdItem("");
+                              }
+                            }
+                          } else {
+                            setErroQtdItem("");
+                          }
+                        }}
+                        className="w-20"
+                      />
+                      {erroQtdItem && (
+                        <p className="text-xs text-destructive mt-0.5 whitespace-nowrap">{erroQtdItem}</p>
+                      )}
+                    </div>
+                    <Button type="button" variant="outline" onClick={adicionarItem} disabled={!itemSelecionado || !!erroQtdItem}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
