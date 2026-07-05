@@ -11,18 +11,20 @@ import Colaboradores from "./pages/Colaboradores";
 import Itens from "./pages/Itens";
 import Kits from "./pages/Kits";
 import Pedidos from "./pages/Pedidos";
+import Financeiro from "./pages/Financeiro";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"} component={Dashboard} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/clientes"} component={Clientes} />
       <Route path={"/colaboradores"} component={Colaboradores} />
       <Route path={"/itens"} component={Itens} />
       <Route path={"/kits"} component={Kits} />
       <Route path={"/pedidos"} component={Pedidos} />
+      <Route path={"/financeiro"} component={Financeiro} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
