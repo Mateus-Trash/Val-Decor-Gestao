@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { clientesRouter } from "./routers/clientes";
-import { colaboradoresRouter } from "./routers/colaboradores";
+import { colaboradoresRouter } from "./routers/colaboradoresRouter";
 import { itensRouter } from "./routers/itens";
 import { kitsRouter } from "./routers/kits";
 import { pedidosRouter } from "./routers/pedidos";
