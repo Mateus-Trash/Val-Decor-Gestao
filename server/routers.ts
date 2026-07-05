@@ -7,6 +7,9 @@ import { colaboradoresRouter } from "./routers/colaboradores";
 import { itensRouter } from "./routers/itens";
 import { kitsRouter } from "./routers/kits";
 import { pedidosRouter } from "./routers/pedidos";
+import { transacoesFinanceirasRouter } from "./routers/transacoesFinanceiras";
+import { comissoesRouter } from "./routers/comissoes";
+import { entregasColetasRouter } from "./routers/entregasColetas";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -28,13 +31,9 @@ export const appRouter = router({
   itens: itensRouter,
   kits: kitsRouter,
   pedidos: pedidosRouter,
-  // TODO: add remaining feature routers
-  // import { transacoesFinanceirasRouter } from './routers/transacoesFinanceiras';
-  // import { comissoesRouter } from './routers/comissoes';
-  // import { entregasColetasRouter } from './routers/entregasColetas';
-  // transacoesFinanceiras: transacoesFinanceirasRouter,
-  // comissoes: comissoesRouter,
-  // entregasColetas: entregasColetasRouter,
+  transacoesFinanceiras: transacoesFinanceirasRouter,
+  comissoes: comissoesRouter,
+  entregasColetas: entregasColetasRouter,
 });
 
 export type AppRouter = typeof appRouter;

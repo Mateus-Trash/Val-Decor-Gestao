@@ -24,9 +24,9 @@
 - [x] Router `itens` (list, create, update, delete, getById)
 - [x] Router `kits` (list, create, update, delete, getById, addItem, removeItem)
 - [x] Router `pedidos` (list, create, update, delete, getById, changeStatus, listByCliente, listByColaborador)
-- [ ] Router `transacoesFinanceiras` (list, create)
-- [ ] Router `comissoes` (list, calculate)
-- [ ] Router `entregasColetas` (list, create, update, changeStatus)
+- [x] Router `transacoesFinanceiras` (list, create, getById, listByPedido, listByTipo)
+- [x] Router `comissoes` (list, getById, listByColaborador, listByPedido, calculate, delete)
+- [x] Router `entregasColetas` (list, create, update, delete, getById, changeStatus, listByPedido, listByColaborador, listByStatus)
 
 ## Frontend (Próximos)
 - [ ] Layout dashboard com sidebar
