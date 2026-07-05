@@ -12,12 +12,14 @@ import Itens from "./pages/Itens";
 import Kits from "./pages/Kits";
 import Pedidos from "./pages/Pedidos";
 import Financeiro from "./pages/Financeiro";
+import Calendario from "./pages/Calendario";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Dashboard} />
+      <Route path={"/calendario"} component={Calendario} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/clientes"} component={Clientes} />
       <Route path={"/colaboradores"} component={Colaboradores} />
