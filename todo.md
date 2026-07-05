@@ -31,8 +31,9 @@
 ## Frontend
 - [x] Layout dashboard com sidebar
 - [x] Página de clientes com CRUD
-- [ ] Página de colaboradores
-- [ ] Página de catálogo (itens e kits)
+- [x] Página de colaboradores com CRUD
+- [x] Página de catálogo (itens)
+- [ ] Página de kits
 - [ ] Página de pedidos
 - [ ] Página de entregas/coletas
 - [ ] Página de financeiro
