@@ -6,7 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import Clientes from "./pages/Clientes";
+
 import Colaboradores from "./pages/Colaboradores";
 import Itens from "./pages/Itens";
 import Kits from "./pages/Kits";
@@ -22,7 +22,7 @@ function Router() {
       <Route path={"/"} component={Dashboard} />
       <Route path={"/calendario"} component={Calendario} />
       <Route path={"/dashboard"} component={Dashboard} />
-      <Route path={"/clientes"} component={Clientes} />
+
       <Route path={"/colaboradores"} component={Colaboradores} />
       <Route path={"/itens"} component={Itens} />
       <Route path={"/kits"} component={Kits} />

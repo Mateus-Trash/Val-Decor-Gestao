@@ -25,22 +25,7 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-/**
- * Clientes — Registros de clientes para aluguéis
- * Valores monetários armazenados em centavos (int)
- */
-export const clientes = mysqlTable("clientes", {
-  id: int("id").autoincrement().primaryKey(),
-  nome: varchar("nome", { length: 255 }).notNull(),
-  contato: varchar("contato", { length: 20 }),
-  email: varchar("email", { length: 320 }),
-  observacoesInternas: text("observacoesInternas"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
 
-export type Cliente = typeof clientes.$inferSelect;
-export type InsertCliente = typeof clientes.$inferInsert;
 
 /**
  * Colaboradores — Equipe de trabalho com comissões
@@ -114,7 +99,7 @@ export type InsertKitItem = typeof kitItens.$inferInsert;
  */
 export const pedidos = mysqlTable("pedidos", {
   id: int("id").autoincrement().primaryKey(),
-  clienteId: int("clienteId"), // nullable
+  nomeCliente: varchar("nomeCliente", { length: 255 }).notNull(),
   colaboradorId: int("colaboradorId").notNull(),
   dataEvento: timestamp("dataEvento").notNull(),
   dataEntrega: timestamp("dataEntrega").notNull(),

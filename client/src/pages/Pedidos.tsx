@@ -45,7 +45,7 @@ const statusColors: Record<string, string> = {
 };
 
 const pedidoSchema = z.object({
-  clienteId: z.string().optional(),
+  nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
   dataEvento: z.string().min(1, "Data do evento é obrigatória"),
   dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
@@ -78,7 +78,6 @@ export default function Pedidos() {
   const utils = trpc.useUtils();
 
   const { data: pedidosList = [], isLoading } = trpc.pedidos.list.useQuery();
-  const { data: clientesList = [] } = trpc.clientes.list.useQuery();
   const { data: colaboradoresList = [] } = trpc.colaboradores.list.useQuery();
   const { data: itensList = [] } = trpc.itens.list.useQuery();
   const { data: kitsList = [] } = trpc.kits.list.useQuery();
@@ -164,7 +163,7 @@ export default function Pedidos() {
     setItensComposicao([]);
     setKitsComposicao([]);
     reset({
-      clienteId: "",
+      nomeCliente: "",
       colaboradorId: "",
       dataEvento: "",
       dataEntrega: "",
@@ -179,7 +178,7 @@ export default function Pedidos() {
   function abrirEditar(p: (typeof pedidosList)[number]) {
     setEditandoId(p.id);
     reset({
-      clienteId: p.clienteId ? String(p.clienteId) : "",
+      nomeCliente: p.nomeCliente ?? "",
       colaboradorId: String(p.colaboradorId),
       dataEvento: p.dataEvento ? format(new Date(p.dataEvento), "yyyy-MM-dd'T'HH:mm") : "",
       dataEntrega: p.dataEntrega ? format(new Date(p.dataEntrega), "yyyy-MM-dd'T'HH:mm") : "",
@@ -276,7 +275,7 @@ export default function Pedidos() {
         return;
       }
       createMutation.mutate({
-        clienteId: data.clienteId && data.clienteId !== "nenhum" ? Number(data.clienteId) : undefined,
+        nomeCliente: data.nomeCliente,
         colaboradorId: Number(data.colaboradorId),
         dataEvento: new Date(data.dataEvento),
         dataEntrega: new Date(data.dataEntrega),
@@ -423,24 +422,11 @@ export default function Pedidos() {
             {/* Campos básicos */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label>Cliente</Label>
-                <Controller
-                  name="clienteId"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar cliente..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nenhum">Nenhum</SelectItem>
-                        {clientesList.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
+                <Label htmlFor="nomeCliente">Cliente *</Label>
+                <Input id="nomeCliente" {...register("nomeCliente")} placeholder="Nome do cliente" />
+                {errors.nomeCliente && (
+                  <p className="text-sm text-destructive">{errors.nomeCliente.message}</p>
+                )}
               </div>
 
               <div className="space-y-1">

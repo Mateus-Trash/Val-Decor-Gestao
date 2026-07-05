@@ -2,7 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
-import { clientesRouter } from "./routers/clientes";
+
 import { colaboradoresRouter } from "./routers/colaboradoresRouter";
 import { itensRouter } from "./routers/itensRouter";
 import { kitsRouter } from "./routers/kitsRouter";
@@ -29,7 +29,6 @@ export const appRouter = router({
   }),
 
   // Feature routers
-  clientes: clientesRouter,
   colaboradores: colaboradoresRouter,
   itens: itensRouter,
   kits: kitsRouter,

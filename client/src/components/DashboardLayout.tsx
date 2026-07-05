@@ -30,7 +30,6 @@ import { Button } from "./ui/button";
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: CalendarIcon, label: "Calendário", path: "/calendario" },
-  { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: UserCheck, label: "Colaboradores", path: "/colaboradores" },
   { icon: Package, label: "Itens", path: "/itens" },
   { icon: Layers, label: "Kits", path: "/kits" },

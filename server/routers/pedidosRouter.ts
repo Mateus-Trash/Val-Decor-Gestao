@@ -1,7 +1,6 @@
 import { and, desc, eq, like, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
-  clientes,
   colaboradores,
   comissoes,
   itens,
@@ -25,7 +24,7 @@ export const pedidosRouter = router({
     const result = await db
       .select({
         id: pedidos.id,
-        clienteId: pedidos.clienteId,
+        nomeCliente: pedidos.nomeCliente,
         colaboradorId: pedidos.colaboradorId,
         dataEvento: pedidos.dataEvento,
         dataEntrega: pedidos.dataEntrega,
@@ -37,11 +36,9 @@ export const pedidosRouter = router({
         observacoes: pedidos.observacoes,
         createdAt: pedidos.createdAt,
         updatedAt: pedidos.updatedAt,
-        nomeCliente: clientes.nome,
         nomeColaborador: colaboradores.nome,
       })
       .from(pedidos)
-      .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
       .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
       .orderBy(desc(pedidos.createdAt));
 
@@ -57,7 +54,7 @@ export const pedidosRouter = router({
       const pedido = await db
         .select({
           id: pedidos.id,
-          clienteId: pedidos.clienteId,
+          nomeCliente: pedidos.nomeCliente,
           colaboradorId: pedidos.colaboradorId,
           dataEvento: pedidos.dataEvento,
           dataEntrega: pedidos.dataEntrega,
@@ -68,11 +65,9 @@ export const pedidosRouter = router({
           status: pedidos.status,
           observacoes: pedidos.observacoes,
           createdAt: pedidos.createdAt,
-          nomeCliente: clientes.nome,
           nomeColaborador: colaboradores.nome,
         })
         .from(pedidos)
-        .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
         .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(eq(pedidos.id, input.id))
         .limit(1);
@@ -115,7 +110,7 @@ export const pedidosRouter = router({
   create: protectedProcedure
     .input(
       z.object({
-        clienteId: z.number().int().positive().optional(),
+        nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
         colaboradorId: z.number().int().positive(),
         dataEvento: z.coerce.date(),
         dataEntrega: z.coerce.date(),
@@ -191,7 +186,7 @@ export const pedidosRouter = router({
 
       // Inserir pedido
       const result = await db.insert(pedidos).values({
-        clienteId: input.clienteId,
+        nomeCliente: input.nomeCliente,
         colaboradorId: input.colaboradorId,
         dataEvento: input.dataEvento,
         dataEntrega: input.dataEntrega,

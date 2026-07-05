@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { entregasColetas, pedidos, colaboradores, clientes } from "../../drizzle/schema";
+import { entregasColetas, pedidos, colaboradores } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -22,12 +22,11 @@ export const entregasRouter = router({
         createdAt: entregasColetas.createdAt,
         updatedAt: entregasColetas.updatedAt,
         nomeColaborador: colaboradores.nome,
-        nomeCliente: clientes.nome,
+        nomeCliente: pedidos.nomeCliente,
       })
       .from(entregasColetas)
       .leftJoin(colaboradores, eq(entregasColetas.colaboradorId, colaboradores.id))
       .leftJoin(pedidos, eq(entregasColetas.pedidoId, pedidos.id))
-      .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
       .orderBy(asc(entregasColetas.dataAgendada));
   }),
 

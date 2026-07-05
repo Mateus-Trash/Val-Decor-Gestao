@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, isNotNull, lte, sql, sum } from "drizzle-orm";
 import { z } from "zod";
-import { pedidos, clientes, colaboradores, transacoesFinanceiras, itensPedido, itens } from "../../drizzle/schema";
+import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -24,12 +24,11 @@ export const dashboardRouter = router({
           id: pedidos.id,
           status: pedidos.status,
           dataEvento: pedidos.dataEvento,
-          nomeCliente: clientes.nome,
+          nomeCliente: pedidos.nomeCliente,
           nomeColaborador: colaboradores.nome,
           valorTotal: pedidos.valorTotal,
         })
         .from(pedidos)
-        .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
         .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(
           and(
