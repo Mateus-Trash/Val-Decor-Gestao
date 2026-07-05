@@ -17,12 +17,24 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  // TODO: add feature routers here
+  // import { clientesRouter } from './routers/clientes';
+  // import { colaboradoresRouter } from './routers/colaboradores';
+  // import { itensRouter } from './routers/itens';
+  // import { kitsRouter } from './routers/kits';
+  // import { pedidosRouter } from './routers/pedidos';
+  // import { transacoesFinanceirasRouter } from './routers/transacoesFinanceiras';
+  // import { comissoesRouter } from './routers/comissoes';
+  // import { entregasColetasRouter } from './routers/entregasColetas';
+  //
+  // clientes: clientesRouter,
+  // colaboradores: colaboradoresRouter,
+  // itens: itensRouter,
+  // kits: kitsRouter,
+  // pedidos: pedidosRouter,
+  // transacoesFinanceiras: transacoesFinanceirasRouter,
+  // comissoes: comissoesRouter,
+  // entregasColetas: entregasColetasRouter,
 });
 
 export type AppRouter = typeof appRouter;

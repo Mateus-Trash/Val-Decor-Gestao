@@ -1,0 +1,49 @@
+# DW Aluguéis Gestão — TODO
+
+## Base de Dados & Schema
+- [x] Tabela `users` (auth do Manus)
+- [x] Tabela `clientes` com campos: id, nome, contato, email, observacoesInternas, createdAt, updatedAt
+- [x] Tabela `colaboradores` com campos: id, nome, email (unique), telefone, funcao, percentualComissao (default 10), createdAt, updatedAt
+- [x] Tabela `itens` com campos: id, nome, descricao, valorAluguel (centavos), custoAquisicao (centavos, nullable), quantidadeTotal, quantidadeDisponivel, createdAt, updatedAt
+- [x] Tabela `kits` com campos: id, nome, descricao, valorAluguel (centavos), createdAt, updatedAt
+- [x] Tabela `kitItens` com campos: id, kitId (fk), itemId (fk), quantidade
+- [x] Tabela `pedidos` com campos: id, clienteId (fk, nullable), colaboradorId (fk), dataEvento, dataEntrega, dataColeta, enderecoEntrega, valorTotal (centavos), valorTaxaEntrega (float), status (enum), observacoes, createdAt, updatedAt
+- [x] Tabela `itensPedido` com campos: id, pedidoId (fk), itemId (fk), quantidade, valorUnitario (centavos), createdAt, updatedAt
+- [x] Tabela `kitsPedido` com campos: id, pedidoId (fk), kitId (fk), quantidade (default 1), valorUnitario (centavos)
+- [x] Tabela `transacoesFinanceiras` com campos: id, pedidoId (fk, nullable), tipo (enum), descricao, valor (centavos), data, createdAt, updatedAt
+- [x] Tabela `comissoes` com campos: id, colaboradorId (fk), pedidoId (fk), valor (centavos), dataCalculo, createdAt, updatedAt
+- [x] Tabela `entregasColetas` com campos: id, pedidoId (fk), colaboradorId (fk, nullable), tipo (enum), dataAgendada, dataRealizada (nullable), status (enum), observacoes, createdAt, updatedAt
+- [x] Arquivo `drizzle/relations.ts` com todas as relações
+- [x] Arquivo `shared/types.ts` com re-exportação de tipos
+- [x] Aplicar migrations ao banco de dados via `pnpm db:push`
+- [x] Preparar `server/routers.ts` com imports comentados
+
+## Routers de Negócio (Próximos)
+- [ ] Router `clientes` (list, create, update, delete)
+- [ ] Router `colaboradores` (list, create, update, delete)
+- [ ] Router `itens` (list, create, update, delete)
+- [ ] Router `kits` (list, create, update, delete)
+- [ ] Router `pedidos` (list, create, update, delete, changeStatus)
+- [ ] Router `transacoesFinanceiras` (list, create)
+- [ ] Router `comissoes` (list, calculate)
+- [ ] Router `entregasColetas` (list, create, update, changeStatus)
+
+## Frontend (Próximos)
+- [ ] Layout dashboard com sidebar
+- [ ] Página de clientes
+- [ ] Página de colaboradores
+- [ ] Página de catálogo (itens e kits)
+- [ ] Página de pedidos
+- [ ] Página de entregas/coletas
+- [ ] Página de financeiro
+- [ ] Página de comissões
+
+## Testes
+- [ ] Testes unitários para routers de clientes
+- [ ] Testes unitários para routers de colaboradores
+- [ ] Testes unitários para routers de itens
+- [ ] Testes unitários para routers de kits
+- [ ] Testes unitários para routers de pedidos
+- [ ] Testes unitários para routers de transações financeiras
+- [ ] Testes unitários para routers de comissões
+- [ ] Testes unitários para routers de entregas/coletas
