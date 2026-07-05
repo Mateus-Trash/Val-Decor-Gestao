@@ -2,6 +2,11 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { clientesRouter } from "./routers/clientes";
+import { colaboradoresRouter } from "./routers/colaboradores";
+import { itensRouter } from "./routers/itens";
+import { kitsRouter } from "./routers/kits";
+import { pedidosRouter } from "./routers/pedidos";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -17,21 +22,16 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here
-  // import { clientesRouter } from './routers/clientes';
-  // import { colaboradoresRouter } from './routers/colaboradores';
-  // import { itensRouter } from './routers/itens';
-  // import { kitsRouter } from './routers/kits';
-  // import { pedidosRouter } from './routers/pedidos';
+  // Feature routers
+  clientes: clientesRouter,
+  colaboradores: colaboradoresRouter,
+  itens: itensRouter,
+  kits: kitsRouter,
+  pedidos: pedidosRouter,
+  // TODO: add remaining feature routers
   // import { transacoesFinanceirasRouter } from './routers/transacoesFinanceiras';
   // import { comissoesRouter } from './routers/comissoes';
   // import { entregasColetasRouter } from './routers/entregasColetas';
-  //
-  // clientes: clientesRouter,
-  // colaboradores: colaboradoresRouter,
-  // itens: itensRouter,
-  // kits: kitsRouter,
-  // pedidos: pedidosRouter,
   // transacoesFinanceiras: transacoesFinanceirasRouter,
   // comissoes: comissoesRouter,
   // entregasColetas: entregasColetasRouter,

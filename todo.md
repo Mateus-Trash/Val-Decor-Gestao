@@ -18,12 +18,12 @@
 - [x] Aplicar migrations ao banco de dados via `pnpm db:push`
 - [x] Preparar `server/routers.ts` com imports comentados
 
-## Routers de Negócio (Próximos)
-- [ ] Router `clientes` (list, create, update, delete)
-- [ ] Router `colaboradores` (list, create, update, delete)
-- [ ] Router `itens` (list, create, update, delete)
-- [ ] Router `kits` (list, create, update, delete)
-- [ ] Router `pedidos` (list, create, update, delete, changeStatus)
+## Routers de Negócio
+- [x] Router `clientes` (list, create, update, delete, getById)
+- [x] Router `colaboradores` (list, create, update, delete, getById)
+- [x] Router `itens` (list, create, update, delete, getById)
+- [x] Router `kits` (list, create, update, delete, getById, addItem, removeItem)
+- [x] Router `pedidos` (list, create, update, delete, getById, changeStatus, listByCliente, listByColaborador)
 - [ ] Router `transacoesFinanceiras` (list, create)
 - [ ] Router `comissoes` (list, calculate)
 - [ ] Router `entregasColetas` (list, create, update, changeStatus)
@@ -39,11 +39,12 @@
 - [ ] Página de comissões
 
 ## Testes
-- [ ] Testes unitários para routers de clientes
-- [ ] Testes unitários para routers de colaboradores
-- [ ] Testes unitários para routers de itens
-- [ ] Testes unitários para routers de kits
-- [ ] Testes unitários para routers de pedidos
+- [x] Testes unitários para routers de clientes
+- [x] Testes unitários para routers de colaboradores
+- [x] Testes unitários para routers de itens
+- [x] Testes unitários para routers de kits
+- [x] Testes unitários para routers de pedidos
+- [x] Testes unitários para routers de auth
 - [ ] Testes unitários para routers de transações financeiras
 - [ ] Testes unitários para routers de comissões
 - [ ] Testes unitários para routers de entregas/coletas
