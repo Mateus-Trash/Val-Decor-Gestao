@@ -28,9 +28,9 @@
 - [x] Router `comissoes` (list, getById, listByColaborador, listByPedido, calculate, delete)
 - [x] Router `entregasColetas` (list, create, update, delete, getById, changeStatus, listByPedido, listByColaborador, listByStatus)
 
-## Frontend (Próximos)
-- [ ] Layout dashboard com sidebar
-- [ ] Página de clientes
+## Frontend
+- [x] Layout dashboard com sidebar
+- [x] Página de clientes com CRUD
 - [ ] Página de colaboradores
 - [ ] Página de catálogo (itens e kits)
 - [ ] Página de pedidos
