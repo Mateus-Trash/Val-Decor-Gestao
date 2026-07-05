@@ -115,6 +115,7 @@ export default function Pedidos() {
       toast.success("Pedido removido!");
       utils.pedidos.list.invalidate();
       utils.itens.list.invalidate();
+      utils.dashboard.getKPIs.invalidate();
     },
     onError: (error) => toast.error(`Erro ao remover pedido: ${error.message}`),
   });
