@@ -70,10 +70,10 @@ export default function Pedidos() {
   const [itensComposicao, setItensComposicao] = useState<ItemPedido[]>([]);
   const [kitsComposicao, setKitsComposicao] = useState<KitPedido[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
-  const [qtdItem, setQtdItem] = useState<number>(1);
+  const [qtdItem, setQtdItem] = useState<string>("1");
   const [erroQtdItem, setErroQtdItem] = useState<string>("");
   const [kitSelecionado, setKitSelecionado] = useState<string>("");
-  const [qtdKit, setQtdKit] = useState<number>(1);
+  const [qtdKit, setQtdKit] = useState<string>("1");
 
   const utils = trpc.useUtils();
 
@@ -154,8 +154,8 @@ export default function Pedidos() {
     setKitsComposicao([]);
     setItemSelecionado("");
     setKitSelecionado("");
-    setQtdItem(1);
-    setQtdKit(1);
+    setQtdItem("1");
+    setQtdKit("1");
     reset();
   }
 
@@ -199,13 +199,14 @@ export default function Pedidos() {
     const id = Number(itemSelecionado);
     const itemInfo = itensList.find((i) => i.id === id);
     if (!itemInfo) return;
+    const qtd = parseInt(qtdItem) || 1;
 
     // Verificar disponibilidade
     const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
     const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
     const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
 
-    if (qtdItem > maxDisponivel) {
+    if (qtd > maxDisponivel) {
       setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
       return;
     }
@@ -215,17 +216,17 @@ export default function Pedidos() {
     if (existente >= 0) {
       setItensComposicao((prev) =>
         prev.map((c, idx) =>
-          idx === existente ? { ...c, quantidade: c.quantidade + qtdItem } : c
+          idx === existente ? { ...c, quantidade: c.quantidade + qtd } : c
         )
       );
     } else {
       setItensComposicao((prev) => [
         ...prev,
-        { itemId: id, nome: itemInfo.nome, quantidade: qtdItem, valorUnitario: itemInfo.valorAluguel },
+        { itemId: id, nome: itemInfo.nome, quantidade: qtd, valorUnitario: itemInfo.valorAluguel },
       ]);
     }
     setItemSelecionado("");
-    setQtdItem(1);
+    setQtdItem("1");
   }
 
   function adicionarKit() {
@@ -233,22 +234,23 @@ export default function Pedidos() {
     const id = Number(kitSelecionado);
     const kitInfo = kitsList.find((k) => k.id === id);
     if (!kitInfo) return;
+    const qtd = parseInt(qtdKit) || 1;
 
     const existente = kitsComposicao.findIndex((c) => c.kitId === id);
     if (existente >= 0) {
       setKitsComposicao((prev) =>
         prev.map((c, idx) =>
-          idx === existente ? { ...c, quantidade: c.quantidade + qtdKit } : c
+          idx === existente ? { ...c, quantidade: c.quantidade + qtd } : c
         )
       );
     } else {
       setKitsComposicao((prev) => [
         ...prev,
-        { kitId: id, nome: kitInfo.nome, quantidade: qtdKit, valorUnitario: kitInfo.valorAluguel },
+        { kitId: id, nome: kitInfo.nome, quantidade: qtd, valorUnitario: kitInfo.valorAluguel },
       ]);
     }
     setKitSelecionado("");
-    setQtdKit(1);
+    setQtdKit("1");
   }
 
   function confirmarDelete(id: number) {
@@ -543,9 +545,9 @@ export default function Pedidos() {
                         min={1}
                         value={qtdItem}
                         onChange={(e) => {
-                          const val = Math.max(1, Number(e.target.value));
-                          setQtdItem(val);
+                          setQtdItem(e.target.value);
                           // Validar reativamente
+                          const val = parseInt(e.target.value) || 1;
                           if (itemSelecionado) {
                             const id = Number(itemSelecionado);
                             const itemInfo = itensList.find((i) => i.id === id);
@@ -563,7 +565,9 @@ export default function Pedidos() {
                             setErroQtdItem("");
                           }
                         }}
+                        onFocus={(e) => e.target.select()}
                         className="w-20"
+                        placeholder="Qtd"
                       />
                       {erroQtdItem && (
                         <p className="text-xs text-destructive mt-0.5 whitespace-nowrap">{erroQtdItem}</p>
@@ -613,8 +617,10 @@ export default function Pedidos() {
                       type="number"
                       min={1}
                       value={qtdKit}
-                      onChange={(e) => setQtdKit(Math.max(1, Number(e.target.value)))}
+                      onChange={(e) => setQtdKit(e.target.value)}
+                      onFocus={(e) => e.target.select()}
                       className="w-20"
+                      placeholder="Qtd"
                     />
                     <Button type="button" variant="outline" onClick={adicionarKit} disabled={!kitSelecionado}>
                       <Plus className="h-4 w-4" />

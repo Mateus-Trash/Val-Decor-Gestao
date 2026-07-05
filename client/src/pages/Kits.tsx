@@ -52,7 +52,7 @@ export default function Kits() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [composicao, setComposicao] = useState<ItemComposicao[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
-  const [qtdItem, setQtdItem] = useState<number>(1);
+  const [qtdItem, setQtdItem] = useState<string>("1");
 
   const utils = trpc.useUtils();
 
@@ -94,7 +94,7 @@ export default function Kits() {
     setEditandoId(null);
     setComposicao([]);
     setItemSelecionado("");
-    setQtdItem(1);
+    setQtdItem("1");
     reset();
   }
 
@@ -127,23 +127,24 @@ export default function Kits() {
     const id = Number(itemSelecionado);
     const itemInfo = itensDisponiveis.find((i) => i.id === id);
     if (!itemInfo) return;
+    const qtd = parseInt(qtdItem) || 1;
 
     // Se já existe, atualizar quantidade
     const existente = composicao.findIndex((c) => c.itemId === id);
     if (existente >= 0) {
       setComposicao((prev) =>
         prev.map((c, idx) =>
-          idx === existente ? { ...c, quantidade: c.quantidade + qtdItem } : c
+          idx === existente ? { ...c, quantidade: c.quantidade + qtd } : c
         )
       );
     } else {
       setComposicao((prev) => [
         ...prev,
-        { itemId: id, nome: itemInfo.nome, quantidade: qtdItem },
+        { itemId: id, nome: itemInfo.nome, quantidade: qtd },
       ]);
     }
     setItemSelecionado("");
-    setQtdItem(1);
+    setQtdItem("1");
   }
 
   function removerItem(itemId: number) {
@@ -313,7 +314,8 @@ export default function Kits() {
                   type="number"
                   min={1}
                   value={qtdItem}
-                  onChange={(e) => setQtdItem(Math.max(1, Number(e.target.value)))}
+                  onChange={(e) => setQtdItem(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-20"
                   placeholder="Qtd"
                 />
