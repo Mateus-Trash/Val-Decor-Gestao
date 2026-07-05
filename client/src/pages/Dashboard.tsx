@@ -1,172 +1,386 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  BarChart3,
-  Users,
-  Package,
-  ShoppingCart,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { trpc } from "@/lib/trpc";
+import {
   TrendingUp,
-  Truck,
+  TrendingDown,
   DollarSign,
-  Award,
+  Truck,
+  BarChart3,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
-import { useLocation } from "wouter";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+// ─── Constantes ───────────────────────────────────────────────────────────────
+
+const STATUS_COLORS: Record<string, { label: string; color: string; bgClass: string }> = {
+  Pendente: { label: "Pendente", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800" },
+  Confirmado: { label: "Confirmado", color: "#3b82f6", bgClass: "bg-blue-100 text-blue-800" },
+  "Em Preparacao": { label: "Em Preparação", color: "#8b5cf6", bgClass: "bg-purple-100 text-purple-800" },
+  Entregue: { label: "Entregue", color: "#f97316", bgClass: "bg-orange-100 text-orange-800" },
+  Concluido: { label: "Concluído", color: "#22c55e", bgClass: "bg-green-100 text-green-800" },
+};
+
+const PIE_COLORS = ["#eab308", "#3b82f6", "#8b5cf6", "#f97316", "#22c55e"];
+
+function formatCentavos(centavos: number): string {
+  return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [, navigate] = useLocation();
+  const hoje = new Date();
+  const [mes, setMes] = useState(hoje.getMonth() + 1);
+  const [ano, setAno] = useState(hoje.getFullYear());
 
-  const dashboardItems = [
-    {
-      title: "Clientes",
-      description: "Gerenciar clientes",
-      icon: Users,
-      href: "/clientes",
-      color: "bg-blue-500",
-    },
-    {
-      title: "Colaboradores",
-      description: "Equipe de trabalho",
-      icon: Users,
-      href: "/colaboradores",
-      color: "bg-green-500",
-    },
-    {
-      title: "Itens",
-      description: "Catálogo de itens",
-      icon: Package,
-      href: "/itens",
-      color: "bg-purple-500",
-    },
-    {
-      title: "Kits",
-      description: "Pacotes de aluguel",
-      icon: ShoppingCart,
-      href: "/kits",
-      color: "bg-orange-500",
-    },
-    {
-      title: "Pedidos",
-      description: "Pedidos de aluguel",
-      icon: ShoppingCart,
-      href: "/pedidos",
-      color: "bg-red-500",
-    },
-    {
-      title: "Entregas/Coletas",
-      description: "Logística",
-      icon: Truck,
-      href: "/entregas-coletas",
-      color: "bg-cyan-500",
-    },
-    {
-      title: "Financeiro",
-      description: "Transações financeiras",
-      icon: DollarSign,
-      href: "/financeiro",
-      color: "bg-emerald-500",
-    },
-    {
-      title: "Comissões",
-      description: "Comissões de colaboradores",
-      icon: Award,
-      href: "/comissoes",
-      color: "bg-indigo-500",
-    },
-  ];
+  const { dataInicio, dataFim } = useMemo(() => {
+    const dataInicio = new Date(ano, mes - 1, 1);
+    const dataFim = new Date(ano, mes, 0, 23, 59, 59);
+    return { dataInicio, dataFim };
+  }, [mes, ano]);
+
+  const { data: kpis, isLoading: kpisLoading } = trpc.dashboard.getKPIs.useQuery({
+    dataInicio,
+    dataFim,
+  });
+
+  const { data: comparativo, isLoading: compLoading } = trpc.dashboard.getComparativoMensal.useQuery({
+    mes,
+    ano,
+  });
+
+  const { data: fluxo, isLoading: fluxoLoading } = trpc.dashboard.getFluxoCaixaMensal.useQuery({
+    mes,
+    ano,
+  });
+
+  const meses = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: String(i + 1),
+      label: format(new Date(2024, i, 1), "MMMM", { locale: ptBR }),
+    }));
+  }, []);
+
+  const anos = useMemo(() => {
+    const anoAtual = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => String(anoAtual - 2 + i));
+  }, []);
+
+  // Dados para gráfico de fluxo
+  const fluxoData = useMemo(() => {
+    if (!fluxo) return [];
+    return fluxo.map((s) => ({
+      semana: `Sem ${s.semana}`,
+      Receitas: s.receitas / 100,
+      Despesas: s.despesas / 100,
+    }));
+  }, [fluxo]);
+
+  // Dados para gráfico de barras (top 5 itens)
+  const top5Data = useMemo(() => {
+    if (!kpis?.top5Itens) return [];
+    return kpis.top5Itens.map((item) => ({
+      nome: item.nome,
+      quantidade: item.totalQuantidade,
+    }));
+  }, [kpis]);
+
+  // Dados para gráfico de pizza (pedidos por status)
+  const pieData = useMemo(() => {
+    if (!kpis?.pedidosPorStatus) return [];
+    return kpis.pedidosPorStatus.map((p) => ({
+      name: STATUS_COLORS[p.status]?.label ?? p.status,
+      value: p.count,
+      status: p.status,
+    }));
+  }, [kpis]);
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Bem-vindo, {user?.name || "Usuário"}! Gerencie seu sistema de aluguéis.
-            </p>
+      <div className="space-y-6">
+        {/* Header + Filtro */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <BarChart3 className="h-7 w-7 text-primary" />
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           </div>
-          <BarChart3 className="h-12 w-12 text-muted-foreground" />
+          <div className="flex items-center gap-2">
+            <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {meses.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {anos.map((a) => (
+                  <SelectItem key={a} value={a}>
+                    {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pedidos Pendentes</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Itens Disponíveis</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            </CardContent>
-          </Card>
+        {/* Cards de KPI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            title="Faturamento do Mês"
+            value={kpis ? formatCentavos(kpis.faturamentoTotal) : null}
+            icon={<TrendingUp className="h-5 w-5 text-green-600" />}
+            loading={kpisLoading}
+            colorClass="border-l-4 border-l-green-500"
+          />
+          <KPICard
+            title="Saldo do Mês"
+            value={kpis ? formatCentavos(kpis.saldo) : null}
+            icon={<DollarSign className="h-5 w-5" />}
+            loading={kpisLoading}
+            colorClass={`border-l-4 ${kpis && kpis.saldo >= 0 ? "border-l-green-500" : "border-l-red-500"}`}
+            valueClass={kpis && kpis.saldo < 0 ? "text-red-600" : "text-green-600"}
+          />
+          <KPICard
+            title="Total de Despesas"
+            value={kpis ? formatCentavos(kpis.totalDespesas) : null}
+            icon={<TrendingDown className="h-5 w-5 text-red-600" />}
+            loading={kpisLoading}
+            colorClass="border-l-4 border-l-red-500"
+            valueClass="text-red-600"
+          />
+          <KPICard
+            title="Taxas de Entrega"
+            value={kpis ? formatCentavos(kpis.taxasEntrega) : null}
+            icon={<Truck className="h-5 w-5 text-blue-600" />}
+            loading={kpisLoading}
+            colorClass="border-l-4 border-l-blue-500"
+          />
         </div>
 
-        {/* Navigation Grid */}
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Módulos</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {dashboardItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Card
-                  key={item.href}
-                  className="cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => navigate(item.href)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                      </div>
-                      <div className={`${item.color} p-2 rounded-lg`}>
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
+        {/* Badges de status de pedidos */}
+        <Card>
+          <CardContent className="py-4">
+            <p className="text-sm font-medium text-muted-foreground mb-3">Pedidos no Período</p>
+            <div className="flex flex-wrap gap-3">
+              {kpisLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-28" />
+                ))
+              ) : (
+                Object.entries(STATUS_COLORS).map(([key, { label, bgClass }]) => {
+                  const count = kpis?.pedidosPorStatus.find((p) => p.status === key)?.count ?? 0;
+                  return (
+                    <Badge key={key} variant="outline" className={`text-sm px-3 py-1 ${bgClass}`}>
+                      {label}: {count}
+                    </Badge>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Fluxo de Caixa Semanal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Fluxo de Caixa Semanal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {fluxoLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={fluxoData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="semana" fontSize={12} />
+                    <YAxis fontSize={12} tickFormatter={(v) => `R$${v}`} />
+                    <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
+                    <Legend />
+                    <Line type="monotone" dataKey="Receitas" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top 5 Itens */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Top 5 Itens Mais Alugados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {kpisLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : top5Data.length === 0 ? (
+                <p className="text-center py-12 text-muted-foreground">Sem dados no período</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={top5Data} layout="vertical" margin={{ left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" fontSize={12} />
+                    <YAxis dataKey="nome" type="category" fontSize={11} width={100} />
+                    <Tooltip />
+                    <Bar dataKey="quantidade" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Distribuição de Pedidos por Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Distribuição de Pedidos por Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {kpisLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : pieData.length === 0 ? (
+                <p className="text-center py-12 text-muted-foreground">Sem dados no período</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      dataKey="value"
+                      label={({ name, value }) => `${name} (${value})`}
+                      labelLine={false}
+                    >
+                      {pieData.map((entry, index) => {
+                        const statusKey = Object.keys(STATUS_COLORS)[index] ?? "";
+                        const color = STATUS_COLORS[statusKey]?.color ?? PIE_COLORS[index % PIE_COLORS.length];
+                        return <Cell key={`cell-${index}`} fill={color} />;
+                      })}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Comparativo Mensal */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Comparativo Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {compLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : comparativo ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Mês Atual</p>
+                      <p className="text-2xl font-bold">{formatCentavos(comparativo.mesAtual)}</p>
                     </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-          </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Mês Anterior</p>
+                      <p className="text-2xl font-bold text-muted-foreground">
+                        {formatCentavos(comparativo.mesAnterior)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    {comparativo.percentualVariacao >= 0 ? (
+                      <ArrowUp className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <ArrowDown className="h-5 w-5 text-red-600" />
+                    )}
+                    <span
+                      className={`text-lg font-semibold ${
+                        comparativo.percentualVariacao >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {comparativo.percentualVariacao >= 0 ? "▲" : "▼"}{" "}
+                      {Math.abs(comparativo.percentualVariacao).toFixed(1)}%
+                    </span>
+                    <span className="text-sm text-muted-foreground">em relação ao mês anterior</span>
+                  </div>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+// ─── Componente auxiliar ───────────────────────────────────────────────────────
+
+function KPICard({
+  title,
+  value,
+  icon,
+  loading,
+  colorClass,
+  valueClass,
+}: {
+  title: string;
+  value: string | null;
+  icon: React.ReactNode;
+  loading: boolean;
+  colorClass?: string;
+  valueClass?: string;
+}) {
+  return (
+    <Card className={colorClass}>
+      <CardContent className="py-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          {icon}
+        </div>
+        {loading ? (
+          <Skeleton className="h-8 w-32 mt-2" />
+        ) : (
+          <p className={`text-2xl font-bold mt-2 ${valueClass ?? ""}`}>{value}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
