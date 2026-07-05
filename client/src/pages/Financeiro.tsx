@@ -175,20 +175,20 @@ export default function Financeiro() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <DollarSign className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
+            <DollarSign className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Financeiro</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Filtro de período */}
             <Select
               value={String(mesSelecionado)}
               onValueChange={(v) => setMesSelecionado(Number(v))}
             >
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="flex-1 sm:flex-none sm:w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -201,7 +201,7 @@ export default function Financeiro() {
               value={String(anoSelecionado)}
               onValueChange={(v) => setAnoSelecionado(Number(v))}
             >
-              <SelectTrigger className="w-24">
+              <SelectTrigger className="flex-1 sm:flex-none sm:w-24">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -210,7 +210,7 @@ export default function Financeiro() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={abrirNovaDespesa}>
+            <Button onClick={abrirNovaDespesa} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Nova Despesa
             </Button>
@@ -218,7 +218,7 @@ export default function Financeiro() {
         </div>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="border-green-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -270,8 +270,8 @@ export default function Financeiro() {
           </Card>
         </div>
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>
               Transações — {MESES[mesSelecionado]} {anoSelecionado}
@@ -353,11 +353,56 @@ export default function Financeiro() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : transacoes.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhuma transação neste período.</p>
+          ) : (
+            transacoes.map((t) => {
+              const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
+              const isManual = t.pedidoId === null;
+              return (
+                <Card key={t.id} className="p-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="font-semibold">{t.descricao || "—"}</p>
+                        <p className="text-xs text-muted-foreground">{format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      </div>
+                      <Badge variant="outline" className={`text-xs ${badge.className}`}>
+                        {badge.label}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="font-medium">Pedido:</span> {t.pedidoId ? `#${t.pedidoId}` : "—"}</div>
+                      <div className={`text-right font-medium ${t.tipo === "despesa" ? "text-red-600" : "text-green-600"}`}>
+                        {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
+                      </div>
+                    </div>
+                    {isManual && (
+                      <div className="flex gap-2 pt-2">
+                        <Button size="sm" variant="outline" onClick={() => abrirEditar(t)} className="flex-1 h-8 text-xs">
+                          Editar
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => confirmarDelete(t.id)} className="flex-1 h-8 text-xs">
+                          Deletar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Dialog nova despesa / editar */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Transação" : "Nova Despesa"}
@@ -399,8 +444,8 @@ export default function Financeiro() {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={fecharDialog}>
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={fecharDialog} disabled={isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>

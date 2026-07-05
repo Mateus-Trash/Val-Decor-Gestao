@@ -57,3 +57,15 @@
 - [x] itensRouter.delete: bloquear se item em pedidos ativos
 - [x] Itens.tsx: tooltip "Nenhuma unidade disponível para novos pedidos" no badge Sem Estoque
 - [x] Pedidos.tsx: mostrar disponibilidade no dialog, bloquear se estoque insuficiente
+
+
+## Responsividade Mobile
+- [ ] DashboardLayout.tsx: sidebar overlay em mobile
+- [ ] Calendario.tsx: refazer para lista de dias com eventos em mobile
+- [ ] Dashboard.tsx: cards KPI, status e gráficos responsivos
+- [ ] Pedidos.tsx: tabela → cards em mobile
+- [ ] Itens.tsx: tabela → cards em mobile
+- [ ] Kits.tsx: tabela → cards em mobile
+- [ ] Colaboradores.tsx: tabela → cards em mobile
+- [ ] Financeiro.tsx: tabela → cards em mobile
+- [ ] Logistica.tsx: tabela → cards em mobile

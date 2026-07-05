@@ -143,21 +143,21 @@ export default function Logistica() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <Truck className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Logística</h1>
+            <Truck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Logística</h1>
           </div>
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={() => setDialogOpen(true)} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Agendar Entrega/Coleta
           </Button>
         </div>
 
         {/* Tabs + Filtro */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <Tabs value={tabAtiva} onValueChange={(v) => setTabAtiva(v as TipoEntrega)}>
             <TabsList>
               <TabsTrigger value="entrega">Entregas</TabsTrigger>
@@ -166,7 +166,7 @@ export default function Logistica() {
           </Tabs>
 
           <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Filtrar status" />
             </SelectTrigger>
             <SelectContent>
@@ -179,8 +179,8 @@ export default function Logistica() {
           </Select>
         </div>
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardContent className="p-0">
             {isLoading ? (
               <p className="text-center py-8 text-muted-foreground">Carregando...</p>
@@ -259,11 +259,68 @@ export default function Logistica() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : listaFiltrada.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum agendamento encontrado.</p>
+          ) : (
+            listaFiltrada.map((e) => {
+              const statusInfo = statusConfig[e.status as StatusEntrega] ?? { label: e.status, className: "" };
+              return (
+                <Card key={e.id} className="p-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="font-semibold">{nomePedido(e.pedidoId, e.nomeCliente)}</p>
+                        <p className="text-xs text-muted-foreground">{e.nomeColaborador || "—"}</p>
+                      </div>
+                      <Select
+                        value={e.status}
+                        onValueChange={(v) =>
+                          updateStatusMutation.mutate({
+                            id: e.id,
+                            status: v as StatusEntrega,
+                          })
+                        }
+                      >
+                        <SelectTrigger className={`w-28 h-7 text-xs border ${statusInfo.className}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusConfig).map(([key, { label }]) => (
+                            <SelectItem key={key} value={key}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="font-medium">Agendada:</span> {formatData(e.dataAgendada)}</div>
+                      <div><span className="font-medium">Realizada:</span> {formatData(e.dataRealizada)}</div>
+                    </div>
+                    {e.observacoes && (
+                      <p className="text-xs text-muted-foreground border-t pt-2">{e.observacoes}</p>
+                    )}
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="destructive" onClick={() => confirmarDelete(e.id)} className="flex-1 h-8 text-xs">
+                        Deletar
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Dialog de agendamento */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Agendar Entrega/Coleta</DialogTitle>
           </DialogHeader>
@@ -327,7 +384,7 @@ export default function Logistica() {
                   <RadioGroup
                     value={field.value}
                     onValueChange={field.onChange}
-                    className="flex gap-6"
+                    className="flex flex-col sm:flex-row gap-4 sm:gap-6"
                   >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="entrega" id="tipo-entrega" />
@@ -366,8 +423,8 @@ export default function Logistica() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={fecharDialog}>
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={fecharDialog} disabled={createMutation.isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

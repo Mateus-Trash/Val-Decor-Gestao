@@ -107,8 +107,60 @@ export default function Calendario() {
           </div>
         </div>
 
-        {/* Calendário */}
-        <Card className="p-6">
+        {/* Calendário Mobile - Lista de dias com eventos */}
+        <div className="block md:hidden">
+          <Card className="p-3 sm:p-4">
+            {isLoading ? (
+              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            ) : (
+              <div className="space-y-3">
+                {/* Mostrar apenas dias com eventos */}
+                {diasCalendario
+                  .filter((dia) => obterEventosDia(dia).length > 0)
+                  .map((dia) => {
+                    const eventos = obterEventosDia(dia);
+                    const ehHoje = isToday(dia);
+                    return (
+                      <div
+                        key={format(dia, "yyyy-MM-dd")}
+                        className={`border rounded-lg p-3 ${ehHoje ? "border-blue-500 bg-blue-50" : "border-border"}`}
+                      >
+                        <p className={`font-semibold text-sm mb-2 ${ehHoje ? "text-blue-700" : ""}`}>
+                          {format(dia, "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
+                        <div className="space-y-2">
+                          {eventos.map((evento) => {
+                            const badge = statusBadge[evento.status] || {
+                              label: evento.status,
+                              className: "",
+                            };
+                            const nomeExibicao = evento.nomeCliente || `Pedido #${evento.id}`;
+                            return (
+                              <div key={evento.id} className="text-xs bg-white border border-border rounded p-2">
+                                <p className="font-medium truncate">{nomeExibicao}</p>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs h-5 mt-1 ${badge.className}`}
+                                >
+                                  {badge.label}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                {diasCalendario.filter((dia) => obterEventosDia(dia).length > 0).length === 0 && (
+                  <p className="text-center py-8 text-muted-foreground">Nenhum evento neste mês</p>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Calendário Desktop - Grade 7 colunas */}
+        <Card className="hidden md:block p-6">
           {isLoading ? (
             <p className="text-center py-12 text-muted-foreground">Carregando...</p>
           ) : (
@@ -126,7 +178,7 @@ export default function Calendario() {
               <div className="grid grid-cols-7 gap-2">
                 {/* Dias vazios antes do primeiro dia do mês */}
                 {Array.from({ length: diasCalendario[0]?.getDay() || 0 }).map((_, i) => (
-                  <div key={`empty-${i}`} className="aspect-square" />
+                  <div key={`empty-${i}`} className="min-h-20" />
                 ))}
 
                 {/* Dias do mês */}
@@ -138,7 +190,7 @@ export default function Calendario() {
                   return (
                     <div
                       key={format(dia, "yyyy-MM-dd")}
-                      className={`aspect-square border rounded-lg p-2 overflow-hidden flex flex-col ${
+                      className={`min-h-20 border rounded-lg p-2 overflow-hidden flex flex-col ${
                         ehHoje
                           ? "border-blue-500 bg-blue-50"
                           : ehMesAtual

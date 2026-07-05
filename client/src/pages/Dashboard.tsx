@@ -127,14 +127,14 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header + Filtro */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <BarChart3 className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <BarChart3 className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="flex-1 sm:w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -146,7 +146,7 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
             <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
-              <SelectTrigger className="w-24">
+              <SelectTrigger className="flex-1 sm:w-24">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -161,7 +161,7 @@ export default function Dashboard() {
         </div>
 
         {/* Cards de KPI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <KPICard
             title="Faturamento do Mês"
             value={kpis ? formatCentavos(kpis.faturamentoTotal) : null}
@@ -196,9 +196,9 @@ export default function Dashboard() {
 
         {/* Badges de status de pedidos */}
         <Card>
-          <CardContent className="py-4">
-            <p className="text-sm font-medium text-muted-foreground mb-3">Pedidos no Período</p>
-            <div className="flex flex-wrap gap-3">
+          <CardContent className="py-3 sm:py-4">
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2 sm:mb-3">Pedidos no Período</p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               {kpisLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-8 w-28" />
@@ -207,8 +207,8 @@ export default function Dashboard() {
                 Object.entries(STATUS_COLORS).map(([key, { label, bgClass }]) => {
                   const count = kpis?.pedidosPorStatus.find((p) => p.status === key)?.count ?? 0;
                   return (
-                    <Badge key={key} variant="outline" className={`text-sm px-3 py-1 ${bgClass}`}>
-                      {label}: {count}
+                    <Badge key={key} variant="outline" className={`text-xs sm:text-sm px-2 sm:px-3 py-1 ${bgClass}`}>
+                      <span className="hidden sm:inline">{label}: </span>{count}
                     </Badge>
                   );
                 })
@@ -218,7 +218,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Fluxo de Caixa Semanal */}
           <Card>
             <CardHeader>
@@ -228,13 +228,13 @@ export default function Dashboard() {
               {fluxoLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={fluxoData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="semana" fontSize={12} />
-                    <YAxis fontSize={12} tickFormatter={(v) => `R$${v}`} />
+                    <XAxis dataKey="semana" fontSize={11} />
+                    <YAxis fontSize={11} tickFormatter={(v) => `R$${v}`} />
                     <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Line type="monotone" dataKey="Receitas" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
@@ -246,7 +246,7 @@ export default function Dashboard() {
           {/* Top 5 Itens */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Top 5 Itens Mais Alugados</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Top 5 Itens Mais Alugados</CardTitle>
             </CardHeader>
             <CardContent>
               {kpisLoading ? (

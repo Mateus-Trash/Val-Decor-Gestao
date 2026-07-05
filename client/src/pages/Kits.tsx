@@ -180,21 +180,21 @@ export default function Kits() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <Layers className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Kits</h1>
+            <Layers className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Kits</h1>
           </div>
-          <Button onClick={abrirCriar}>
+          <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Kit
           </Button>
         </div>
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>Catálogo de Kits</CardTitle>
           </CardHeader>
@@ -248,11 +248,43 @@ export default function Kits() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : kits.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum kit cadastrado.</p>
+          ) : (
+            kits.map((kit) => (
+              <Card key={kit.id} className="p-3">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <p className="font-semibold">{kit.nome}</p>
+                      <p className="text-xs text-muted-foreground">{kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—"}</p>
+                    </div>
+                    <p className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</p>
+                  </div>
+                  <p className="text-xs"><span className="font-medium">Valor:</span> {formatCurrency(kit.valorAluguel)}</p>
+                  <div className="flex gap-2 pt-2">
+                    <Button size="sm" variant="outline" onClick={() => abrirEditar(kit)} className="flex-1 h-8 text-xs">
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(kit.id)} className="flex-1 h-8 text-xs">
+                      Deletar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Dialog criar/editar */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Kit" : "Novo Kit"}
@@ -260,12 +292,29 @@ export default function Kits() {
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Campos básicos */}
-            <div className="space-y-1">
-              <Label htmlFor="nome">Nome *</Label>
-              <Input id="nome" {...register("nome")} placeholder="Nome do kit" />
-              {errors.nome && (
-                <p className="text-sm text-destructive">{errors.nome.message}</p>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="nome">Nome *</Label>
+                <Input id="nome" {...register("nome")} placeholder="Nome do kit" />
+                {errors.nome && (
+                  <p className="text-sm text-destructive">{errors.nome.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="valorAluguel">Valor Aluguel (R$) *</Label>
+                <Input
+                  id="valorAluguel"
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  {...register("valorAluguel", { valueAsNumber: true })}
+                  placeholder="0,00"
+                />
+                {errors.valorAluguel && (
+                  <p className="text-sm text-destructive">{errors.valorAluguel.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -274,22 +323,8 @@ export default function Kits() {
                 id="descricao"
                 {...register("descricao")}
                 placeholder="Descrição do kit"
+                rows={3}
               />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="valorAluguel">Valor de Aluguel (R$) *</Label>
-              <Input
-                id="valorAluguel"
-                type="number"
-                step={0.01}
-                min={0}
-                {...register("valorAluguel", { valueAsNumber: true })}
-                placeholder="0,00"
-              />
-              {errors.valorAluguel && (
-                <p className="text-sm text-destructive">{errors.valorAluguel.message}</p>
-              )}
             </div>
 
             {/* Seção composição */}
@@ -297,7 +332,7 @@ export default function Kits() {
               <p className="font-medium text-sm">Composição do Kit</p>
 
               {/* Seletor de item */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Selecionar item..." />
@@ -316,10 +351,10 @@ export default function Kits() {
                   value={qtdItem}
                   onChange={(e) => setQtdItem(e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-20"
+                  className="w-full sm:w-20"
                   placeholder="Qtd"
                 />
-                <Button type="button" variant="outline" onClick={adicionarItem} disabled={!itemSelecionado}>
+                <Button type="button" variant="outline" onClick={adicionarItem} disabled={!itemSelecionado} className="w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -355,8 +390,8 @@ export default function Kits() {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={fecharDialog}>
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={fecharDialog} disabled={isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>

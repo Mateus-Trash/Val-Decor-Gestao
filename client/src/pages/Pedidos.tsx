@@ -305,29 +305,29 @@ export default function Pedidos() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <ShoppingCart className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Pedidos</h1>
+            <ShoppingCart className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Pedidos</h1>
           </div>
-          <Button onClick={abrirCriar}>
+          <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Pedido
           </Button>
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Input
-            placeholder="Buscar por cliente ou colaborador..."
+            placeholder="Buscar cliente ou colaborador..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="max-w-sm"
+            className="flex-1"
           />
           <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Filtrar status" />
             </SelectTrigger>
             <SelectContent>
@@ -339,8 +339,8 @@ export default function Pedidos() {
           </Select>
         </div>
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>Lista de Pedidos</CardTitle>
           </CardHeader>
@@ -408,11 +408,59 @@ export default function Pedidos() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : pedidosFiltrados.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado.</p>
+          ) : (
+            pedidosFiltrados.map((p) => (
+              <Card key={p.id} className="p-3">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <p className="font-semibold">#{p.id}</p>
+                      <p className="text-xs text-muted-foreground">{p.nomeCliente || "Sem cliente"}</p>
+                    </div>
+                    <Select
+                      value={p.status}
+                      onValueChange={(value) =>
+                        updateStatusMutation.mutate({ id: p.id, status: value as typeof statusOptions[number] })
+                      }
+                    >
+                      <SelectTrigger className={`w-28 h-8 text-xs border ${statusColors[p.status] ?? ""}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-xs"><span className="font-medium">Colaborador:</span> {p.nomeColaborador}</p>
+                  <p className="text-xs"><span className="font-medium">Data:</span> {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}</p>
+                  <p className="text-xs"><span className="font-medium">Total:</span> {formatCurrency(p.valorTotal)}</p>
+                  <div className="flex gap-2 pt-2">
+                    <Button size="sm" variant="outline" onClick={() => abrirEditar(p)} className="flex-1 h-8 text-xs">
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(p.id)} className="flex-1 h-8 text-xs">
+                      Deletar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Dialog criar/editar */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Pedido" : "Novo Pedido"}
@@ -420,7 +468,7 @@ export default function Pedidos() {
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Campos básicos */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="nomeCliente">Cliente *</Label>
                 <Input id="nomeCliente" {...register("nomeCliente")} placeholder="Nome do cliente" />
@@ -451,202 +499,184 @@ export default function Pedidos() {
                   <p className="text-sm text-destructive">{errors.colaboradorId.message}</p>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
-                <Label htmlFor="dataEvento">Data Evento *</Label>
+                <Label htmlFor="dataEvento">Data do Evento *</Label>
                 <Input id="dataEvento" type="datetime-local" {...register("dataEvento")} />
                 {errors.dataEvento && (
                   <p className="text-sm text-destructive">{errors.dataEvento.message}</p>
                 )}
               </div>
+
               <div className="space-y-1">
-                <Label htmlFor="dataEntrega">Data Entrega *</Label>
+                <Label htmlFor="dataEntrega">Data de Entrega *</Label>
                 <Input id="dataEntrega" type="datetime-local" {...register("dataEntrega")} />
+                {errors.dataEntrega && (
+                  <p className="text-sm text-destructive">{errors.dataEntrega.message}</p>
+                )}
               </div>
+
               <div className="space-y-1">
-                <Label htmlFor="dataColeta">Data Coleta *</Label>
+                <Label htmlFor="dataColeta">Data de Coleta *</Label>
                 <Input id="dataColeta" type="datetime-local" {...register("dataColeta")} />
+                {errors.dataColeta && (
+                  <p className="text-sm text-destructive">{errors.dataColeta.message}</p>
+                )}
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="enderecoEntrega">Endereço de Entrega *</Label>
-              <Input id="enderecoEntrega" {...register("enderecoEntrega")} placeholder="Endereço completo" />
-              {errors.enderecoEntrega && (
-                <p className="text-sm text-destructive">{errors.enderecoEntrega.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="valorTaxaEntrega">Taxa de Entrega (R$)</Label>
                 <Input
                   id="valorTaxaEntrega"
                   type="number"
-                  step={0.01}
-                  min={0}
+                  step="0.01"
                   {...register("valorTaxaEntrega", { valueAsNumber: true })}
                   placeholder="0,00"
                 />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea id="observacoes" {...register("observacoes")} placeholder="Observações..." />
-              </div>
             </div>
 
-            {/* Seção Itens — só no criar */}
+            <div className="space-y-1">
+              <Label htmlFor="enderecoEntrega">Endereço de Entrega *</Label>
+              <Input id="enderecoEntrega" {...register("enderecoEntrega")} placeholder="Rua, número, cidade..." />
+              {errors.enderecoEntrega && (
+                <p className="text-sm text-destructive">{errors.enderecoEntrega.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea id="observacoes" {...register("observacoes")} placeholder="Notas adicionais..." rows={3} />
+            </div>
+
+            {/* Composição de itens e kits (apenas na criação) */}
             {editandoId === null && (
               <>
-                <div className="space-y-3 border rounded-md p-3">
-                  <p className="font-medium text-sm">Itens</p>
-                  <div className="flex gap-2 items-start">
-                    <Select value={itemSelecionado} onValueChange={(v) => { setItemSelecionado(v); setErroQtdItem(""); }}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecionar item..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {itensList.map((item) => (
-                          <SelectItem
-                            key={item.id}
-                            value={String(item.id)}
-                            disabled={item.quantidadeDisponivel === 0}
-                          >
-                            <span className={item.quantidadeDisponivel === 0 ? "text-muted-foreground" : ""}>
-                              {item.nome} — {formatCurrency(item.valorAluguel)}
-                              <span className="text-xs text-muted-foreground ml-1">({item.quantidadeDisponivel} disponíveis)</span>
-                            </span>
-                            {item.quantidadeDisponivel === 0 && (
-                              <span className="ml-2 text-xs bg-red-100 text-red-700 rounded px-1">Sem estoque</span>
-                            )}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex flex-col">
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-3">Composição do Pedido</h3>
+
+                  {/* Adicionar itens */}
+                  <div className="space-y-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar item..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {itensList.map((i) => (
+                            <SelectItem key={i.id} value={String(i.id)}>
+                              {i.nome} ({i.quantidadeDisponivel} disp.)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Input
                         type="number"
-                        min={1}
+                        min="1"
                         value={qtdItem}
-                        onChange={(e) => {
-                          setQtdItem(e.target.value);
-                          // Validar reativamente
-                          const val = parseInt(e.target.value) || 1;
-                          if (itemSelecionado) {
-                            const id = Number(itemSelecionado);
-                            const itemInfo = itensList.find((i) => i.id === id);
-                            if (itemInfo) {
-                              const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
-                              const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
-                              const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
-                              if (val > maxDisponivel) {
-                                setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
-                              } else {
-                                setErroQtdItem("");
-                              }
-                            }
-                          } else {
-                            setErroQtdItem("");
-                          }
-                        }}
+                        onChange={(e) => setQtdItem(e.target.value)}
                         onFocus={(e) => e.target.select()}
-                        className="w-20"
                         placeholder="Qtd"
                       />
-                      {erroQtdItem && (
-                        <p className="text-xs text-destructive mt-0.5 whitespace-nowrap">{erroQtdItem}</p>
-                      )}
+                      <Button type="button" onClick={adicionarItem} variant="outline" className="w-full">
+                        Adicionar
+                      </Button>
                     </div>
-                    <Button type="button" variant="outline" onClick={adicionarItem} disabled={!itemSelecionado || !!erroQtdItem}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                    {erroQtdItem && <p className="text-sm text-destructive">{erroQtdItem}</p>}
                   </div>
-                  {itensComposicao.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">Nenhum item adicionado.</p>
-                  ) : (
-                    <ul className="space-y-1">
-                      {itensComposicao.map((c) => (
-                        <li key={c.itemId} className="flex items-center justify-between text-sm bg-muted rounded px-3 py-1.5">
-                          <span>
-                            <span className="font-medium">{c.nome}</span>
-                            <span className="text-muted-foreground ml-2">× {c.quantidade}</span>
-                            <span className="text-muted-foreground ml-2">({formatCurrency(c.valorUnitario)} un.)</span>
-                          </span>
-                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setItensComposicao((prev) => prev.filter((i) => i.itemId !== c.itemId))}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
 
-                {/* Seção Kits */}
-                <div className="space-y-3 border rounded-md p-3">
-                  <p className="font-medium text-sm">Kits</p>
-                  <div className="flex gap-2">
-                    <Select value={kitSelecionado} onValueChange={setKitSelecionado}>
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecionar kit..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kitsList.map((kit) => (
-                          <SelectItem key={kit.id} value={String(kit.id)}>
-                            🎁 {kit.nome} — {formatCurrency(kit.valorAluguel)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={qtdKit}
-                      onChange={(e) => setQtdKit(e.target.value)}
-                      onFocus={(e) => e.target.select()}
-                      className="w-20"
-                      placeholder="Qtd"
-                    />
-                    <Button type="button" variant="outline" onClick={adicionarKit} disabled={!kitSelecionado}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
+                  {/* Lista de itens adicionados */}
+                  {itensComposicao.length > 0 && (
+                    <div className="mb-4 p-3 bg-muted rounded-lg space-y-2">
+                      {itensComposicao.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm">
+                          <span>{item.nome} x{item.quantidade}</span>
+                          <div className="flex items-center gap-2">
+                            <span>{formatCurrency(item.valorUnitario * item.quantidade)}</span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setItensComposicao((prev) => prev.filter((_, i) => i !== idx))}
+                              className="h-6 w-6"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Adicionar kits */}
+                  <div className="space-y-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <Select value={kitSelecionado} onValueChange={setKitSelecionado}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar kit..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {kitsList.map((k) => (
+                            <SelectItem key={k.id} value={String(k.id)}>
+                              {k.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={qtdKit}
+                        onChange={(e) => setQtdKit(e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                        placeholder="Qtd"
+                      />
+                      <Button type="button" onClick={adicionarKit} variant="outline" className="w-full">
+                        Adicionar
+                      </Button>
+                    </div>
                   </div>
-                  {kitsComposicao.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-2">Nenhum kit adicionado.</p>
-                  ) : (
-                    <ul className="space-y-1">
-                      {kitsComposicao.map((c) => (
-                        <li key={c.kitId} className="flex items-center justify-between text-sm bg-muted rounded px-3 py-1.5">
-                          <span>
-                            <span className="font-medium">🎁 {c.nome}</span>
-                            <span className="text-muted-foreground ml-2">× {c.quantidade}</span>
-                            <span className="text-muted-foreground ml-2">({formatCurrency(c.valorUnitario)} un.)</span>
-                          </span>
-                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setKitsComposicao((prev) => prev.filter((k) => k.kitId !== c.kitId))}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
 
-                {/* Valor total */}
-                <div className="flex justify-end border-t pt-3">
-                  <p className="text-lg font-bold">
-                    Total: {formatCurrency(valorTotalCalculado)}
-                  </p>
+                  {/* Lista de kits adicionados */}
+                  {kitsComposicao.length > 0 && (
+                    <div className="mb-4 p-3 bg-muted rounded-lg space-y-2">
+                      {kitsComposicao.map((kit, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm">
+                          <span>{kit.nome} x{kit.quantidade}</span>
+                          <div className="flex items-center gap-2">
+                            <span>{formatCurrency(kit.valorUnitario * kit.quantidade)}</span>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setKitsComposicao((prev) => prev.filter((_, i) => i !== idx))}
+                              className="h-6 w-6"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <p className="font-semibold text-sm">
+                      Total: {formatCurrency(valorTotalCalculado)}
+                    </p>
+                  </div>
                 </div>
               </>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={fecharDialog}>
+            {/* Botões */}
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={fecharDialog} disabled={isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Salvando..." : editandoId !== null ? "Salvar" : "Criar Pedido"}
+                {isPending ? "Salvando..." : editandoId !== null ? "Atualizar" : "Criar Pedido"}
               </Button>
             </div>
           </form>

@@ -153,14 +153,14 @@ export default function Itens() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <Package className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Itens</h1>
+            <Package className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Itens</h1>
           </div>
-          <Button onClick={abrirCriar}>
+          <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Item
           </Button>
@@ -171,11 +171,11 @@ export default function Itens() {
           placeholder="Buscar por nome..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="max-w-sm"
+          className="w-full"
         />
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>Catálogo de Itens</CardTitle>
           </CardHeader>
@@ -239,23 +239,103 @@ export default function Itens() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : itensFiltrados.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</p>
+          ) : (
+            itensFiltrados.map((item) => (
+              <Card key={item.id} className="p-3">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <p className="font-semibold">{item.nome}</p>
+                      <p className="text-xs text-muted-foreground">{item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}</p>
+                    </div>
+                    <div>{getSituacao(item.quantidadeDisponivel)}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="font-medium">Aluguel:</span> {formatCurrency(item.valorAluguel)}</div>
+                    <div><span className="font-medium">Custo:</span> {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}</div>
+                    <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
+                    <div><span className="font-medium">Disponível:</span> {item.quantidadeDisponivel}</div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button size="sm" variant="outline" onClick={() => abrirEditar(item)} className="flex-1 h-8 text-xs">
+                      Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(item.id)} className="flex-1 h-8 text-xs">
+                      Deletar
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Dialog criar/editar */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Item" : "Novo Item"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="nome">Nome *</Label>
-              <Input id="nome" {...register("nome")} placeholder="Nome do item" />
-              {errors.nome && (
-                <p className="text-sm text-destructive">{errors.nome.message}</p>
-              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="nome">Nome *</Label>
+                <Input id="nome" {...register("nome")} placeholder="Nome do item" />
+                {errors.nome && (
+                  <p className="text-sm text-destructive">{errors.nome.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="valorAluguel">Valor Aluguel (R$) *</Label>
+                <Input
+                  id="valorAluguel"
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  {...register("valorAluguel", { valueAsNumber: true })}
+                  placeholder="0,00"
+                />
+                {errors.valorAluguel && (
+                  <p className="text-sm text-destructive">{errors.valorAluguel.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="custoAquisicao">Custo Aquisição (R$)</Label>
+                <Input
+                  id="custoAquisicao"
+                  type="number"
+                  step={0.01}
+                  min={0}
+                  {...register("custoAquisicao", { valueAsNumber: true })}
+                  placeholder="0,00"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="quantidadeTotal">Quantidade Total *</Label>
+                <Input
+                  id="quantidadeTotal"
+                  type="number"
+                  min={1}
+                  {...register("quantidadeTotal", { valueAsNumber: true })}
+                  placeholder="1"
+                />
+                {errors.quantidadeTotal && (
+                  <p className="text-sm text-destructive">{errors.quantidadeTotal.message}</p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -264,48 +344,8 @@ export default function Itens() {
                 id="descricao"
                 {...register("descricao")}
                 placeholder="Descrição detalhada do item"
+                rows={3}
               />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="valorAluguel">Valor de Aluguel (R$) *</Label>
-              <Input
-                id="valorAluguel"
-                type="number"
-                step={0.01}
-                min={0}
-                {...register("valorAluguel", { valueAsNumber: true })}
-                placeholder="0,00"
-              />
-              {errors.valorAluguel && (
-                <p className="text-sm text-destructive">{errors.valorAluguel.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="custoAquisicao">Custo de Aquisição (R$)</Label>
-              <Input
-                id="custoAquisicao"
-                type="number"
-                step={0.01}
-                min={0}
-                {...register("custoAquisicao", { valueAsNumber: true })}
-                placeholder="0,00"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="quantidadeTotal">Quantidade Total *</Label>
-              <Input
-                id="quantidadeTotal"
-                type="number"
-                min={1}
-                {...register("quantidadeTotal", { valueAsNumber: true })}
-                placeholder="1"
-              />
-              {errors.quantidadeTotal && (
-                <p className="text-sm text-destructive">{errors.quantidadeTotal.message}</p>
-              )}
             </div>
 
             {editandoId !== null && (
@@ -321,8 +361,8 @@ export default function Itens() {
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>

@@ -137,14 +137,14 @@ export default function Colaboradores() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <UserCheck className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Colaboradores</h1>
+            <UserCheck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Colaboradores</h1>
           </div>
-          <Button onClick={abrirCriar}>
+          <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Colaborador
           </Button>
@@ -155,11 +155,11 @@ export default function Colaboradores() {
           placeholder="Buscar por nome..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="max-w-sm"
+          className="w-full"
         />
 
-        {/* Tabela */}
-        <Card>
+        {/* Tabela Desktop */}
+        <Card className="hidden sm:block">
           <CardHeader>
             <CardTitle>Lista de Colaboradores</CardTitle>
           </CardHeader>
@@ -229,36 +229,93 @@ export default function Colaboradores() {
             )}
           </CardContent>
         </Card>
+
+        {/* Cards Mobile */}
+        <div className="block sm:hidden space-y-3">
+          {isLoading ? (
+            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+          ) : colaboradoresFiltrados.length === 0 ? (
+            <p className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado.</p>
+          ) : (
+            colaboradoresFiltrados.map((c) => {
+              const resumo = resumoMap.get(c.id);
+              return (
+                <Card key={c.id} className="p-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="font-semibold">{c.nome}</p>
+                        <p className="text-xs text-muted-foreground">{c.funcao || "—"}</p>
+                      </div>
+                      <p className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{c.percentualComissao}%</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div><span className="font-medium">Email:</span> {c.email || "—"}</div>
+                      <div><span className="font-medium">Tel:</span> {c.telefone || "—"}</div>
+                      <div><span className="font-medium">Comissão:</span> {resumo ? (resumo.totalComissao / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0,00"}</div>
+                      <div><span className="font-medium">Pedidos:</span> {resumo?.quantidadePedidos ?? 0}</div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="outline" onClick={() => abrirEditar(c)} className="flex-1 h-8 text-xs">
+                        Editar
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => confirmarDelete(c.id)} className="flex-1 h-8 text-xs">
+                        Deletar
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Dialog criar/editar */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Colaborador" : "Novo Colaborador"}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1">
-              <Label htmlFor="nome">Nome *</Label>
-              <Input id="nome" {...register("nome")} placeholder="Nome completo" />
-              {errors.nome && (
-                <p className="text-sm text-destructive">{errors.nome.message}</p>
-              )}
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="nome">Nome *</Label>
+                <Input id="nome" {...register("nome")} placeholder="Nome completo" />
+                {errors.nome && (
+                  <p className="text-sm text-destructive">{errors.nome.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} placeholder="email@exemplo.com" />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="percentualComissao">Comissão (%)</Label>
+                <Input
+                  id="percentualComissao"
+                  type="number"
+                  min={0}
+                  max={100}
+                  {...register("percentualComissao", { valueAsNumber: true })}
+                  placeholder="10"
+                />
+                {errors.percentualComissao && (
+                  <p className="text-sm text-destructive">{errors.percentualComissao.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input id="telefone" {...register("telefone")} placeholder="(11) 99999-9999" />
+              <div className="space-y-1">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" {...register("email")} placeholder="email@exemplo.com" />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input id="telefone" {...register("telefone")} placeholder="(11) 99999-9999" />
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -266,23 +323,8 @@ export default function Colaboradores() {
               <Input id="funcao" {...register("funcao")} placeholder="Ex: Entregador, Gerente" />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="percentualComissao">Comissão (%)</Label>
-              <Input
-                id="percentualComissao"
-                type="number"
-                min={0}
-                max={100}
-                {...register("percentualComissao", { valueAsNumber: true })}
-                placeholder="10"
-              />
-              {errors.percentualComissao && (
-                <p className="text-sm text-destructive">{errors.percentualComissao.message}</p>
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isPending}>

@@ -1,6 +1,5 @@
 import { relations } from "drizzle-orm";
 import {
-  clientes,
   colaboradores,
   comissoes,
   entregasColetas,
@@ -12,13 +11,6 @@ import {
   pedidos,
   transacoesFinanceiras,
 } from "./schema";
-
-/**
- * Relações para a tabela clientes
- */
-export const clientesRelations = relations(clientes, ({ many }) => ({
-  pedidos: many(pedidos),
-}));
 
 /**
  * Relações para a tabela colaboradores
@@ -63,10 +55,6 @@ export const kitItensRelations = relations(kitItens, ({ one }) => ({
  * Relações para a tabela pedidos
  */
 export const pedidosRelations = relations(pedidos, ({ one, many }) => ({
-  cliente: one(clientes, {
-    fields: [pedidos.clienteId],
-    references: [clientes.id],
-  }),
   colaborador: one(colaboradores, {
     fields: [pedidos.colaboradorId],
     references: [colaboradores.id],
