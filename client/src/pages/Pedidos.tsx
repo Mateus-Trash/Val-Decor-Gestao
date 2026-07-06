@@ -57,7 +57,9 @@ const pedidoSchema = z.object({
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
   dataEvento: z.string().min(1, "Data do evento é obrigatória"),
   dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
-  enderecoEntrega: z.string().min(1, "Endereço é obrigatório"),
+  ruaEntrega: z.string().min(1, "Rua é obrigatória"),
+  bairroEntrega: z.string().min(1, "Bairro é obrigatório"),
+  numeroEntrega: z.string().min(1, "Número é obrigatório"),
   valorTaxaEntrega: z.number().min(0).optional(),
   observacoes: z.string().optional(),
 });
@@ -189,7 +191,9 @@ export default function Pedidos() {
       colaboradorId: "",
       dataEvento: "",
       dataEntrega: "",
-      enderecoEntrega: "",
+      ruaEntrega: "",
+      bairroEntrega: "",
+      numeroEntrega: "",
       valorTaxaEntrega: 0,
       observacoes: "",
     });
@@ -203,7 +207,9 @@ export default function Pedidos() {
       colaboradorId: String(p.colaboradorId),
       dataEvento: p.dataEvento ? format(new Date(p.dataEvento), "yyyy-MM-dd'T'HH:mm") : "",
       dataEntrega: p.dataEntrega ? format(new Date(p.dataEntrega), "yyyy-MM-dd'T'HH:mm") : "",
-      enderecoEntrega: p.enderecoEntrega ?? "",
+      ruaEntrega: p.ruaEntrega,
+      bairroEntrega: p.bairroEntrega,
+      numeroEntrega: p.numeroEntrega ?? "",
       valorTaxaEntrega: p.valorTaxaEntrega ?? 0,
       observacoes: p.observacoes ?? "",
     });
@@ -295,7 +301,9 @@ export default function Pedidos() {
         id: editandoId,
         dataEvento: new Date(data.dataEvento),
         dataEntrega: new Date(data.dataEntrega),
-        enderecoEntrega: data.enderecoEntrega,
+        ruaEntrega: data.ruaEntrega,
+        bairroEntrega: data.bairroEntrega,
+        numeroEntrega: data.numeroEntrega,
         valorTaxaEntrega: data.valorTaxaEntrega ?? 0,
         observacoes: data.observacoes,
       });
@@ -309,7 +317,9 @@ export default function Pedidos() {
         colaboradorId: Number(data.colaboradorId),
         dataEvento: new Date(data.dataEvento),
         dataEntrega: new Date(data.dataEntrega),
-        enderecoEntrega: data.enderecoEntrega,
+        ruaEntrega: data.ruaEntrega,
+        bairroEntrega: data.bairroEntrega,
+        numeroEntrega: data.numeroEntrega,
         valorTaxaEntrega: data.valorTaxaEntrega ?? 0,
         observacoes: data.observacoes,
         itens: itensComposicao.map((i) => ({
@@ -557,13 +567,29 @@ export default function Pedidos() {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="enderecoEntrega">Endereço de Entrega *</Label>
-              <Input id="enderecoEntrega" {...register("enderecoEntrega")} placeholder="Rua, número, cidade..." />
-              {errors.enderecoEntrega && (
-                <p className="text-sm text-destructive">{errors.enderecoEntrega.message}</p>
-              )}
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="ruaEntrega">Rua *</Label>
+                  <Input id="ruaEntrega" {...register("ruaEntrega")} placeholder="Rua..." />
+                  {errors.ruaEntrega && (
+                    <p className="text-sm text-destructive">{errors.ruaEntrega.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="numeroEntrega">Número *</Label>
+                  <Input id="numeroEntrega" {...register("numeroEntrega")} placeholder="Número..." />
+                  {errors.numeroEntrega && (
+                    <p className="text-sm text-destructive">{errors.numeroEntrega.message}</p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="bairroEntrega">Bairro *</Label>
+                  <Input id="bairroEntrega" {...register("bairroEntrega")} placeholder="Bairro..." />
+                  {errors.bairroEntrega && (
+                    <p className="text-sm text-destructive">{errors.bairroEntrega.message}</p>
+                  )}
+                </div>
+              </div>
 
             <div className="space-y-1">
               <Label htmlFor="observacoes">Observações</Label>

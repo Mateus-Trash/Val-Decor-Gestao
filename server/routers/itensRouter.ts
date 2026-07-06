@@ -66,13 +66,13 @@ export const itensRouter = router({
 
       // Verificar se o item está em pedidos ativos (status diferente de Concluido)
       const registros = await db
-        .select({ count: sql<number>`COUNT(*)`.as("count") })
+        .select({ count: sql`COUNT(*)` })
         .from(itensPedido)
         .innerJoin(pedidos, eq(itensPedido.pedidoId, pedidos.id))
         .where(
           and(
             eq(itensPedido.itemId, input.id),
-            notInArray(pedidos.status, ["Concluido"])  // Quando "Cancelado" existir, adicionar aqui
+            notInArray(pedidos.status, ["Concluido"])
           )
         );
 

@@ -103,7 +103,9 @@ export const pedidos = mysqlTable("pedidos", {
   colaboradorId: int("colaboradorId").notNull(),
   dataEvento: timestamp("dataEvento").notNull(),
   dataEntrega: timestamp("dataEntrega").notNull(),
-  enderecoEntrega: text("enderecoEntrega"),
+  ruaEntrega: varchar("ruaEntrega", { length: 255 }).notNull(),
+  bairroEntrega: varchar("bairroEntrega", { length: 120 }).notNull(),
+  numeroEntrega: varchar("numeroEntrega", { length: 20 }).notNull(),
   valorTotal: int("valorTotal").notNull(), // em centavos
   valorTaxaEntrega: float("valorTaxaEntrega").default(0).notNull(), // em reais
   status: mysqlEnum("status", ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"]).default("Pendente").notNull(),

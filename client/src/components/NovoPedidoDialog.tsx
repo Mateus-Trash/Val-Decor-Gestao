@@ -19,7 +19,9 @@ const pedidoSchema = z.object({
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
   dataEvento: z.string().min(1, "Data do evento é obrigatória"),
   dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
-  enderecoEntrega: z.string().min(1, "Endereço é obrigatório"),
+  ruaEntrega: z.string().min(1, "Rua é obrigatória"),
+  bairroEntrega: z.string().min(1, "Bairro é obrigatório"),
+  numeroEntrega: z.string().min(1, "Número é obrigatório"),
   valorTaxaEntrega: z.number().min(0).optional(),
   observacoes: z.string().optional(),
 });
@@ -187,7 +189,9 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
       colaboradorId: Number(data.colaboradorId),
       dataEvento,
       dataEntrega,
-      enderecoEntrega: data.enderecoEntrega,
+      ruaEntrega: data.ruaEntrega,
+      bairroEntrega: data.bairroEntrega,
+      numeroEntrega: data.numeroEntrega,
       valorTaxaEntrega: Math.round((data.valorTaxaEntrega || 0) * 100),
       observacoes: data.observacoes || "",
       itens: itensComposicao,
@@ -260,19 +264,39 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
                   type="datetime-local"
                   {...register("dataEntrega")}
                   className="text-sm"
-                />
-                {errors.dataEntrega && <p className="text-xs text-red-500 mt-1">{errors.dataEntrega.message}</p>}
+                  />
               </div>
-
-              <div>
-                <Label htmlFor="enderecoEntrega" className="text-xs">Endereço de Entrega</Label>
-                <Input
-                  id="enderecoEntrega"
-                  {...register("enderecoEntrega")}
-                  placeholder="Rua, número, bairro..."
-                  className="text-sm"
-                />
-                {errors.enderecoEntrega && <p className="text-xs text-red-500 mt-1">{errors.enderecoEntrega.message}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div>
+                  <Label htmlFor="ruaEntrega" className="text-xs">Rua</Label>
+                  <Input
+                    id="ruaEntrega"
+                    {...register("ruaEntrega")}
+                    placeholder="Rua..."
+                    className="text-sm"
+                  />
+                  {errors.ruaEntrega && <p className="text-xs text-red-500 mt-1">{errors.ruaEntrega.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="numeroEntrega" className="text-xs">Número</Label>
+                  <Input
+                    id="numeroEntrega"
+                    {...register("numeroEntrega")}
+                    placeholder="Número..."
+                    className="text-sm"
+                  />
+                  {errors.numeroEntrega && <p className="text-xs text-red-500 mt-1">{errors.numeroEntrega.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="bairroEntrega" className="text-xs">Bairro</Label>
+                  <Input
+                    id="bairroEntrega"
+                    {...register("bairroEntrega")}
+                    placeholder="Bairro..."
+                    className="text-sm"
+                  />
+                  {errors.bairroEntrega && <p className="text-xs text-red-500 mt-1">{errors.bairroEntrega.message}</p>}
+                </div>
               </div>
 
               <div>
