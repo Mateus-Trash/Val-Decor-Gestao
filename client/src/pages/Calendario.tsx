@@ -311,9 +311,8 @@ export default function Calendario() {
                 const [bgColor] = badge.className.split(" ");
 
                 return (
-                  <div key={pedido.id} className="border rounded-lg p-3 relative">
-                    {/* Badge de status no canto */}
-                    <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${badge.className.split(" ")[0]}`} />
+                  <div key={pedido.id} className={`border rounded-lg p-3 relative ${badge.className}`}>
+                    {/* Badge de status no canto - removido, agora o fundo é colorido */}
 
                     <div className="pr-4">
                       <p className="font-semibold text-sm">{pedido.nomeCliente}</p>
