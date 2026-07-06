@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import { eq } from "drizzle-orm";
+import { getDb } from "./db";
+import { comissoes } from "../drizzle/schema";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -225,11 +228,11 @@ describe("Routers", () => {
       }
     });
 
-    it("should validate changeStatus with valid enum", async () => {
+    it("should validate updateStatus with valid enum", async () => {
       const ctx = createAuthContext();
       const caller = appRouter.createCaller(ctx);
       try {
-        await caller.pedidos.changeStatus({
+        await caller.pedidos.updateStatus({
           id: 1,
           status: "Confirmado",
         });
@@ -274,5 +277,153 @@ describe("Routers", () => {
       expect(result).toEqual({ success: true });
       expect(clearedCookie).toBe(true);
     });
+  });
+});
+
+describe("pedidos - comissão", () => {
+  it("should insert comissão when updateStatus goes to Concluido, and remove it when it leaves Concluido", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const sufixo = Date.now();
+
+    const colaboradorResult = await caller.colaboradores.create({
+      nome: `Colaborador Teste ${sufixo}`,
+      email: `colaborador${sufixo}@example.com`,
+      percentualComissao: 10,
+    });
+    const colaboradorId = (colaboradorResult as any)[0].insertId;
+
+    const itemResult = await caller.itens.create({
+      nome: `Item Comissão Teste ${sufixo}`,
+      valorAluguel: 1000,
+      quantidadeTotal: 50,
+    });
+    const itemId = (itemResult as any)[0].insertId;
+
+    const pedido = await caller.pedidos.create({
+      nomeCliente: "Cliente Teste Comissão",
+      colaboradorId,
+      dataEvento: new Date("2026-08-10T12:00:00"),
+      dataEntrega: new Date("2026-08-10T08:00:00"),
+      dataColeta: new Date("2026-08-11T08:00:00"),
+      enderecoEntrega: "Rua Teste, 123",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 1, valorUnitario: 1000 }],
+      kits: [],
+    });
+    const pedidoId = pedido.pedidoId;
+    const db = await getDb();
+
+    await caller.pedidos.updateStatus({ id: pedidoId, status: "Concluido" });
+    const comissaoInserida = await db!.select().from(comissoes).where(eq(comissoes.pedidoId, pedidoId));
+    expect(comissaoInserida.length).toBe(1);
+
+    await caller.pedidos.updateStatus({ id: pedidoId, status: "Confirmado" });
+    const comissaoRemovida = await db!.select().from(comissoes).where(eq(comissoes.pedidoId, pedidoId));
+    expect(comissaoRemovida.length).toBe(0);
+  });
+});
+
+describe("financeiros", () => {
+  it("should list financeiros", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.financeiros.list();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("should validate valor is positive on create", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.financeiros.create({ tipo: "despesa", descricao: "Teste", valor: -100 });
+      expect.fail("Should have thrown validation error");
+    } catch (error: any) {
+      expect(error.message).toContain("Valor deve ser positivo");
+    }
+  });
+
+  it("should validate tipo enum on create", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.financeiros.create({ tipo: "invalido" as any, descricao: "Teste", valor: 100 });
+      expect.fail("Should have thrown validation error");
+    } catch (error: any) {
+      expect(error.message).toContain("Invalid");
+    }
+  });
+});
+
+describe("entregas", () => {
+  it("should list entregas", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const result = await caller.entregas.list();
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("should validate tipo enum on create", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.entregas.create({ pedidoId: 1, tipo: "invalido" as any, dataAgendada: new Date() });
+      expect.fail("Should have thrown validation error");
+    } catch (error: any) {
+      expect(error.message).toContain("Invalid");
+    }
+  });
+
+  it("should validate status enum on updateStatus", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.entregas.updateStatus({ id: 1, status: "invalido" as any });
+      expect.fail("Should have thrown validation error");
+    } catch (error: any) {
+      expect(error.message).toContain("Invalid");
+    }
+  });
+});
+
+describe("estoque por data", () => {
+  it("should show item as unavailable only on the reserved date, not on other dates", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const sufixo = Date.now();
+
+    const colaboradorResult = await caller.colaboradores.create({
+      nome: `Colaborador Estoque ${sufixo}`,
+      email: `estoque${sufixo}@example.com`,
+    });
+    const colaboradorId = (colaboradorResult as any)[0].insertId;
+
+    const itemResult = await caller.itens.create({
+      nome: `Item Estoque Teste ${sufixo}`,
+      valorAluguel: 1000,
+      quantidadeTotal: 10,
+    });
+    const itemId = (itemResult as any)[0].insertId;
+
+    const dataReservada = new Date("2026-09-15T12:00:00");
+    const dataLivre = new Date("2026-09-16T12:00:00");
+
+    await caller.pedidos.create({
+      nomeCliente: "Cliente Teste Estoque",
+      colaboradorId,
+      dataEvento: dataReservada,
+      dataEntrega: dataReservada,
+      dataColeta: dataReservada,
+      enderecoEntrega: "Rua Teste, 456",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 10, valorUnitario: 1000 }],
+      kits: [],
+    });
+
+    const dispNoDia = await caller.itens.getDisponibilidadePorData({ data: dataReservada });
+    expect(dispNoDia.find((i: any) => i.id === itemId)?.disponivel).toBe(0);
+
+    const dispOutroDia = await caller.itens.getDisponibilidadePorData({ data: dataLivre });
+    expect(dispOutroDia.find((i: any) => i.id === itemId)?.disponivel).toBe(10);
   });
 });

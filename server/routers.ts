@@ -7,9 +7,7 @@ import { colaboradoresRouter } from "./routers/colaboradoresRouter";
 import { itensRouter } from "./routers/itensRouter";
 import { kitsRouter } from "./routers/kitsRouter";
 import { pedidosRouter } from "./routers/pedidosRouter";
-import { transacoesFinanceirasRouter } from "./routers/transacoesFinanceiras";
-import { comissoesRouter } from "./routers/comissoes";
-import { entregasColetasRouter } from "./routers/entregasColetas";
+
 import { financeirosRouter } from "./routers/financeirosRouter";
 import { dashboardRouter } from "./routers/dashboardRouter";
 import { entregasRouter } from "./routers/entregasRouter";
@@ -33,9 +31,7 @@ export const appRouter = router({
   itens: itensRouter,
   kits: kitsRouter,
   pedidos: pedidosRouter,
-  transacoesFinanceiras: transacoesFinanceirasRouter,
-  comissoes: comissoesRouter,
-  entregasColetas: entregasColetasRouter,
+
   financeiros: financeirosRouter,
   dashboard: dashboardRouter,
   entregas: entregasRouter,
