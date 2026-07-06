@@ -385,16 +385,23 @@ export default function Financeiro() {
                         {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
                       </div>
                     </div>
-                    {isManual && (
-                      <div className="flex gap-2 pt-2">
-                        <Button size="sm" variant="outline" onClick={() => abrirEditar(t)} className="flex-1 h-8 text-xs">
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => confirmarDelete(t.id)} className="flex-1 h-8 text-xs">
-                          Deletar
-                        </Button>
-                      </div>
-                    )}
+                   {isManual && (
+                     <div className="flex gap-2 pt-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => abrirEditar(t)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
+                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                     </div>
+                   )}
                   </div>
                 </Card>
               );

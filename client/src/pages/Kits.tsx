@@ -270,16 +270,23 @@ export default function Kits() {
                     <p className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</p>
                   </div>
                   <p className="text-xs"><span className="font-medium">Valor:</span> {formatCurrency(kit.valorAluguel)}</p>
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline" onClick={() => abrirEditar(kit)} className="flex-1 h-8 text-xs">
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(kit.id)} className="flex-1 h-8 text-xs">
-                      Deletar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                 <div className="flex gap-2 pt-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => abrirEditar(kit)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </div>
+               </div>
+             </Card>
             ))
           )}
         </div>

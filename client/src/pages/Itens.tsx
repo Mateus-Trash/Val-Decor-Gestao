@@ -266,16 +266,23 @@ export default function Itens() {
                     <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
                     <div><span className="font-medium">Disponível:</span> {item.quantidadeDisponivel}</div>
                   </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline" onClick={() => abrirEditar(item)} className="flex-1 h-8 text-xs">
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(item.id)} className="flex-1 h-8 text-xs">
-                      Deletar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                 <div className="flex gap-2 pt-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => abrirEditar(item)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </div>
+               </div>
+             </Card>
             ))
           )}
         </div>

@@ -493,16 +493,23 @@ export default function Pedidos() {
                   <p className="text-xs"><span className="font-medium">Colaborador:</span> {p.nomeColaborador}</p>
                   <p className="text-xs"><span className="font-medium">Data:</span> {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}</p>
                   <p className="text-xs"><span className="font-medium">Total:</span> {formatCurrency(p.valorTotal)}</p>
-                  <div className="flex gap-2 pt-2">
-                    <Button size="sm" variant="outline" onClick={() => abrirEditar(p)} className="flex-1 h-8 text-xs">
-                      Editar
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => confirmarDelete(p.id)} className="flex-1 h-8 text-xs">
-                      Deletar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                 <div className="flex gap-2 pt-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => abrirEditar(p)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmarDelete(p.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </div>
+               </div>
+             </Card>
             ))
           )}
         </div>
