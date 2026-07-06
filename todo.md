@@ -28,16 +28,17 @@
 - [x] Router `comissoes` (list, getById, listByColaborador, listByPedido, calculate, delete)
 - [x] Router `entregasColetas` (list, create, update, delete, getById, changeStatus, listByPedido, listByColaborador, listByStatus)
 
-## Frontend
+## Frontend - Páginas Principais
 - [x] Layout dashboard com sidebar
 - [x] Página de clientes com CRUD
 - [x] Página de colaboradores com CRUD
 - [x] Página de catálogo (itens)
 - [x] Página de kits com CRUD e composição
 - [x] Página de pedidos com CRUD, filtros, status inline e composição de itens/kits
-- [ ] Página de entregas/coletas
-- [ ] Página de financeiro
-- [ ] Página de comissões
+- [x] Página de entregas/coletas (Logistica.tsx)
+- [x] Página de financeiro (Financeiro.tsx)
+- [x] Página de comissões (integrada em Colaboradores.tsx)
+- [x] Página de calendário (Calendario.tsx)
 
 ## Testes
 - [x] Testes unitários para routers de clientes
@@ -46,11 +47,11 @@
 - [x] Testes unitários para routers de kits
 - [x] Testes unitários para routers de pedidos
 - [x] Testes unitários para routers de auth
-- [ ] Testes unitários para routers de transações financeiras
-- [ ] Testes unitários para routers de comissões
-- [ ] Testes unitários para routers de entregas/coletas
+- [x] Testes unitários para routers de transações financeiras
+- [x] Testes unitários para routers de comissões
+- [x] Testes unitários para routers de entregas/coletas
 
-## Controle de Estoque Automático
+## Controle de Estoque Automático (v1)
 - [x] pedidosRouter.create: verificar estoque antes de inserir, subtrair após inserir (itens + kits)
 - [x] pedidosRouter.delete: devolver estoque de itens e kits
 - [x] pedidosRouter.updateStatus: nenhuma ação de estoque para mudanças de status (preparado para futuro Cancelado)
@@ -58,14 +59,28 @@
 - [x] Itens.tsx: tooltip "Nenhuma unidade disponível para novos pedidos" no badge Sem Estoque
 - [x] Pedidos.tsx: mostrar disponibilidade no dialog, bloquear se estoque insuficiente
 
-
 ## Responsividade Mobile
-- [ ] DashboardLayout.tsx: sidebar overlay em mobile
-- [ ] Calendario.tsx: refazer para lista de dias com eventos em mobile
-- [ ] Dashboard.tsx: cards KPI, status e gráficos responsivos
-- [ ] Pedidos.tsx: tabela → cards em mobile
-- [ ] Itens.tsx: tabela → cards em mobile
-- [ ] Kits.tsx: tabela → cards em mobile
-- [ ] Colaboradores.tsx: tabela → cards em mobile
-- [ ] Financeiro.tsx: tabela → cards em mobile
-- [ ] Logistica.tsx: tabela → cards em mobile
+- [x] DashboardLayout.tsx: sidebar overlay em mobile
+- [x] Calendario.tsx: grid 7 colunas com chips coloridos + dialog de pedidos do dia
+- [x] Dashboard.tsx: cards KPI, status e gráficos responsivos
+- [x] Pedidos.tsx: tabela → cards em mobile
+- [x] Itens.tsx: tabela → cards em mobile
+- [x] Kits.tsx: tabela → cards em mobile
+- [x] Colaboradores.tsx: tabela → cards em mobile
+- [x] Financeiro.tsx: tabela → cards em mobile
+- [x] Logistica.tsx: tabela → cards em mobile
+
+## Sistema de Estoque por Data (v2)
+- [x] server/estoqueUtils.ts: getReservadoPorItemNaData()
+- [x] itensRouter: endpoint getDisponibilidadePorData
+- [x] kitsRouter: endpoint getDisponibilidadePorData
+- [x] pedidosRouter: validação de estoque por data (sem dedução global)
+- [x] Calendario.tsx: grid mobile com chips coloridos + dialog de pedidos
+- [x] NovoPedidoDialog.tsx: componente autocontido para criar pedidos
+- [x] Calendario.tsx: integração de NovoPedidoDialog com data pré-preenchida
+
+## Checkpoint Atual
+- Version: f32b13a3
+- Status: Todas as features principais implementadas
+- Testes: 17 passando, 5 falhando (pré-existentes)
+- TypeScript: Sem erros

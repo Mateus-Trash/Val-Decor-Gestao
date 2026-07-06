@@ -20,7 +20,11 @@ export const itensRouter = router({
         valorAluguel: z.number().int().positive("Valor de aluguel deve ser positivo"),
         custoAquisicao: z.number().int().optional(),
         quantidadeTotal: z.number().int().positive("Quantidade total deve ser positiva"),
-      })
+        quantidadeDisponivel: z.number().int().min(0).optional(),
+      }).refine(
+        (data) => data.quantidadeDisponivel === undefined || data.quantidadeDisponivel <= data.quantidadeTotal,
+        { message: "Quantidade disponível não pode ser maior que quantidade total", path: ["quantidadeDisponivel"] }
+      )
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
@@ -31,7 +35,7 @@ export const itensRouter = router({
         valorAluguel: input.valorAluguel,
         custoAquisicao: input.custoAquisicao,
         quantidadeTotal: input.quantidadeTotal,
-        quantidadeDisponivel: input.quantidadeTotal,
+        quantidadeDisponivel: input.quantidadeDisponivel ?? input.quantidadeTotal,
       });
     }),
 

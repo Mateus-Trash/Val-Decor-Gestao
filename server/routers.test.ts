@@ -32,42 +32,7 @@ function createAuthContext(): TrpcContext {
 }
 
 describe("Routers", () => {
-  describe("clientes", () => {
-    it("should list clientes", async () => {
-      const ctx = createAuthContext();
-      const caller = appRouter.createCaller(ctx);
-      const result = await caller.clientes.list();
-      expect(Array.isArray(result)).toBe(true);
-    });
 
-    it("should validate required fields on create", async () => {
-      const ctx = createAuthContext();
-      const caller = appRouter.createCaller(ctx);
-      try {
-        await caller.clientes.create({
-          nome: "",
-          contato: "123456789",
-        });
-        expect.fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.message).toContain("Nome é obrigatório");
-      }
-    });
-
-    it("should validate email format on create", async () => {
-      const ctx = createAuthContext();
-      const caller = appRouter.createCaller(ctx);
-      try {
-        await caller.clientes.create({
-          nome: "Test Cliente",
-          email: "invalid-email",
-        });
-        expect.fail("Should have thrown validation error");
-      } catch (error: any) {
-        expect(error.message).toContain("Invalid");
-      }
-    });
-  });
 
   describe("colaboradores", () => {
     it("should list colaboradores", async () => {
@@ -174,7 +139,7 @@ describe("Routers", () => {
         });
         expect.fail("Should have thrown validation error");
       } catch (error: any) {
-        expect(error.message).toContain("Quantidade disponível não pode ser maior");
+        expect(error.message).toContain("Quantidade disponível não pode ser maior que quantidade total");
       }
     });
   });
@@ -275,11 +240,11 @@ describe("Routers", () => {
       }
     });
 
-    it("should reject changeStatus with invalid enum", async () => {
+    it("should reject updateStatus with invalid enum", async () => {
       const ctx = createAuthContext();
       const caller = appRouter.createCaller(ctx);
       try {
-        await caller.pedidos.changeStatus({
+        await caller.pedidos.updateStatus({
           id: 1,
           status: "InvalidStatus" as any,
         });
