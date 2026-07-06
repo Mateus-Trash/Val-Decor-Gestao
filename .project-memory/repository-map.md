@@ -1,10 +1,11 @@
 # Repository Map
 
-Updated: 2026-07-06 05:10:29 +0000
+Updated: 2026-07-06 18:37:06 +0000
 
 ```text
 - ./
   - .gitignore
+  - DIRETRIZES_CODIGO.md
   - components.json
   - drizzle.config.ts
   - package.json
@@ -13,6 +14,7 @@ Updated: 2026-07-06 05:10:29 +0000
   - todo.md
   - tsconfig.json
   - vite.config.ts
+  - vite.config.ts.bak
   - vitest.config.ts
   - client/
     - index.html
@@ -46,8 +48,10 @@ Updated: 2026-07-06 05:10:29 +0000
       - pages/
         - Calendario.tsx
         - Colaboradores.tsx
+        - Comissoes.tsx
         - ComponentShowcase.tsx
         - Dashboard.tsx
+        - Estoque.tsx
         - Financeiro.tsx
         - Home.tsx
         - Itens.tsx
@@ -57,14 +61,22 @@ Updated: 2026-07-06 05:10:29 +0000
         - Pedidos.tsx
   - drizzle/
     - 0000_hard_colonel_america.sql
+    - 0000_messy_the_anarchist.sql
     - 0001_blushing_amphibian.sql
     - 0002_tricky_madame_masque.sql
+    - 0003_init_schema.sql
+    - 0004_update_pedidos_status_enum.sql
+    - 0005_lively_triathlon.sql
+    - 0006_address_refactor.sql
     - relations.ts
     - schema.ts
     - meta/
       - 0000_snapshot.json
       - 0001_snapshot.json
       - 0002_snapshot.json
+      - 0003_snapshot.json
+      - 0004_snapshot.json
+      - 0005_snapshot.json
       - _journal.json
     - migrations/
   - patches/
@@ -108,19 +120,14 @@ Updated: 2026-07-06 05:10:29 +0000
         - cookie.d.ts
         - manusTypes.ts
     - routers/
-      - colaboradores.ts
       - colaboradoresRouter.ts
-      - comissoes.ts
+      - comissoesRouter.ts
       - dashboardRouter.ts
-      - entregasColetas.ts
       - entregasRouter.ts
       - financeirosRouter.ts
-      - itens.ts
       - itensRouter.ts
-      - kits.ts
       - kitsRouter.ts
       - pedidosRouter.ts
-      - transacoesFinanceiras.ts
   - shared/
     - const.ts
     - types.ts
