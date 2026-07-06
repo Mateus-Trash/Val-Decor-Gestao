@@ -26,8 +26,8 @@ import NovoPedidoDialog from "@/components/NovoPedidoDialog";
 const statusBadge: Record<string, { label: string; className: string }> = {
   Pendente: { label: "Pendente", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
   Confirmado: { label: "Confirmado", className: "bg-blue-100 text-blue-800 border-blue-300" },
-  "Em Preparacao": { label: "Em Preparação", className: "bg-purple-100 text-purple-800 border-purple-300" },
-  Entregue: { label: "Entregue", className: "bg-orange-100 text-orange-800 border-orange-300" },
+  EntregueNaoPago: { label: "Entregue (Não Pago)", className: "bg-red-200 text-red-900 border-red-400" },
+  EntreguePago: { label: "Entregue (Pago)", className: "bg-red-100 text-red-700 border-red-300" },
   Concluido: { label: "Concluído", className: "bg-green-100 text-green-800 border-green-300" },
 };
 
@@ -335,8 +335,8 @@ export default function Calendario() {
                           <SelectContent>
                             <SelectItem value="Pendente">Pendente</SelectItem>
                             <SelectItem value="Confirmado">Confirmado</SelectItem>
-                            <SelectItem value="Em Preparacao">Em Preparação</SelectItem>
-                            <SelectItem value="Entregue">Entregue</SelectItem>
+                            <SelectItem value="EntregueNaoPago">Entregue (Não Pago)</SelectItem>
+                            <SelectItem value="EntreguePago">Entregue (Pago)</SelectItem>
                             <SelectItem value="Concluido">Concluído</SelectItem>
                           </SelectContent>
                         </Select>

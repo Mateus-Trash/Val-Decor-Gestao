@@ -15,7 +15,7 @@ import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { getReservadoPorItemNaData } from "../estoqueUtils";
 
-const statusEnum = z.enum(["Pendente", "Confirmado", "Em Preparacao", "Entregue", "Concluido"]);
+const statusEnum = z.enum(["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"]);
 
 export const pedidosRouter = router({
   list: protectedProcedure.query(async () => {

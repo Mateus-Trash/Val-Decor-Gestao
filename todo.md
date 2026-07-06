@@ -67,3 +67,13 @@
 - [x] Contextos e hooks restaurados
 - [x] Servidor iniciado sem erros
 - [x] TypeScript sem erros de compilação
+- [x] TypeScript sem erros de compilação
+
+## Reestruturação do Enum de Status de Pedidos
+- [x] drizzle/schema.ts: alterar enum status de pedidos para novo conjunto de valores
+- [x] Migration Drizzle com UPDATE de dados existentes (Em Preparacao→Confirmado, Entregue→EntregueNaoPago)
+- [x] server/routers/pedidosRouter.ts: atualizar z.enum statusEnum
+- [x] client/src/pages/Pedidos.tsx: atualizar statusOptions, statusColors e labels
+- [x] client/src/pages/Calendario.tsx: atualizar statusBadge e SelectContent
+- [x] client/src/pages/Dashboard.tsx: atualizar STATUS_COLORS
+- [x] pnpm check: sem referências a "Em Preparacao" ou "Entregue" (sem sufixo)

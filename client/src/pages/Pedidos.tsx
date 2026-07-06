@@ -34,13 +34,21 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-const statusOptions = ["Pendente", "Confirmado", "Em Preparacao", "Entregue", "Concluido"] as const;
+const statusOptions = ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"] as const;
+
+const statusLabels: Record<string, string> = {
+  Pendente: "Pendente",
+  Confirmado: "Confirmado",
+  EntregueNaoPago: "Entregue (Não Pago)",
+  EntreguePago: "Entregue (Pago)",
+  Concluido: "Concluído",
+};
 
 const statusColors: Record<string, string> = {
   Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
   Confirmado: "bg-blue-100 text-blue-800 border-blue-300",
-  "Em Preparacao": "bg-purple-100 text-purple-800 border-purple-300",
-  Entregue: "bg-orange-100 text-orange-800 border-orange-300",
+  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400",
+  EntreguePago: "bg-red-100 text-red-700 border-red-300",
   Concluido: "bg-green-100 text-green-800 border-green-300",
 };
 
@@ -333,7 +341,7 @@ export default function Pedidos() {
             <SelectContent>
               <SelectItem value="Todos">Todos</SelectItem>
               {statusOptions.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -385,7 +393,7 @@ export default function Pedidos() {
                             </SelectTrigger>
                             <SelectContent>
                               {statusOptions.map((s) => (
-                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -435,7 +443,7 @@ export default function Pedidos() {
                       </SelectTrigger>
                       <SelectContent>
                         {statusOptions.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                          <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

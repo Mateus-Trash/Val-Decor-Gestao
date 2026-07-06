@@ -43,12 +43,12 @@ import { ptBR } from "date-fns/locale";
 const STATUS_COLORS: Record<string, { label: string; color: string; bgClass: string }> = {
   Pendente: { label: "Pendente", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800" },
   Confirmado: { label: "Confirmado", color: "#3b82f6", bgClass: "bg-blue-100 text-blue-800" },
-  "Em Preparacao": { label: "Em Preparação", color: "#8b5cf6", bgClass: "bg-purple-100 text-purple-800" },
-  Entregue: { label: "Entregue", color: "#f97316", bgClass: "bg-orange-100 text-orange-800" },
+  EntregueNaoPago: { label: "Entregue (Não Pago)", color: "#dc2626", bgClass: "bg-red-200 text-red-900" },
+  EntreguePago: { label: "Entregue (Pago)", color: "#f87171", bgClass: "bg-red-100 text-red-700" },
   Concluido: { label: "Concluído", color: "#22c55e", bgClass: "bg-green-100 text-green-800" },
 };
 
-const PIE_COLORS = ["#eab308", "#3b82f6", "#8b5cf6", "#f97316", "#22c55e"];
+const PIE_COLORS = ["#eab308", "#3b82f6", "#dc2626", "#f87171", "#22c55e"];
 
 function formatCentavos(centavos: number): string {
   return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
