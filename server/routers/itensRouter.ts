@@ -3,6 +3,7 @@ import { z } from "zod";
 import { itens, itensPedido, pedidos } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { getReservadoPorItemNaData } from "../estoqueUtils";
 
 export const itensRouter = router({
   list: protectedProcedure.query(async () => {
@@ -105,5 +106,20 @@ export const itensRouter = router({
         .update(itens)
         .set({ quantidadeDisponivel: novaQuantidade })
         .where(eq(itens.id, input.id));
+    }),
+
+  getDisponibilidadePorData: protectedProcedure
+    .input(z.object({ data: z.coerce.date() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const todosItens = await db.select().from(itens);
+      const reservado = await getReservadoPorItemNaData(db, input.data);
+      return todosItens.map((item) => ({
+        id: item.id,
+        nome: item.nome,
+        quantidadeTotal: item.quantidadeTotal,
+        disponivel: item.quantidadeTotal - (reservado.get(item.id) || 0),
+      }));
     }),
 });

@@ -13,6 +13,7 @@ import {
 } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { getReservadoPorItemNaData } from "../estoqueUtils";
 
 const statusEnum = z.enum(["Pendente", "Confirmado", "Em Preparacao", "Entregue", "Concluido"]);
 
@@ -160,16 +161,18 @@ export const pedidosRouter = router({
         }
       }
 
-      // ─── Verificar estoque consolidado ───
+      // ─── Verificar estoque por data ───
+      const reservadoNaData = await getReservadoPorItemNaData(db, input.dataEvento);
       for (const [itemId, qtdTotal] of Array.from(demandaPorItem.entries())) {
         const [itemDb] = await db
-          .select({ nome: itens.nome, quantidadeDisponivel: itens.quantidadeDisponivel })
+          .select({ nome: itens.nome, quantidadeTotal: itens.quantidadeTotal })
           .from(itens)
           .where(eq(itens.id, itemId))
           .limit(1);
         if (!itemDb) throw new Error(`Item com id ${itemId} não encontrado`);
-        if (itemDb.quantidadeDisponivel < qtdTotal) {
-          throw new Error(`Estoque insuficiente: ${itemDb.nome}`);
+        const disponivel = itemDb.quantidadeTotal - (reservadoNaData.get(itemId) || 0);
+        if (disponivel < qtdTotal) {
+          throw new Error(`Estoque insuficiente para ${itemDb.nome} nesta data`);
         }
       }
 
@@ -200,7 +203,7 @@ export const pedidosRouter = router({
 
       const pedidoId = Number(result[0].insertId);
 
-      // Inserir itensPedido e deduzir estoque
+      // Inserir itensPedido (sem deduzir estoque)
       for (const item of input.itens) {
         await db.insert(itensPedido).values({
           pedidoId,
@@ -208,16 +211,9 @@ export const pedidosRouter = router({
           quantidade: item.quantidade,
           valorUnitario: item.valorUnitario,
         });
-
-        await db
-          .update(itens)
-          .set({
-            quantidadeDisponivel: sql`${itens.quantidadeDisponivel} - ${item.quantidade}`,
-          })
-          .where(eq(itens.id, item.itemId));
       }
 
-      // Inserir kitsPedido e deduzir estoque dos itens do kit
+      // Inserir kitsPedido (sem deduzir estoque)
       for (const kit of input.kits) {
         await db.insert(kitsPedido).values({
           pedidoId,
@@ -225,22 +221,6 @@ export const pedidosRouter = router({
           quantidade: kit.quantidade,
           valorUnitario: kit.valorUnitario,
         });
-
-        // Buscar itens do kit e deduzir estoque proporcionalmente
-        const kitItensResult = await db
-          .select()
-          .from(kitItens)
-          .where(eq(kitItens.kitId, kit.kitId));
-
-        for (const ki of kitItensResult) {
-          const qtdDeduzir = kit.quantidade * ki.quantidade;
-          await db
-            .update(itens)
-            .set({
-              quantidadeDisponivel: sql`${itens.quantidadeDisponivel} - ${qtdDeduzir}`,
-            })
-            .where(eq(itens.id, ki.itemId));
-        }
       }
 
       // Criar transação receita
@@ -375,45 +355,7 @@ export const pedidosRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      // Buscar itensPedido e devolver estoque
-      const itensDoP = await db
-        .select()
-        .from(itensPedido)
-        .where(eq(itensPedido.pedidoId, input.id));
-
-      for (const ip of itensDoP) {
-        await db
-          .update(itens)
-          .set({
-            quantidadeDisponivel: sql`${itens.quantidadeDisponivel} + ${ip.quantidade}`,
-          })
-          .where(eq(itens.id, ip.itemId));
-      }
-
-      // Buscar kitsPedido e devolver estoque dos itens dos kits
-      const kitsDoP = await db
-        .select()
-        .from(kitsPedido)
-        .where(eq(kitsPedido.pedidoId, input.id));
-
-      for (const kp of kitsDoP) {
-        const kitItensResult = await db
-          .select()
-          .from(kitItens)
-          .where(eq(kitItens.kitId, kp.kitId));
-
-        for (const ki of kitItensResult) {
-          const qtdDevolver = kp.quantidade * ki.quantidade;
-          await db
-            .update(itens)
-            .set({
-              quantidadeDisponivel: sql`${itens.quantidadeDisponivel} + ${qtdDevolver}`,
-            })
-            .where(eq(itens.id, ki.itemId));
-        }
-      }
-
-      // Deletar na ordem correta
+      // Deletar na ordem correta (estoque é calculado dinamicamente, não precisa devolver)
       await db.delete(itensPedido).where(eq(itensPedido.pedidoId, input.id));
       await db.delete(kitsPedido).where(eq(kitsPedido.pedidoId, input.id));
       await db.delete(comissoes).where(eq(comissoes.pedidoId, input.id));

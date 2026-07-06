@@ -3,6 +3,7 @@ import { z } from "zod";
 import { itens, kitItens, kits } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { getReservadoPorItemNaData } from "../estoqueUtils";
 
 export const kitsRouter = router({
   list: protectedProcedure.query(async () => {
@@ -158,5 +159,33 @@ export const kitsRouter = router({
         disponivel: itensFaltando.length === 0,
         itensFaltando,
       };
+    }),
+
+  getDisponibilidadePorData: protectedProcedure
+    .input(z.object({ data: z.coerce.date() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const todosKits = await db.select().from(kits);
+      const todosItens = await db.select().from(itens);
+      const reservado = await getReservadoPorItemNaData(db, input.data);
+      const disponibilidadeItem = new Map(
+        todosItens.map((i) => [i.id, i.quantidadeTotal - (reservado.get(i.id) || 0)])
+      );
+      const resultado = [];
+      for (const kit of todosKits) {
+        const composicao = await db.select().from(kitItens).where(eq(kitItens.kitId, kit.id));
+        if (composicao.length === 0) {
+          resultado.push({ id: kit.id, nome: kit.nome, disponivel: 0 });
+          continue;
+        }
+        let minDisponivel = Infinity;
+        for (const ki of composicao) {
+          const dispItem = disponibilidadeItem.get(ki.itemId) ?? 0;
+          minDisponivel = Math.min(minDisponivel, Math.floor(dispItem / ki.quantidade));
+        }
+        resultado.push({ id: kit.id, nome: kit.nome, disponivel: Math.max(0, minDisponivel) });
+      }
+      return resultado;
     }),
 });
