@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, UserCheck, Package, Layers, ShoppingCart, DollarSign, Calendar as CalendarIcon, Truck } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, UserCheck, Package, Layers, ShoppingCart, DollarSign, Calendar as CalendarIcon, Truck, Warehouse } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,7 +33,8 @@ const menuItems = [
   { icon: UserCheck, label: "Colaboradores", path: "/colaboradores" },
   { icon: Package, label: "Itens", path: "/itens" },
   { icon: Layers, label: "Kits", path: "/kits" },
-  { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
+    { icon: Warehouse, label: "Estoque", path: "/estoque" },
+    { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
   { icon: Truck, label: "Logística", path: "/logistica" },
 ];

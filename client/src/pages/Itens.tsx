@@ -21,12 +21,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { trpc } from "@/lib/trpc";
-import { Package, Plus, Pencil, Trash2, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -46,16 +42,10 @@ export default function Itens() {
   const [busca, setBusca] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
-  const [dataConsulta, setDataConsulta] = useState<Date>(new Date());
 
   const utils = trpc.useUtils();
 
   const { data: itens = [], isLoading } = trpc.itens.list.useQuery();
-  const { data: disponibilidadeData = [] } = trpc.itens.getDisponibilidadePorData.useQuery({ data: dataConsulta });
-  const disponibilidadePorId = useMemo(
-    () => new Map(disponibilidadeData.map((d) => [d.id, d.disponivel])),
-    [disponibilidadeData]
-  );
 
   const createMutation = trpc.itens.create.useMutation({
     onSuccess: () => {
@@ -184,19 +174,6 @@ export default function Itens() {
           className="w-full"
         />
 
-        {/* Calendário de Estoque */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              Estoque em {format(dataConsulta, "dd/MM/yyyy")}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar mode="single" selected={dataConsulta} onSelect={(date) => date && setDataConsulta(date)} locale={ptBR} />
-          </PopoverContent>
-        </Popover>
-
         {/* Tabela Desktop */}
         <Card className="hidden sm:block">
           <CardHeader>
@@ -217,7 +194,7 @@ export default function Itens() {
                       <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
                       <TableHead className="text-right">Custo Aquisição (R$)</TableHead>
                       <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Disponível ({format(dataConsulta, "dd/MM")})</TableHead>
+                      <TableHead className="text-right">Disponível</TableHead>
                       <TableHead className="text-center">Situação</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -232,9 +209,9 @@ export default function Itens() {
                           {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}
                         </TableCell>
                         <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
-                        <TableCell className="text-right">{disponibilidadePorId.get(item.id) ?? item.quantidadeTotal}</TableCell>
+                        <TableCell className="text-right">{item.quantidadeDisponivel}</TableCell>
                         <TableCell className="text-center">
-                          {getSituacao(disponibilidadePorId.get(item.id) ?? item.quantidadeTotal)}
+                          {getSituacao(item.quantidadeDisponivel)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -278,13 +255,13 @@ export default function Itens() {
                       <p className="font-semibold">{item.nome}</p>
                       <p className="text-xs text-muted-foreground">{item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}</p>
                     </div>
-                    <div>{getSituacao(disponibilidadePorId.get(item.id) ?? item.quantidadeTotal)}</div>
+                    <div>{getSituacao(item.quantidadeDisponivel)}</div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div><span className="font-medium">Aluguel:</span> {formatCurrency(item.valorAluguel)}</div>
                     <div><span className="font-medium">Custo:</span> {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}</div>
                     <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
-                    <div><span className="font-medium">Disponível:</span> {disponibilidadePorId.get(item.id) ?? item.quantidadeTotal}</div>
+                    <div><span className="font-medium">Disponível:</span> {item.quantidadeDisponivel}</div>
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button size="sm" variant="outline" onClick={() => abrirEditar(item)} className="flex-1 h-8 text-xs">
