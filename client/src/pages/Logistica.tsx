@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -15,9 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin } from "lucide-react";
+import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 type Pedido = {
   id: number;
@@ -26,6 +28,7 @@ type Pedido = {
   bairroEntrega: string;
   numeroEntrega: string;
   dataEntrega: Date | string;
+  coletaAdiadaPara?: Date | string | null;
   status: string;
   observacoes?: string | null;
 };
@@ -58,17 +61,29 @@ function groupByBairro(pedidos: Pedido[]): Record<string, Pedido[]> {
   );
 }
 
+// ─── Grupo Desktop (com checkboxes) ─────────────────────────────────────────
+
 function GrupoDesktop({
   pedidos,
   titulo,
   icone,
+  showCheckboxes,
+  selectedIds,
+  onToggle,
+  onToggleAll,
 }: {
   pedidos: Pedido[];
   titulo: string;
   icone: React.ReactNode;
+  showCheckboxes?: boolean;
+  selectedIds?: Set<number>;
+  onToggle?: (id: number) => void;
+  onToggleAll?: (ids: number[], checked: boolean) => void;
 }) {
   const grupos = useMemo(() => groupByBairro(pedidos), [pedidos]);
   const bairros = Object.keys(grupos).sort();
+  const allIds = pedidos.map((p) => p.id);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds?.has(id));
 
   return (
     <Card>
@@ -102,6 +117,17 @@ function GrupoDesktop({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {showCheckboxes && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={(checked) =>
+                            onToggleAll?.(allIds, !!checked)
+                          }
+                          aria-label="Selecionar todos"
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>Cliente</TableHead>
                     <TableHead>Endereço</TableHead>
                     <TableHead className="text-center">Status</TableHead>
@@ -110,7 +136,16 @@ function GrupoDesktop({
                 </TableHeader>
                 <TableBody>
                   {grupos[bairro].map((p) => (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className={selectedIds?.has(p.id) ? "bg-muted/40" : ""}>
+                      {showCheckboxes && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds?.has(p.id) ?? false}
+                            onCheckedChange={() => onToggle?.(p.id)}
+                            aria-label={`Selecionar ${p.nomeCliente}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">{p.nomeCliente}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {p.ruaEntrega}, {p.numeroEntrega}
@@ -135,14 +170,22 @@ function GrupoDesktop({
   );
 }
 
+// ─── Grupo Mobile (com checkboxes) ──────────────────────────────────────────
+
 function GrupoMobile({
   pedidos,
   titulo,
   icone,
+  showCheckboxes,
+  selectedIds,
+  onToggle,
 }: {
   pedidos: Pedido[];
   titulo: string;
   icone: React.ReactNode;
+  showCheckboxes?: boolean;
+  selectedIds?: Set<number>;
+  onToggle?: (id: number) => void;
 }) {
   const grupos = useMemo(() => groupByBairro(pedidos), [pedidos]);
   const bairros = Object.keys(grupos).sort();
@@ -172,10 +215,23 @@ function GrupoMobile({
             </div>
             <div className="space-y-2">
               {grupos[bairro].map((p) => (
-                <Card key={p.id} className="border shadow-sm">
+                <Card
+                  key={p.id}
+                  className={`border shadow-sm ${selectedIds?.has(p.id) ? "border-primary bg-primary/5" : ""}`}
+                >
                   <CardContent className="p-3 space-y-1">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-medium text-sm">{p.nomeCliente}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {showCheckboxes && (
+                          <Checkbox
+                            checked={selectedIds?.has(p.id) ?? false}
+                            onCheckedChange={() => onToggle?.(p.id)}
+                            aria-label={`Selecionar ${p.nomeCliente}`}
+                            className="shrink-0"
+                          />
+                        )}
+                        <span className="font-medium text-sm truncate">{p.nomeCliente}</span>
+                      </div>
                       <Badge
                         className={`text-xs border shrink-0 ${statusColors[p.status] ?? ""}`}
                       >
@@ -199,16 +255,59 @@ function GrupoMobile({
   );
 }
 
+// ─── Page ────────────────────────────────────────────────────────────────────
+
 export default function Logistica() {
   const [dataConsulta, setDataConsulta] = useState<Date>(new Date());
+  const [selectedColetas, setSelectedColetas] = useState<Set<number>>(new Set());
+
+  const utils = trpc.useUtils();
 
   const { data, isLoading } = trpc.pedidos.listByDataLogistica.useQuery({
     data: dataConsulta,
   });
 
+  // Clear selections whenever the consulted date changes
+  useEffect(() => {
+    setSelectedColetas(new Set());
+  }, [dataConsulta]);
+
+  const postergarMutation = trpc.pedidos.postergarColeta.useMutation({
+    onSuccess: (result) => {
+      toast.success(`${result.updated} coleta(s) postergada(s) para amanhã`);
+      setSelectedColetas(new Set());
+      utils.pedidos.listByDataLogistica.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Erro ao postergar: ${err.message}`);
+    },
+  });
+
   const entregas: Pedido[] = (data?.entregas ?? []) as Pedido[];
   const coletas: Pedido[] = (data?.coletas ?? []) as Pedido[];
   const totalDia = entregas.length + coletas.length;
+
+  function toggleColeta(id: number) {
+    setSelectedColetas((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllColetas(ids: number[], checked: boolean) {
+    setSelectedColetas((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  }
+
+  function handlePostergar() {
+    if (selectedColetas.size === 0) return;
+    postergarMutation.mutate({ pedidoIds: Array.from(selectedColetas) });
+  }
 
   return (
     <DashboardLayout>
@@ -244,7 +343,12 @@ export default function Logistica() {
             <Calendar
               mode="single"
               selected={dataConsulta}
-              onSelect={(date) => date && setDataConsulta(date)}
+              onSelect={(date) => {
+                if (date) {
+                  setDataConsulta(date);
+                  setSelectedColetas(new Set());
+                }
+              }}
               locale={ptBR}
             />
           </PopoverContent>
@@ -261,11 +365,36 @@ export default function Logistica() {
                 titulo="Entregas do Dia"
                 icone={<PackageOpen className="h-4 w-4 text-blue-600" />}
               />
-              <GrupoDesktop
-                pedidos={coletas}
-                titulo="Coletas do Dia"
-                icone={<PackageCheck className="h-4 w-4 text-green-600" />}
-              />
+
+              {/* Coletas com toolbar de postergar */}
+              <div className="space-y-2">
+                {selectedColetas.size > 0 && (
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedColetas.size} coleta(s) selecionada(s)
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handlePostergar}
+                      disabled={postergarMutation.isPending}
+                      className="gap-1.5"
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                      Postergar selecionadas para amanhã
+                    </Button>
+                  </div>
+                )}
+                <GrupoDesktop
+                  pedidos={coletas}
+                  titulo="Coletas do Dia"
+                  icone={<PackageCheck className="h-4 w-4 text-green-600" />}
+                  showCheckboxes
+                  selectedIds={selectedColetas}
+                  onToggle={toggleColeta}
+                  onToggleAll={toggleAllColetas}
+                />
+              </div>
             </div>
 
             {/* Mobile */}
@@ -276,11 +405,29 @@ export default function Logistica() {
                 icone={<PackageOpen className="h-4 w-4 text-blue-600" />}
               />
               <Separator />
-              <GrupoMobile
-                pedidos={coletas}
-                titulo="Coletas do Dia"
-                icone={<PackageCheck className="h-4 w-4 text-green-600" />}
-              />
+
+              {/* Coletas mobile com botão de postergar */}
+              <div className="space-y-3">
+                <GrupoMobile
+                  pedidos={coletas}
+                  titulo="Coletas do Dia"
+                  icone={<PackageCheck className="h-4 w-4 text-green-600" />}
+                  showCheckboxes
+                  selectedIds={selectedColetas}
+                  onToggle={toggleColeta}
+                />
+                {selectedColetas.size > 0 && (
+                  <Button
+                    className="w-full gap-2"
+                    variant="outline"
+                    onClick={handlePostergar}
+                    disabled={postergarMutation.isPending}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                    Postergar {selectedColetas.size} selecionada(s) para amanhã
+                  </Button>
+                )}
+              </div>
             </div>
           </>
         )}

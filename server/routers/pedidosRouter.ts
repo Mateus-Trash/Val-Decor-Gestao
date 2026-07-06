@@ -1,4 +1,4 @@
-import { and, desc, eq, like, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, like, or, sql } from "drizzle-orm";
 import { addDays } from "date-fns";
 import { z } from "zod";
 import {
@@ -369,11 +369,12 @@ export const pedidosRouter = router({
       return db.delete(pedidos).where(eq(pedidos.id, input.id));
     }),
 
+
   /**
    * Retorna entregas e coletas do dia para a tela de Logística.
-   * - Entregas: pedidos com DATE(dataEntrega) = data selecionada e status != Concluido
-   * - Coletas: pedidos cuja dataEntrega + 1 dia = data selecionada e status != Concluido
-   *   (coletaAdiadaPara ainda não existe — tratado como sempre null por enquanto)
+   * - Entregas: DATE(dataEntrega) = data selecionada AND status != Concluido
+   * - Coletas: data de coleta efetiva = data selecionada AND status != Concluido
+   *   Data de coleta efetiva = coletaAdiadaPara se preenchido, senão dataEntrega + 1 dia
    * Ambos os grupos são ordenados por bairroEntrega para otimizar rota.
    */
   listByDataLogistica: protectedProcedure
@@ -396,19 +397,59 @@ export const pedidosRouter = router({
         )
         .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
 
-      // Coletas: dataEntrega + 1 dia = data selecionada AND status != Concluido
+      // Coletas: data de coleta efetiva = data selecionada AND status != Concluido
+      // Data de coleta efetiva = coletaAdiadaPara se preenchido, senão dataEntrega + 1 dia
       const dataAnterior = addDays(input.data, -1).toISOString().slice(0, 10);
       const coletas = await db
         .select()
         .from(pedidos)
         .where(
           and(
-            sql`DATE(${pedidos.dataEntrega}) = ${dataAnterior}`,
+            or(
+              // Coleta adiada: coletaAdiadaPara = data selecionada
+              sql`DATE(${pedidos.coletaAdiadaPara}) = ${dataStr}`,
+              // Coleta normal: coletaAdiadaPara é null E dataEntrega + 1 = data selecionada
+              and(
+                isNull(pedidos.coletaAdiadaPara),
+                sql`DATE(${pedidos.dataEntrega}) = ${dataAnterior}`
+              )
+            ),
             sql`${pedidos.status} != 'Concluido'`
           )
         )
         .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
 
       return { entregas, coletas };
+    }),
+
+  /**
+   * Posterga a coleta de uma lista de pedidos para o dia seguinte.
+   * Incrementa coletaAdiadaPara em 1 dia (base = coletaAdiadaPara atual ?? dataEntrega + 1 dia).
+   */
+  postergarColeta: protectedProcedure
+    .input(z.object({ pedidoIds: z.array(z.number().int().positive()).min(1) }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Buscar os pedidos para calcular a nova data
+      const pedidosParaPostergar = await db
+        .select({ id: pedidos.id, dataEntrega: pedidos.dataEntrega, coletaAdiadaPara: pedidos.coletaAdiadaPara })
+        .from(pedidos)
+        .where(inArray(pedidos.id, input.pedidoIds));
+
+      // Para cada pedido, calcular nova data: (coletaAdiadaPara ?? dataEntrega + 1) + 1 dia
+      for (const pedido of pedidosParaPostergar) {
+        const baseColeta = pedido.coletaAdiadaPara
+          ? new Date(pedido.coletaAdiadaPara)
+          : addDays(new Date(pedido.dataEntrega), 1);
+        const novaData = addDays(baseColeta, 1);
+        await db
+          .update(pedidos)
+          .set({ coletaAdiadaPara: novaData })
+          .where(eq(pedidos.id, pedido.id));
+      }
+
+      return { updated: pedidosParaPostergar.length };
     }),
 });

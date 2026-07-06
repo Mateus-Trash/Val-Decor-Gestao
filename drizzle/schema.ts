@@ -110,6 +110,7 @@ export const pedidos = mysqlTable("pedidos", {
   valorTaxaEntrega: float("valorTaxaEntrega").default(0).notNull(), // em reais
   status: mysqlEnum("status", ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"]).default("Pendente").notNull(),
   observacoes: text("observacoes"),
+  coletaAdiadaPara: timestamp("coletaAdiadaPara"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
