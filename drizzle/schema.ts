@@ -1,4 +1,4 @@
-import { float, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, float, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -179,6 +179,8 @@ export const comissoes = mysqlTable("comissoes", {
   valor: int("valor").notNull(), // em centavos
   dataCalculo: timestamp("dataCalculo").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  pago: boolean("pago").default(false).notNull(),
+  dataPagamento: timestamp("dataPagamento"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
