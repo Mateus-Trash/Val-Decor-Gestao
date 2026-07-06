@@ -77,3 +77,14 @@
 - [x] client/src/pages/Calendario.tsx: atualizar statusBadge e SelectContent
 - [x] client/src/pages/Dashboard.tsx: atualizar STATUS_COLORS
 - [x] pnpm check: sem referências a "Em Preparacao" ou "Entregue" (sem sufixo)
+- [x] pnpm check: sem referências a "Em Preparacao" ou "Entregue" (sem sufixo)
+
+## Refatoração do Sistema de Estoque (Reserva por Período)
+- [x] drizzle/schema.ts: remover coluna dataColeta da tabela pedidos
+- [x] Migration Drizzle para remover dataColeta
+- [x] server/estoqueUtils.ts: reescrever para reservar por período (dataEntrega <= data E status != Concluido)
+- [x] server/routers/pedidosRouter.ts: remover dataColeta do input/select, usar dataEntrega na verificação
+- [x] client/src/components/NovoPedidoDialog.tsx: remover dataColeta, usar getDisponibilidadePorData
+- [x] client/src/pages/Pedidos.tsx: remover dataColeta, usar getDisponibilidadePorData
+- [x] Remover referências remanescentes a dataColeta em todo o projeto
+- [x] pnpm check e pnpm test: corrigir testes quebrados

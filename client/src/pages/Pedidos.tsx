@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { ShoppingCart, Plus, Pencil, Trash2, X } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -57,7 +57,6 @@ const pedidoSchema = z.object({
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
   dataEvento: z.string().min(1, "Data do evento é obrigatória"),
   dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
-  dataColeta: z.string().min(1, "Data de coleta é obrigatória"),
   enderecoEntrega: z.string().min(1, "Endereço é obrigatório"),
   valorTaxaEntrega: z.number().min(0).optional(),
   observacoes: z.string().optional(),
@@ -127,9 +126,24 @@ export default function Pedidos() {
     onError: (error) => toast.error(`Erro ao remover pedido: ${error.message}`),
   });
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<PedidoForm, unknown, PedidoForm>({
+  const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<PedidoForm, unknown, PedidoForm>({
     resolver: zodResolver(pedidoSchema),
   });
+
+  const dataEntregaValue = watch("dataEntrega");
+  const dataParaDisponibilidade = useMemo(() => {
+    if (dataEntregaValue) return new Date(dataEntregaValue);
+    return new Date();
+  }, [dataEntregaValue]);
+
+  const { data: disponibilidadeItens = [] } = trpc.itens.getDisponibilidadePorData.useQuery(
+    { data: dataParaDisponibilidade },
+    { enabled: true }
+  );
+  const { data: disponibilidadeKits = [] } = trpc.kits.getDisponibilidadePorData.useQuery(
+    { data: dataParaDisponibilidade },
+    { enabled: true }
+  );
 
   const pedidosFiltrados = useMemo(() => {
     let resultado = pedidosList;
@@ -175,7 +189,6 @@ export default function Pedidos() {
       colaboradorId: "",
       dataEvento: "",
       dataEntrega: "",
-      dataColeta: "",
       enderecoEntrega: "",
       valorTaxaEntrega: 0,
       observacoes: "",
@@ -190,7 +203,6 @@ export default function Pedidos() {
       colaboradorId: String(p.colaboradorId),
       dataEvento: p.dataEvento ? format(new Date(p.dataEvento), "yyyy-MM-dd'T'HH:mm") : "",
       dataEntrega: p.dataEntrega ? format(new Date(p.dataEntrega), "yyyy-MM-dd'T'HH:mm") : "",
-      dataColeta: p.dataColeta ? format(new Date(p.dataColeta), "yyyy-MM-dd'T'HH:mm") : "",
       enderecoEntrega: p.enderecoEntrega ?? "",
       valorTaxaEntrega: p.valorTaxaEntrega ?? 0,
       observacoes: p.observacoes ?? "",
@@ -211,7 +223,8 @@ export default function Pedidos() {
     // Verificar disponibilidade
     const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
     const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
-    const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
+    const dispInfo = disponibilidadeItens.find((d) => d.id === id);
+    const maxDisponivel = (dispInfo?.disponivel ?? 0) - qtdJaReservada;
 
     if (qtd > maxDisponivel) {
       setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
@@ -241,7 +254,17 @@ export default function Pedidos() {
     const id = Number(kitSelecionado);
     const kitInfo = kitsList.find((k) => k.id === id);
     if (!kitInfo) return;
-    const qtd = parseInt(qtdKit) || 1;
+   const qtd = parseInt(qtdKit) || 1;
+
+    // Verificar disponibilidade do kit
+    const jaAdicionadoKit = kitsComposicao.find((c) => c.kitId === id);
+    const qtdJaReservadaKit = jaAdicionadoKit ? jaAdicionadoKit.quantidade : 0;
+    const dispKitInfo = disponibilidadeKits.find((d) => d.id === id);
+    const maxDisponivelKit = (dispKitInfo?.disponivel ?? 0) - qtdJaReservadaKit;
+    if (qtd > maxDisponivelKit) {
+      toast.error(`Máximo disponível para este kit: ${maxDisponivelKit}`);
+      return;
+    }
 
     const existente = kitsComposicao.findIndex((c) => c.kitId === id);
     if (existente >= 0) {
@@ -272,7 +295,6 @@ export default function Pedidos() {
         id: editandoId,
         dataEvento: new Date(data.dataEvento),
         dataEntrega: new Date(data.dataEntrega),
-        dataColeta: new Date(data.dataColeta),
         enderecoEntrega: data.enderecoEntrega,
         valorTaxaEntrega: data.valorTaxaEntrega ?? 0,
         observacoes: data.observacoes,
@@ -287,7 +309,6 @@ export default function Pedidos() {
         colaboradorId: Number(data.colaboradorId),
         dataEvento: new Date(data.dataEvento),
         dataEntrega: new Date(data.dataEntrega),
-        dataColeta: new Date(data.dataColeta),
         enderecoEntrega: data.enderecoEntrega,
         valorTaxaEntrega: data.valorTaxaEntrega ?? 0,
         observacoes: data.observacoes,
@@ -525,14 +546,6 @@ export default function Pedidos() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="dataColeta">Data de Coleta *</Label>
-                <Input id="dataColeta" type="datetime-local" {...register("dataColeta")} />
-                {errors.dataColeta && (
-                  <p className="text-sm text-destructive">{errors.dataColeta.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-1">
                 <Label htmlFor="valorTaxaEntrega">Taxa de Entrega (R$)</Label>
                 <Input
                   id="valorTaxaEntrega"
@@ -573,7 +586,7 @@ export default function Pedidos() {
                         <SelectContent>
                           {itensList.map((i) => (
                             <SelectItem key={i.id} value={String(i.id)}>
-                              {i.nome} ({i.quantidadeDisponivel} disp.)
+                              {i.nome} (Disp: {disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -625,8 +638,8 @@ export default function Pedidos() {
                         </SelectTrigger>
                         <SelectContent>
                           {kitsList.map((k) => (
-                            <SelectItem key={k.id} value={String(k.id)}>
-                              {k.nome}
+                            <SelectItem key={k.id} value={String(k.id)} disabled={(disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0) <= 0}>
+                              {k.nome} (Disp: {disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0})
                             </SelectItem>
                           ))}
                         </SelectContent>

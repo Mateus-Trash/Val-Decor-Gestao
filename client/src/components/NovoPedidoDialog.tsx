@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2 } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -19,7 +19,6 @@ const pedidoSchema = z.object({
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
   dataEvento: z.string().min(1, "Data do evento é obrigatória"),
   dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
-  dataColeta: z.string().min(1, "Data de coleta é obrigatória"),
   enderecoEntrega: z.string().min(1, "Endereço é obrigatório"),
   valorTaxaEntrega: z.number().min(0).optional(),
   observacoes: z.string().optional(),
@@ -60,9 +59,24 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
     onError: (error) => toast.error(`Erro ao criar pedido: ${error.message}`),
   });
 
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<PedidoForm>({
+  const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<PedidoForm>({
     resolver: zodResolver(pedidoSchema),
   });
+
+  const dataEntregaValue = watch("dataEntrega");
+  const dataParaDisponibilidade = useMemo(() => {
+    if (dataEntregaValue) return new Date(dataEntregaValue);
+    return new Date();
+  }, [dataEntregaValue]);
+
+  const { data: disponibilidadeItens = [] } = trpc.itens.getDisponibilidadePorData.useQuery(
+    { data: dataParaDisponibilidade },
+    { enabled: true }
+  );
+  const { data: disponibilidadeKits = [] } = trpc.kits.getDisponibilidadePorData.useQuery(
+    { data: dataParaDisponibilidade },
+    { enabled: true }
+  );
 
   const valorTotalCalculado = useMemo(() => {
     const totalItens = itensComposicao.reduce((acc, i) => acc + i.valorUnitario * i.quantidade, 0);
@@ -91,7 +105,8 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
 
     const jaAdicionado = itensComposicao.find((c) => c.itemId === id);
     const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
-    const maxDisponivel = itemInfo.quantidadeDisponivel - qtdJaReservada;
+    const dispInfo = disponibilidadeItens.find((d) => d.id === id);
+    const maxDisponivel = (dispInfo?.disponivel ?? 0) - qtdJaReservada;
 
     if (qtd > maxDisponivel) {
       setErroQtdItem(`Máximo disponível: ${maxDisponivel}`);
@@ -121,7 +136,17 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
     const id = Number(kitSelecionado);
     const kitInfo = kitsList.find((k) => k.id === id);
     if (!kitInfo) return;
-    const qtd = parseInt(qtdKit) || 1;
+   const qtd = parseInt(qtdKit) || 1;
+
+    // Verificar disponibilidade do kit
+    const jaAdicionado = kitsComposicao.find((c) => c.kitId === id);
+    const qtdJaReservada = jaAdicionado ? jaAdicionado.quantidade : 0;
+    const dispKitInfo = disponibilidadeKits.find((d) => d.id === id);
+    const maxDisponivelKit = (dispKitInfo?.disponivel ?? 0) - qtdJaReservada;
+    if (qtd > maxDisponivelKit) {
+      toast.error(`Máximo disponível para este kit: ${maxDisponivelKit}`);
+      return;
+    }
 
     const existente = kitsComposicao.findIndex((c) => c.kitId === id);
     if (existente >= 0) {
@@ -156,14 +181,12 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
 
     const dataEvento = new Date(data.dataEvento);
     const dataEntrega = new Date(data.dataEntrega);
-    const dataColeta = new Date(data.dataColeta);
 
     await createMutation.mutateAsync({
       nomeCliente: data.nomeCliente,
       colaboradorId: Number(data.colaboradorId),
       dataEvento,
       dataEntrega,
-      dataColeta,
       enderecoEntrega: data.enderecoEntrega,
       valorTaxaEntrega: Math.round((data.valorTaxaEntrega || 0) * 100),
       observacoes: data.observacoes || "",
@@ -242,17 +265,6 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
               </div>
 
               <div>
-                <Label htmlFor="dataColeta" className="text-xs">Data de Coleta</Label>
-                <Input
-                  id="dataColeta"
-                  type="datetime-local"
-                  {...register("dataColeta")}
-                  className="text-sm"
-                />
-                {errors.dataColeta && <p className="text-xs text-red-500 mt-1">{errors.dataColeta.message}</p>}
-              </div>
-
-              <div>
                 <Label htmlFor="enderecoEntrega" className="text-xs">Endereço de Entrega</Label>
                 <Input
                   id="enderecoEntrega"
@@ -302,12 +314,17 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
                   </SelectTrigger>
                   <SelectContent>
                     {itensList.map((i) => (
-                      <SelectItem key={i.id} value={String(i.id)}>
-                        {i.nome}
+                      <SelectItem key={i.id} value={String(i.id)} disabled={(disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0) <= 0}>
+                        {i.nome} (Disp: {disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {dataEntregaValue && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    em {format(new Date(dataEntregaValue), "dd/MM")}
+                  </span>
+                )}
                 <Input
                   type="number"
                   min="1"
@@ -333,12 +350,17 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
                   </SelectTrigger>
                   <SelectContent>
                     {kitsList.map((k) => (
-                      <SelectItem key={k.id} value={String(k.id)}>
-                        {k.nome}
+                      <SelectItem key={k.id} value={String(k.id)} disabled={(disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0) <= 0}>
+                        {k.nome} (Disp: {disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {dataEntregaValue && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    em {format(new Date(dataEntregaValue), "dd/MM")}
+                  </span>
+                )}
                 <Input
                   type="number"
                   min="1"

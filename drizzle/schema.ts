@@ -103,7 +103,6 @@ export const pedidos = mysqlTable("pedidos", {
   colaboradorId: int("colaboradorId").notNull(),
   dataEvento: timestamp("dataEvento").notNull(),
   dataEntrega: timestamp("dataEntrega").notNull(),
-  dataColeta: timestamp("dataColeta").notNull(),
   enderecoEntrega: text("enderecoEntrega"),
   valorTotal: int("valorTotal").notNull(), // em centavos
   valorTaxaEntrega: float("valorTaxaEntrega").default(0).notNull(), // em reais

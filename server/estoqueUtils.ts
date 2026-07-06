@@ -1,19 +1,28 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, ne, sql, and, lte } from "drizzle-orm";
 import { itensPedido, kitsPedido, kitItens, pedidos } from "../drizzle/schema";
 
 /**
  * Retorna um Map<itemId, quantidadeReservada> somando reservas diretas (itensPedido)
- * e via kits (kitsPedido expandido por kitItens) de todos os pedidos cuja dataEvento
- * cai no mesmo dia (ignorando hora) da data informada.
+ * e via kits (kitsPedido expandido por kitItens) de todos os pedidos cujo:
+ * - status é DIFERENTE de "Concluido"
+ * - dataEntrega é menor ou igual à data informada (DATE(dataEntrega) <= DATE(data))
+ *
+ * Ou seja, o item fica reservado a partir da entrega e continua reservado indefinidamente
+ * em qualquer data futura até o pedido ser marcado como Concluido.
  */
 export async function getReservadoPorItemNaData(db: any, data: Date): Promise<Map<number, number>> {
-  const pedidosNoDia = await db
+  const pedidosReservados = await db
     .select({ id: pedidos.id })
     .from(pedidos)
-    .where(sql`DATE(${pedidos.dataEvento}) = DATE(${data})`);
+    .where(
+      and(
+        ne(pedidos.status, "Concluido"),
+        lte(sql`DATE(${pedidos.dataEntrega})`, sql`DATE(${data})`)
+      )
+    );
 
   const reservado = new Map<number, number>();
-  const pedidoIds = pedidosNoDia.map((p: { id: number }) => p.id);
+  const pedidoIds = pedidosReservados.map((p: { id: number }) => p.id);
   if (pedidoIds.length === 0) return reservado;
 
   const itensDiretos = await db

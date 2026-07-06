@@ -29,7 +29,6 @@ export const pedidosRouter = router({
         colaboradorId: pedidos.colaboradorId,
         dataEvento: pedidos.dataEvento,
         dataEntrega: pedidos.dataEntrega,
-        dataColeta: pedidos.dataColeta,
         enderecoEntrega: pedidos.enderecoEntrega,
         valorTotal: pedidos.valorTotal,
         valorTaxaEntrega: pedidos.valorTaxaEntrega,
@@ -59,7 +58,6 @@ export const pedidosRouter = router({
           colaboradorId: pedidos.colaboradorId,
           dataEvento: pedidos.dataEvento,
           dataEntrega: pedidos.dataEntrega,
-          dataColeta: pedidos.dataColeta,
           enderecoEntrega: pedidos.enderecoEntrega,
           valorTotal: pedidos.valorTotal,
           valorTaxaEntrega: pedidos.valorTaxaEntrega,
@@ -115,7 +113,6 @@ export const pedidosRouter = router({
         colaboradorId: z.number().int().positive(),
         dataEvento: z.coerce.date(),
         dataEntrega: z.coerce.date(),
-        dataColeta: z.coerce.date(),
         enderecoEntrega: z.string().min(1, "Endereço é obrigatório"),
         valorTaxaEntrega: z.number().min(0).default(0),
         observacoes: z.string().optional(),
@@ -162,7 +159,7 @@ export const pedidosRouter = router({
       }
 
       // ─── Verificar estoque por data ───
-      const reservadoNaData = await getReservadoPorItemNaData(db, input.dataEvento);
+      const reservadoNaData = await getReservadoPorItemNaData(db, input.dataEntrega);
       for (const [itemId, qtdTotal] of Array.from(demandaPorItem.entries())) {
         const [itemDb] = await db
           .select({ nome: itens.nome, quantidadeTotal: itens.quantidadeTotal })
@@ -193,7 +190,6 @@ export const pedidosRouter = router({
         colaboradorId: input.colaboradorId,
         dataEvento: input.dataEvento,
         dataEntrega: input.dataEntrega,
-        dataColeta: input.dataColeta,
         enderecoEntrega: input.enderecoEntrega,
         valorTotal,
         valorTaxaEntrega: input.valorTaxaEntrega,
@@ -250,7 +246,6 @@ export const pedidosRouter = router({
         id: z.number().int().positive(),
         dataEvento: z.coerce.date().optional(),
         dataEntrega: z.coerce.date().optional(),
-        dataColeta: z.coerce.date().optional(),
         enderecoEntrega: z.string().optional(),
         observacoes: z.string().optional(),
         valorTaxaEntrega: z.number().min(0).optional(),
