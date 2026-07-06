@@ -313,7 +313,7 @@ export default function Calendario() {
                 return (
                   <div key={pedido.id} className="border rounded-lg p-3 relative">
                     {/* Badge de status no canto */}
-                    <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${bgColor.replace("bg-", "bg-").split("-")[0]}-500`} />
+                    <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${badge.className.split(" ")[0]}`} />
 
                     <div className="pr-4">
                       <p className="font-semibold text-sm">{pedido.nomeCliente}</p>
