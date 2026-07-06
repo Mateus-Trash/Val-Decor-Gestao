@@ -1,14 +1,14 @@
-import { eq, inArray, ne, sql, and, lte } from "drizzle-orm";
+import { eq, inArray, ne, sql, and } from "drizzle-orm";
 import { itensPedido, kitsPedido, kitItens, pedidos } from "../drizzle/schema";
-
 /**
  * Retorna um Map<itemId, quantidadeReservada> somando reservas diretas (itensPedido)
  * e via kits (kitsPedido expandido por kitItens) de todos os pedidos cujo:
  * - status é DIFERENTE de "Concluido"
- * - dataEntrega é menor ou igual à data informada (DATE(dataEntrega) <= DATE(data))
+ * - dataEntrega é igual à data informada (DATE(dataEntrega) = DATE(data))
  *
- * Ou seja, o item fica reservado a partir da entrega e continua reservado indefinidamente
- * em qualquer data futura até o pedido ser marcado como Concluido.
+ * Ou seja, o item fica reservado apenas no dia exato de entrega.
+ * Em qualquer outro dia (passado ou futuro), o item está disponível normalmente.
+ * Se o pedido for marcado como Concluido no mesmo dia, o item é liberado na hora.
  */
 export async function getReservadoPorItemNaData(db: any, data: Date): Promise<Map<number, number>> {
   const pedidosReservados = await db
@@ -17,7 +17,7 @@ export async function getReservadoPorItemNaData(db: any, data: Date): Promise<Ma
     .where(
       and(
         ne(pedidos.status, "Concluido"),
-        lte(sql`DATE(${pedidos.dataEntrega})`, sql`DATE(${data})`)
+        eq(sql`DATE(${pedidos.dataEntrega})`, sql`DATE(${data})`)
       )
     );
 

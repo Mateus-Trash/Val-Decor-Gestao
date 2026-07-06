@@ -384,7 +384,7 @@ describe("entregas", () => {
 });
 
 describe("estoque por data", () => {
-  it("should show item as unavailable from dataEntrega onwards until Concluido, and available before dataEntrega", async () => {
+  it("should show item as unavailable only on the exact dataEntrega day, and available on any other day", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
     const sufixo = Date.now();
@@ -419,9 +419,9 @@ describe("estoque por data", () => {
     const dispNoDia = await caller.itens.getDisponibilidadePorData({ data: dataReservada });
     expect(dispNoDia.find((i: any) => i.id === itemId)?.disponivel).toBe(0);
 
-    // Com reserva por período, o item continua reservado em datas futuras (até Concluido)
-    const dispDiaFuturo = await caller.itens.getDisponibilidadePorData({ data: new Date("2026-09-16T12:00:00") });
-    expect(dispDiaFuturo.find((i: any) => i.id === itemId)?.disponivel).toBe(0);
+    // Em data futura qualquer, o item está disponível (não trava a agenda)
+    const dispDiaFuturo = await caller.itens.getDisponibilidadePorData({ data: new Date("2026-09-20T12:00:00") });
+    expect(dispDiaFuturo.find((i: any) => i.id === itemId)?.disponivel).toBe(10);
 
     // Mas em data anterior à entrega, o item está livre
     const dispDiaAnterior = await caller.itens.getDisponibilidadePorData({ data: dataAnterior });
