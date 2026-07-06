@@ -1,4 +1,5 @@
 import { and, desc, eq, like, sql } from "drizzle-orm";
+import { addDays } from "date-fns";
 import { z } from "zod";
 import {
   colaboradores,
@@ -366,5 +367,48 @@ export const pedidosRouter = router({
       await db.delete(comissoes).where(eq(comissoes.pedidoId, input.id));
       await db.delete(transacoesFinanceiras).where(eq(transacoesFinanceiras.pedidoId, input.id));
       return db.delete(pedidos).where(eq(pedidos.id, input.id));
+    }),
+
+  /**
+   * Retorna entregas e coletas do dia para a tela de Logística.
+   * - Entregas: pedidos com DATE(dataEntrega) = data selecionada e status != Concluido
+   * - Coletas: pedidos cuja dataEntrega + 1 dia = data selecionada e status != Concluido
+   *   (coletaAdiadaPara ainda não existe — tratado como sempre null por enquanto)
+   * Ambos os grupos são ordenados por bairroEntrega para otimizar rota.
+   */
+  listByDataLogistica: protectedProcedure
+    .input(z.object({ data: z.coerce.date() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      const dataStr = input.data.toISOString().slice(0, 10);
+
+      // Entregas: DATE(dataEntrega) = data selecionada AND status != Concluido
+      const entregas = await db
+        .select()
+        .from(pedidos)
+        .where(
+          and(
+            sql`DATE(${pedidos.dataEntrega}) = ${dataStr}`,
+            sql`${pedidos.status} != 'Concluido'`
+          )
+        )
+        .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
+
+      // Coletas: dataEntrega + 1 dia = data selecionada AND status != Concluido
+      const dataAnterior = addDays(input.data, -1).toISOString().slice(0, 10);
+      const coletas = await db
+        .select()
+        .from(pedidos)
+        .where(
+          and(
+            sql`DATE(${pedidos.dataEntrega}) = ${dataAnterior}`,
+            sql`${pedidos.status} != 'Concluido'`
+          )
+        )
+        .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
+
+      return { entregas, coletas };
     }),
 });
