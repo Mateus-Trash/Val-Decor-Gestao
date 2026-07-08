@@ -22,8 +22,16 @@ import {
 } from "lucide-react";
 import { PageHeading } from "@/components/PageHeading";
 import { Link } from "wouter";
-import { CountUp } from "@/components/CountUp";
+import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import {
   LineChart,
   Line,
@@ -53,6 +61,15 @@ const STATUS_COLORS: Record<string, { label: string; color: string; bgClass: str
 };
 
 const PIE_COLORS = ["#eab308", "#3b82f6", "#dc2626", "#f87171", "#22c55e"];
+
+const fluxoChartConfig = {
+  Receitas: { label: "Receitas", color: "#22c55e" },
+  Despesas: { label: "Despesas", color: "#ef4444" },
+} satisfies ChartConfig;
+
+const top5ChartConfig = {
+  quantidade: { label: "Quantidade", color: "var(--chart-1)" },
+} satisfies ChartConfig;
 
 function formatCentavos(centavos: number): string {
   return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -169,55 +186,69 @@ export default function Dashboard() {
 
         {/* Cards de KPI */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <KPICard
+          <StatCard
             title="Faturamento do Mês"
-            numericValue={kpis ? kpis.faturamentoTotal : null}
+            value={kpis ? kpis.faturamentoTotal : null}
             formatFn={formatCentavos}
             icon={<TrendingUp className="h-5 w-5 text-green-600" />}
             loading={kpisLoading}
-            colorClass="border-l-4 border-l-green-500"
+            accentClassName="border-l-4 border-l-green-500"
+            trend={
+              comparativo
+                ? {
+                    direction: comparativo.percentualVariacao >= 0 ? "up" : "down",
+                    percent: comparativo.percentualVariacao,
+                  }
+                : undefined
+            }
+            footerNote="vs. mês anterior"
           />
-          <KPICard
+          <StatCard
             title="Saldo do Mês"
-            numericValue={kpis ? kpis.saldo : null}
+            value={kpis ? kpis.saldo : null}
             formatFn={formatCentavos}
             icon={<DollarSign className="h-5 w-5" />}
             loading={kpisLoading}
-            colorClass={`border-l-4 ${kpis && kpis.saldo >= 0 ? "border-l-green-500" : "border-l-red-500"}`}
-            valueClass={kpis && kpis.saldo < 0 ? "text-red-600" : "text-green-600"}
+            accentClassName={`border-l-4 ${kpis && kpis.saldo >= 0 ? "border-l-green-500" : "border-l-red-500"}`}
+            valueClassName={kpis && kpis.saldo < 0 ? "text-red-600" : "text-green-600"}
+            footerNote="Receitas menos despesas no período"
           />
-          <KPICard
+          <StatCard
             title="Total de Despesas"
-            numericValue={kpis ? kpis.totalDespesas : null}
+            value={kpis ? kpis.totalDespesas : null}
             formatFn={formatCentavos}
             icon={<TrendingDown className="h-5 w-5 text-red-600" />}
             loading={kpisLoading}
-            colorClass="border-l-4 border-l-red-500"
-            valueClass="text-red-600"
+            accentClassName="border-l-4 border-l-red-500"
+            valueClassName="text-red-600"
+            footerNote="No período selecionado"
           />
-          <KPICard
+          <StatCard
             title="Taxas de Entrega"
-            numericValue={kpis ? kpis.taxasEntrega : null}
+            value={kpis ? kpis.taxasEntrega : null}
             formatFn={formatCentavos}
             icon={<Truck className="h-5 w-5 text-blue-600" />}
             loading={kpisLoading}
-            colorClass="border-l-4 border-l-blue-500"
+            accentClassName="border-l-4 border-l-blue-500"
+            footerNote="No período selecionado"
           />
-          <KPICard
+          <StatCard
             title="Ticket Médio"
-            numericValue={kpis ? kpis.ticketMedio : null}
+            value={kpis ? kpis.ticketMedio : null}
             formatFn={formatCentavos}
             icon={<DollarSign className="h-5 w-5 text-indigo-600" />}
             loading={kpisLoading}
-            colorClass="border-l-4 border-l-indigo-500"
+            accentClassName="border-l-4 border-l-indigo-500"
+            footerNote="Valor médio por pedido"
           />
-          <KPICard
+          <StatCard
             title="Taxa de Conclusão"
-            numericValue={kpis ? kpis.taxaConclusao : null}
+            value={kpis ? kpis.taxaConclusao : null}
             formatFn={(v) => `${v.toFixed(1)}%`}
             icon={<TrendingUp className="h-5 w-5 text-teal-600" />}
             loading={kpisLoading}
-            colorClass="border-l-4 border-l-teal-500"
+            accentClassName="border-l-4 border-l-teal-500"
+            footerNote="Pedidos concluídos no período"
           />
         </div>
 
@@ -279,17 +310,17 @@ export default function Dashboard() {
               {fluxoLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : (
-                <ResponsiveContainer width="100%" height={240}>
+                <ChartContainer config={fluxoChartConfig} className="h-60 w-full">
                   <LineChart data={fluxoData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="semana" fontSize={11} />
                     <YAxis fontSize={11} tickFormatter={(v) => `R$${v}`} />
-                    <Tooltip formatter={(v: number) => `R$ ${v.toFixed(2)}`} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="Receitas" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
+                    <ChartTooltip content={<ChartTooltipContent formatter={(v) => `R$ ${Number(v).toFixed(2)}`} />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Line type="monotone" dataKey="Receitas" stroke="var(--color-Receitas)" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="Despesas" stroke="var(--color-Despesas)" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               )}
             </CardContent>
           </Card>
@@ -305,15 +336,15 @@ export default function Dashboard() {
               ) : top5Data.length === 0 ? (
                 <EmptyState icon={BarChart3} message="Sem dados no período" />
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
+                <ChartContainer config={top5ChartConfig} className="h-64 w-full">
                   <BarChart data={top5Data} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" fontSize={12} />
                     <YAxis dataKey="nome" type="category" fontSize={11} width={100} />
-                    <Tooltip />
-                    <Bar dataKey="quantidade" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="quantidade" fill="var(--color-quantidade)" radius={[0, 4, 4, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               )}
             </CardContent>
           </Card>
@@ -437,40 +468,4 @@ export default function Dashboard() {
   );
 }
 
-// ─── Componente auxiliar ───────────────────────────────────────────────────────
 
-function KPICard({
-  title,
-  numericValue,
-  formatFn,
-  icon,
-  loading,
-  colorClass,
-  valueClass,
-}: {
-  title: string;
-  numericValue: number | null;
-  formatFn: (v: number) => string;
-  icon: React.ReactNode;
-  loading: boolean;
-  colorClass?: string;
-  valueClass?: string;
-}) {
-  return (
-    <Card className={"gap-2 " + colorClass}>
-      <CardContent className="py-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          {icon}
-        </div>
-        {loading || numericValue === null ? (
-          <Skeleton className="h-8 w-32 mt-2" />
-        ) : (
-          <p className={`text-2xl font-bold mt-2 ${valueClass ?? ""}`}>
-            <CountUp end={numericValue} duration={800} formatFn={formatFn} />
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
