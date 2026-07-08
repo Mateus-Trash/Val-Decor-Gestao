@@ -50,7 +50,7 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         await caller.colaboradores.create({
-          nome: "Test Colaborador",
+          nome: "TEST_Colaborador",
           email: "",
           senha: "123456",
         });
@@ -65,7 +65,7 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         const result = await caller.colaboradores.create({
-          nome: "Test Colaborador 2",
+          nome: "TEST_Colaborador 2",
           email: "test2@example.com",
           senha: "123456",
         });
@@ -81,8 +81,8 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         await caller.colaboradores.create({
-          nome: "Test Colaborador",
-          email: "test@example.com",
+          nome: "TEST_Colaborador 3",
+          email: "test3@example.com",
           senha: "123456",
           percentualComissao: 150,
         });
@@ -122,7 +122,7 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         await caller.itens.create({
-          nome: "Test Item",
+          nome: "TEST_Item",
           valorAluguel: 0,
           quantidadeTotal: 5,
           quantidadeDisponivel: 5,
@@ -138,7 +138,7 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         await caller.itens.create({
-          nome: "Test Item",
+          nome: "TEST_Item",
           valorAluguel: 1000,
           quantidadeTotal: 5,
           quantidadeDisponivel: 10,
@@ -177,7 +177,7 @@ describe("Routers", () => {
       const caller = appRouter.createCaller(ctx);
       try {
         await caller.kits.create({
-          nome: "Test Kit",
+          nome: "TEST_Kit",
           valorAluguel: 0,
         });
         expect.fail("Should have thrown validation error");
@@ -297,24 +297,24 @@ describe("pedidos - comissão", () => {
     const sufixo = Date.now();
 
     const colaboradorResult = await caller.colaboradores.create({
-      nome: `Colaborador Teste ${sufixo}`,
-      email: `colaborador${sufixo}@example.com`,
+      nome: `TEST_Colaborador_Teste_${sufixo}`,
+      email: `TEST_colaborador${sufixo}@example.com`,
       senha: "123456",
       percentualComissao: 10,
     });
     // After refactor, create returns { success: true }; get the colaborador by listing
     const colabs = await caller.colaboradores.list();
-    const colaboradorId = colabs.find(c => c.email === `colaborador${sufixo}@example.com`)!.id;
+    const colaboradorId = colabs.find(c => c.email === `TEST_colaborador${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
-      nome: `Item Comissão Teste ${sufixo}`,
+      nome: `TEST_Item_Comissao_${sufixo}`,
       valorAluguel: 1000,
       quantidadeTotal: 50,
     });
     const itemId = (itemResult as any)[0].insertId;
 
     const pedido = await caller.pedidos.create({
-      nomeCliente: "Cliente Teste Comissão",
+      nomeCliente: "TEST_Cliente Comissao",
       colaboradorId,
       dataEvento: new Date("2026-08-10T12:00:00"),
       dataEntrega: new Date("2026-08-10T08:00:00"),
@@ -407,15 +407,15 @@ describe("estoque por data", () => {
     const sufixo = Date.now();
 
     const colaboradorResult = await caller.colaboradores.create({
-      nome: `Colaborador Estoque ${sufixo}`,
-      email: `estoque${sufixo}@example.com`,
+      nome: `TEST_Colaborador_Estoque_${sufixo}`,
+      email: `TEST_estoque${sufixo}@example.com`,
       senha: "123456",
     });
     const colabs2 = await caller.colaboradores.list();
-    const colaboradorId = colabs2.find(c => c.email === `estoque${sufixo}@example.com`)!.id;
+    const colaboradorId = colabs2.find(c => c.email === `TEST_estoque${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
-      nome: `Item Estoque Teste ${sufixo}`,
+      nome: `TEST_Item_Estoque_${sufixo}`,
       valorAluguel: 1000,
       quantidadeTotal: 10,
     });
@@ -425,7 +425,7 @@ describe("estoque por data", () => {
     const dataAnterior = new Date("2026-09-14T12:00:00");
 
     await caller.pedidos.create({
-      nomeCliente: "Cliente Teste Estoque",
+      nomeCliente: "TEST_Cliente Estoque",
       colaboradorId,
       dataEvento: dataReservada,
       dataEntrega: dataReservada,
@@ -457,15 +457,15 @@ describe("alertas de coleta atrasada", () => {
     const sufixo = Date.now();
 
     const colaboradorResult = await caller.colaboradores.create({
-      nome: `Colaborador Alerta ${sufixo}`,
-      email: `alerta${sufixo}@example.com`,
+      nome: `TEST_Colaborador_Alerta_${sufixo}`,
+      email: `TEST_alerta${sufixo}@example.com`,
       senha: "123456",
     });
     const colabs = await caller.colaboradores.list();
-    const colaboradorId = colabs.find((c: any) => c.email === `alerta${sufixo}@example.com`)!.id;
+    const colaboradorId = colabs.find((c: any) => c.email === `TEST_alerta${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
-      nome: `Item Alerta Teste ${sufixo}`,
+      nome: `TEST_Item_Alerta_${sufixo}`,
       valorAluguel: 1000,
       quantidadeTotal: 5,
     });
@@ -475,7 +475,7 @@ describe("alertas de coleta atrasada", () => {
     quatroDiasAtras.setDate(quatroDiasAtras.getDate() - 4);
 
     const pedido = await caller.pedidos.create({
-      nomeCliente: "Cliente Atrasado Teste",
+      nomeCliente: "TEST_Cliente Atrasado",
       colaboradorId,
       dataEvento: quatroDiasAtras,
       dataEntrega: quatroDiasAtras,
@@ -503,15 +503,15 @@ describe("aviso de dependência do dia anterior", () => {
     const sufixo = Date.now();
 
     const colaboradorResult = await caller.colaboradores.create({
-      nome: `Colaborador Dep ${sufixo}`,
-      email: `dep${sufixo}@example.com`,
+      nome: `TEST_Colaborador_Dep_${sufixo}`,
+      email: `TEST_dep${sufixo}@example.com`,
       senha: "123456",
     });
     const colabs = await caller.colaboradores.list();
-    const colaboradorId = colabs.find((c: any) => c.email === `dep${sufixo}@example.com`)!.id;
+    const colaboradorId = colabs.find((c: any) => c.email === `TEST_dep${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
-      nome: `Item Dependencia Teste ${sufixo}`,
+      nome: `TEST_Item_Dependencia_${sufixo}`,
       valorAluguel: 1000,
       quantidadeTotal: 100,
     });
@@ -521,7 +521,7 @@ describe("aviso de dependência do dia anterior", () => {
     const dia2 = new Date("2026-07-07T10:00:00");
 
     const pedido1 = await caller.pedidos.create({
-      nomeCliente: "Cliente Dia 1",
+      nomeCliente: "TEST_Cliente Dia 1",
       colaboradorId,
       dataEvento: dia1,
       dataEntrega: dia1,
@@ -535,7 +535,7 @@ describe("aviso de dependência do dia anterior", () => {
     await caller.pedidos.updateStatus({ id: pedido1.pedidoId, status: "EntregueNaoPago" });
 
     await caller.pedidos.create({
-      nomeCliente: "Cliente Dia 2",
+      nomeCliente: "TEST_Cliente Dia 2",
       colaboradorId,
       dataEvento: dia2,
       dataEntrega: dia2,
@@ -561,22 +561,22 @@ describe("aviso de dependência do dia anterior para kits", () => {
     const sufixo = Date.now();
 
     const colaboradorResult = await caller.colaboradores.create({
-      nome: `Colaborador KitDep ${sufixo}`,
-      email: `kitdep${sufixo}@example.com`,
+      nome: `TEST_Colaborador_KitDep_${sufixo}`,
+      email: `TEST_kitdep${sufixo}@example.com`,
       senha: "123456",
     });
     const colabs = await caller.colaboradores.list();
-    const colaboradorId = colabs.find((c: any) => c.email === `kitdep${sufixo}@example.com`)!.id;
+    const colaboradorId = colabs.find((c: any) => c.email === `TEST_kitdep${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
-      nome: `Item KitDep Teste ${sufixo}`,
+      nome: `TEST_Item_KitDep_${sufixo}`,
       valorAluguel: 1000,
       quantidadeTotal: 10,
     });
     const itemId = (itemResult as any)[0].insertId;
 
     const kitResult = await caller.kits.create({
-      nome: `Kit Dep Teste ${sufixo}`,
+      nome: `TEST_Kit_Dep_${sufixo}`,
       valorAluguel: 2000,
       itens: [{ itemId, quantidade: 1 }],
     });
@@ -586,7 +586,7 @@ describe("aviso de dependência do dia anterior para kits", () => {
     const dia2 = new Date("2026-08-07T10:00:00");
 
     const pedido1 = await caller.pedidos.create({
-      nomeCliente: "Cliente Kit Dia 1",
+      nomeCliente: "TEST_Cliente Kit Dia 1",
       colaboradorId,
       dataEvento: dia1,
       dataEntrega: dia1,
@@ -600,7 +600,7 @@ describe("aviso de dependência do dia anterior para kits", () => {
     await caller.pedidos.updateStatus({ id: pedido1.pedidoId, status: "EntregueNaoPago" });
 
     await caller.pedidos.create({
-      nomeCliente: "Cliente Kit Dia 2",
+      nomeCliente: "TEST_Cliente Kit Dia 2",
       colaboradorId,
       dataEvento: dia2,
       dataEntrega: dia2,
