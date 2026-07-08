@@ -110,3 +110,9 @@
 - [x] Colaboradores.tsx: campo senha no criar, novaSenha no editar
 - [x] NovoPedidoDialog.tsx: pré-preencher colaboradorId se vinculado
 - [x] pnpm check e pnpm test sem erros
+
+## Responsividade Mobile — NovoPedidoDialog
+- [x] Corrigir DialogContent: padding reduzido e largura total no mobile
+- [x] Substituir tabelas de composição (itens/kits) por cards/listas responsivas no mobile
+- [x] Ajustar rows de seleção de itens/kits (Select + Input + Button) para empilhamento vertical no mobile
+- [x] pnpm check sem erros, checkpoint e push

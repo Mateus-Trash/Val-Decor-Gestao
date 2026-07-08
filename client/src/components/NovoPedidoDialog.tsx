@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2 } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
@@ -304,16 +303,19 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent
+        className="max-w-[calc(100vw-1rem)] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-3 sm:p-6"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">{isEditing ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-5">
           {/* Seção 1: Dados Básicos */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="text-sm font-semibold">Dados Básicos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="nomeCliente" className="text-xs">Nome do Cliente</Label>
                 <Input
@@ -373,52 +375,54 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                   type="datetime-local"
                   {...register("dataEntrega")}
                   className="text-sm"
-                  />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div>
-                  <Label htmlFor="ruaEntrega" className="text-xs">Rua</Label>
-                  <Input
-                    id="ruaEntrega"
-                    {...register("ruaEntrega")}
-                    placeholder="Rua..."
-                    className="text-sm"
-                  />
-                  {errors.ruaEntrega && <p className="text-xs text-red-500 mt-1">{errors.ruaEntrega.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="numeroEntrega" className="text-xs">Número</Label>
-                  <Input
-                    id="numeroEntrega"
-                    {...register("numeroEntrega")}
-                    placeholder="Número..."
-                    className="text-sm"
-                  />
-                  {errors.numeroEntrega && <p className="text-xs text-red-500 mt-1">{errors.numeroEntrega.message}</p>}
-                </div>
-                <div>
-                  <Label htmlFor="bairroEntrega" className="text-xs">Bairro</Label>
-                  <Input
-                    id="bairroEntrega"
-                    {...register("bairroEntrega")}
-                    placeholder="Bairro..."
-                    className="text-sm"
-                  />
-                  {errors.bairroEntrega && <p className="text-xs text-red-500 mt-1">{errors.bairroEntrega.message}</p>}
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="valorTaxaEntrega" className="text-xs">Taxa de Entrega (R$)</Label>
-                <Input
-                  id="valorTaxaEntrega"
-                  type="number"
-                  step="0.01"
-                  {...register("valorTaxaEntrega", { valueAsNumber: true })}
-                  placeholder="0.00"
-                  className="text-sm"
                 />
               </div>
+            </div>
+
+            {/* Endereço — 3 colunas no desktop, empilhado no mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Label htmlFor="ruaEntrega" className="text-xs">Rua</Label>
+                <Input
+                  id="ruaEntrega"
+                  {...register("ruaEntrega")}
+                  placeholder="Rua..."
+                  className="text-sm"
+                />
+                {errors.ruaEntrega && <p className="text-xs text-red-500 mt-1">{errors.ruaEntrega.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="numeroEntrega" className="text-xs">Número</Label>
+                <Input
+                  id="numeroEntrega"
+                  {...register("numeroEntrega")}
+                  placeholder="Número..."
+                  className="text-sm"
+                />
+                {errors.numeroEntrega && <p className="text-xs text-red-500 mt-1">{errors.numeroEntrega.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="bairroEntrega" className="text-xs">Bairro</Label>
+                <Input
+                  id="bairroEntrega"
+                  {...register("bairroEntrega")}
+                  placeholder="Bairro..."
+                  className="text-sm"
+                />
+                {errors.bairroEntrega && <p className="text-xs text-red-500 mt-1">{errors.bairroEntrega.message}</p>}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="valorTaxaEntrega" className="text-xs">Taxa de Entrega (R$)</Label>
+              <Input
+                id="valorTaxaEntrega"
+                type="number"
+                step="0.01"
+                {...register("valorTaxaEntrega", { valueAsNumber: true })}
+                placeholder="0.00"
+                className="text-sm"
+              />
             </div>
 
             <div>
@@ -434,15 +438,15 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
           </div>
 
           {/* Seção 2: Composição */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h3 className="text-sm font-semibold">Composição</h3>
 
-            {/* Adicionar Itens */}
+            {/* Adicionar Itens — empilhado no mobile */}
             <div className="space-y-2">
               <p className="text-xs font-medium">Adicionar Itens</p>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
-                  <SelectTrigger className="w-40 text-sm">
+                  <SelectTrigger className="w-full sm:w-48 text-sm">
                     <SelectValue placeholder="Selecione item..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -459,32 +463,39 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                     })}
                   </SelectContent>
                 </Select>
-                {dataEntregaValue && (
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    em {format(new Date(dataEntregaValue), "dd/MM")}
-                  </span>
-                )}
-                <Input
-                  type="number"
-                  min="1"
-                  value={qtdItem}
-                  onChange={(e) => setQtdItem(e.target.value)}
-                  placeholder="Qtd"
-                  className="w-16 text-sm"
-                />
-                <Button type="button" size="sm" onClick={adicionarItem} className="text-xs">
-                  <Plus className="h-3 w-3 mr-1" /> Adicionar
-                </Button>
+                <div className="flex gap-2 items-center">
+                  {dataEntregaValue && (
+                    <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
+                      em {format(new Date(dataEntregaValue), "dd/MM")}
+                    </span>
+                  )}
+                  <Input
+                    type="number"
+                    min="1"
+                    value={qtdItem}
+                    onChange={(e) => setQtdItem(e.target.value)}
+                    placeholder="Qtd"
+                    className="w-16 text-sm shrink-0"
+                  />
+                  <Button type="button" size="sm" onClick={adicionarItem} className="text-xs shrink-0">
+                    <Plus className="h-3 w-3 mr-1" /> Adicionar
+                  </Button>
+                </div>
               </div>
+              {dataEntregaValue && (
+                <p className="text-xs text-muted-foreground sm:hidden">
+                  Disponibilidade em {format(new Date(dataEntregaValue), "dd/MM")}
+                </p>
+              )}
               {erroQtdItem && <p className="text-xs text-red-500">{erroQtdItem}</p>}
             </div>
 
-            {/* Adicionar Kits */}
+            {/* Adicionar Kits — empilhado no mobile */}
             <div className="space-y-2">
               <p className="text-xs font-medium">Adicionar Kits</p>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={kitSelecionado} onValueChange={setKitSelecionado}>
-                  <SelectTrigger className="w-40 text-sm">
+                  <SelectTrigger className="w-full sm:w-48 text-sm">
                     <SelectValue placeholder="Selecione kit..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -501,86 +512,85 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                     })}
                   </SelectContent>
                 </Select>
-                {dataEntregaValue && (
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    em {format(new Date(dataEntregaValue), "dd/MM")}
-                  </span>
-                )}
-                <Input
-                  type="number"
-                  min="1"
-                  value={qtdKit}
-                  onChange={(e) => setQtdKit(e.target.value)}
-                  placeholder="Qtd"
-                  className="w-16 text-sm"
-                />
-                <Button type="button" size="sm" onClick={adicionarKit} className="text-xs">
-                  <Plus className="h-3 w-3 mr-1" /> Adicionar
-                </Button>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={qtdKit}
+                    onChange={(e) => setQtdKit(e.target.value)}
+                    placeholder="Qtd"
+                    className="w-16 text-sm shrink-0"
+                  />
+                  <Button type="button" size="sm" onClick={adicionarKit} className="text-xs shrink-0">
+                    <Plus className="h-3 w-3 mr-1" /> Adicionar
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Tabela de Itens */}
+            {/* Lista de Itens — cards responsivos em vez de tabela */}
             {itensComposicao.length > 0 && (
-              <div className="overflow-x-auto">
-                <Table className="text-xs">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead className="text-right">Qtd</TableHead>
-                      <TableHead className="text-right">Valor Unit.</TableHead>
-                      <TableHead className="text-right">Subtotal</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {itensComposicao.map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{item.nome}</TableCell>
-                        <TableCell className="text-right">{item.quantidade}</TableCell>
-                        <TableCell className="text-right">R$ {(item.valorUnitario / 100).toFixed(2)}</TableCell>
-                        <TableCell className="text-right">R$ {((item.valorUnitario * item.quantidade) / 100).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <button type="button" onClick={() => removerItem(idx)} className="text-red-500 hover:text-red-700">
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Itens adicionados</p>
+                {itensComposicao.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card/50 p-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{item.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.quantidade}x &times; R$ {(item.valorUnitario / 100).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-semibold">
+                        R$ {((item.valorUnitario * item.quantidade) / 100).toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removerItem(idx)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        aria-label="Remover item"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Tabela de Kits */}
+            {/* Lista de Kits — cards responsivos em vez de tabela */}
             {kitsComposicao.length > 0 && (
-              <div className="overflow-x-auto">
-                <Table className="text-xs">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Kit</TableHead>
-                      <TableHead className="text-right">Qtd</TableHead>
-                      <TableHead className="text-right">Valor Unit.</TableHead>
-                      <TableHead className="text-right">Subtotal</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {kitsComposicao.map((kit, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{kit.nome}</TableCell>
-                        <TableCell className="text-right">{kit.quantidade}</TableCell>
-                        <TableCell className="text-right">R$ {(kit.valorUnitario / 100).toFixed(2)}</TableCell>
-                        <TableCell className="text-right">R$ {((kit.valorUnitario * kit.quantidade) / 100).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <button type="button" onClick={() => removerKit(idx)} className="text-red-500 hover:text-red-700">
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">Kits adicionados</p>
+                {kitsComposicao.map((kit, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card/50 p-2.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{kit.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {kit.quantidade}x &times; R$ {(kit.valorUnitario / 100).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-semibold">
+                        R$ {((kit.valorUnitario * kit.quantidade) / 100).toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removerKit(idx)}
+                        className="text-red-500 hover:text-red-700 p-1"
+                        aria-label="Remover kit"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
