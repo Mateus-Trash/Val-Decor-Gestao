@@ -34,8 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical, Hash } from "lucide-react";
-import EntityCard from "@/components/EntityCard";
+import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -360,48 +359,60 @@ export default function Financeiro() {
           </CardContent>
         </Card>
 
-        {/* Cards Mobile */}
-        <div className="block sm:hidden space-y-3">
+        {/* Lista Mobile — linhas compactas */}
+        <div className="block sm:hidden">
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
+            <div className="space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full" />
               ))}
             </div>
           ) : transacoes.length === 0 ? (
             <EmptyState icon={DollarSign} message="Nenhuma transação neste período." actionLabel="Nova Despesa" onAction={abrirNovaDespesa} />
           ) : (
-            transacoes.map((t) => {
-              const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
-              const isManual = t.pedidoId === null;
-              return (
-                <EntityCard
-                  key={t.id}
-                  title={t.descricao || "—"}
-                  subtitle={format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
-                  badge={<Badge variant="outline" className={`text-xs ${badge.className}`}>{badge.label}</Badge>}
-                  fields={[
-                    { icon: Hash, label: "Pedido", value: t.pedidoId ? `#${t.pedidoId}` : "—" },
-                    { icon: DollarSign, label: "Valor", value: `${t.tipo === "despesa" ? "−" : "+"}${formatCurrency(t.valor)}` },
-                  ]}
-                  actions={isManual ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => abrirEditar(t)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : undefined}
-                />
-              );
-            })
+            <div className="divide-y divide-border">
+              {transacoes.map((t) => {
+                const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
+                const isManual = t.pedidoId === null;
+                const valorClass = t.tipo === "despesa" ? "text-red-600" : "text-green-600";
+                return (
+                  <div key={t.id} className="flex items-center gap-3 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium truncate">{t.descricao || "—"}</span>
+                        <Badge variant="outline" className={"text-[10px] px-1.5 py-0 shrink-0 " + badge.className}>
+                          {badge.label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
+                        {t.pedidoId && <span className="ml-2 font-mono">#{t.pedidoId}</span>}
+                      </p>
+                    </div>
+                    <span className={"text-sm font-semibold shrink-0 " + valorClass}>
+                      {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
+                    </span>
+                    {isManual ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => abrirEditar(t)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground shrink-0 w-7 text-center">Auto</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
