@@ -117,20 +117,38 @@ function DashboardLayoutContent({
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isResizing) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
+      const newWidth = touch.clientX - sidebarLeft;
+      if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
     const handleMouseUp = () => {
       setIsResizing(false);
     };
 
     if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("touchmove", handleTouchMove);
       document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mouseleave", handleMouseUp);
+      document.addEventListener("touchend", handleMouseUp);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     }
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseleave", handleMouseUp);
+      document.removeEventListener("touchend", handleMouseUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -220,6 +238,10 @@ function DashboardLayoutContent({
         <div
           className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
           onMouseDown={() => {
+            if (isCollapsed) return;
+            setIsResizing(true);
+          }}
+          onTouchStart={() => {
             if (isCollapsed) return;
             setIsResizing(true);
           }}
