@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -455,9 +456,19 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                         ? (pedidoParaEditar.itens.find((ip) => ip.itemId === i.id)?.quantidade ?? 0)
                         : 0;
                       const disp = (disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0) + qtdAtualNoPedido;
+                      const dispColor = disp <= 0
+                        ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                        : disp <= 2
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                          : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
                       return (
                         <SelectItem key={i.id} value={String(i.id)} disabled={disp <= 0}>
-                          {i.nome} (Disp: {disp})
+                          <span className="flex items-center gap-2">
+                            <span className="truncate">{i.nome}</span>
+                            <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
+                              {disp}
+                            </Badge>
+                          </span>
                         </SelectItem>
                       );
                     })}
@@ -504,9 +515,19 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                         ? (pedidoParaEditar.kits.find((kp) => kp.kitId === k.id)?.quantidade ?? 0)
                         : 0;
                       const disp = (disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0) + qtdAtualNoPedido;
+                      const dispColor = disp <= 0
+                        ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                        : disp <= 2
+                          ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                          : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
                       return (
                         <SelectItem key={k.id} value={String(k.id)} disabled={disp <= 0}>
-                          {k.nome} (Disp: {disp})
+                          <span className="flex items-center gap-2">
+                            <span className="truncate">{k.nome}</span>
+                            <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
+                              {disp}
+                            </Badge>
+                          </span>
                         </SelectItem>
                       );
                     })}
