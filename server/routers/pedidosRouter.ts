@@ -45,7 +45,38 @@ export const pedidosRouter = router({
       .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
       .orderBy(desc(pedidos.createdAt));
 
-    return result;
+    // Query grouped totals for itens and kits per pedido
+    const totalItensRows = await db
+      .select({
+        pedidoId: itensPedido.pedidoId,
+        total: sql<number>`COALESCE(SUM(${itensPedido.quantidade}), 0)`,
+      })
+      .from(itensPedido)
+      .groupBy(itensPedido.pedidoId);
+
+    const totalKitsRows = await db
+      .select({
+        pedidoId: kitsPedido.pedidoId,
+        total: sql<number>`COALESCE(SUM(${kitsPedido.quantidade}), 0)`,
+      })
+      .from(kitsPedido)
+      .groupBy(kitsPedido.pedidoId);
+
+    const itensMap = new Map<number, number>();
+    for (const row of totalItensRows) {
+      itensMap.set(row.pedidoId, Number(row.total));
+    }
+
+    const kitsMap = new Map<number, number>();
+    for (const row of totalKitsRows) {
+      kitsMap.set(row.pedidoId, Number(row.total));
+    }
+
+    return result.map((p) => ({
+      ...p,
+      totalItens: itensMap.get(p.id) ?? 0,
+      totalKits: kitsMap.get(p.id) ?? 0,
+    }));
   }),
 
   getById: protectedProcedure

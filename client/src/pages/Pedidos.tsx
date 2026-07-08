@@ -182,6 +182,8 @@ export default function Pedidos() {
                       <TableHead>Colaborador</TableHead>
                       <TableHead>Data Evento</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-center">Itens/Kits</TableHead>
+                      <TableHead className="text-right">Taxa</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
@@ -196,6 +198,8 @@ export default function Pedidos() {
                           {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(p.valorTotal)}</TableCell>
+                        <TableCell className="text-center text-xs">{p.totalItens} / {p.totalKits}</TableCell>
+                        <TableCell className="text-right text-xs">{formatCurrency(p.valorTaxaEntrega)}</TableCell>
                         <TableCell>
                           <Select
                             value={p.status}
@@ -275,6 +279,9 @@ export default function Pedidos() {
                   <p className="text-xs"><span className="font-medium">Colaborador:</span> {p.nomeColaborador}</p>
                   <p className="text-xs"><span className="font-medium">Data:</span> {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}</p>
                   <p className="text-xs"><span className="font-medium">Total:</span> {formatCurrency(p.valorTotal)}</p>
+                  <p className="text-xs"><span className="font-medium">Itens:</span> {p.totalItens} un.</p>
+                  <p className="text-xs"><span className="font-medium">Kits:</span> {p.totalKits} un.</p>
+                  <p className="text-xs"><span className="font-medium">Taxa de entrega:</span> {formatCurrency(p.valorTaxaEntrega)}</p>
                   <div className="flex gap-2 pt-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
