@@ -20,6 +20,9 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { PageHeading } from "@/components/PageHeading";
+import { CountUp } from "@/components/CountUp";
+import { EmptyState } from "@/components/EmptyState";
 import {
   LineChart,
   Line,
@@ -41,11 +44,11 @@ import { ptBR } from "date-fns/locale";
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, { label: string; color: string; bgClass: string }> = {
-  Pendente: { label: "Pendente", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800" },
-  Confirmado: { label: "Confirmado", color: "#3b82f6", bgClass: "bg-blue-100 text-blue-800" },
-  EntregueNaoPago: { label: "Entregue (Não Pago)", color: "#dc2626", bgClass: "bg-red-200 text-red-900" },
-  EntreguePago: { label: "Entregue (Pago)", color: "#f87171", bgClass: "bg-red-100 text-red-700" },
-  Concluido: { label: "Concluído", color: "#22c55e", bgClass: "bg-green-100 text-green-800" },
+  Pendente: { label: "Pendente", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" },
+  Confirmado: { label: "Confirmado", color: "#3b82f6", bgClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800" },
+  EntregueNaoPago: { label: "Entregue (Não Pago)", color: "#dc2626", bgClass: "bg-red-200 text-red-900 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
+  EntreguePago: { label: "Entregue (Pago)", color: "#f87171", bgClass: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
+  Concluido: { label: "Concluído", color: "#22c55e", bgClass: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800" },
 };
 
 const PIE_COLORS = ["#eab308", "#3b82f6", "#dc2626", "#f87171", "#22c55e"];
@@ -127,11 +130,7 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header + Filtro */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dashboard</h1>
-          </div>
+        <PageHeading icon={<BarChart3 className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Dashboard">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
               <SelectTrigger className="flex-1 sm:w-36">
@@ -158,20 +157,22 @@ export default function Dashboard() {
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </PageHeading>
 
         {/* Cards de KPI */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <KPICard
             title="Faturamento do Mês"
-            value={kpis ? formatCentavos(kpis.faturamentoTotal) : null}
+            numericValue={kpis ? kpis.faturamentoTotal : null}
+            formatFn={formatCentavos}
             icon={<TrendingUp className="h-5 w-5 text-green-600" />}
             loading={kpisLoading}
             colorClass="border-l-4 border-l-green-500"
           />
           <KPICard
             title="Saldo do Mês"
-            value={kpis ? formatCentavos(kpis.saldo) : null}
+            numericValue={kpis ? kpis.saldo : null}
+            formatFn={formatCentavos}
             icon={<DollarSign className="h-5 w-5" />}
             loading={kpisLoading}
             colorClass={`border-l-4 ${kpis && kpis.saldo >= 0 ? "border-l-green-500" : "border-l-red-500"}`}
@@ -179,7 +180,8 @@ export default function Dashboard() {
           />
           <KPICard
             title="Total de Despesas"
-            value={kpis ? formatCentavos(kpis.totalDespesas) : null}
+            numericValue={kpis ? kpis.totalDespesas : null}
+            formatFn={formatCentavos}
             icon={<TrendingDown className="h-5 w-5 text-red-600" />}
             loading={kpisLoading}
             colorClass="border-l-4 border-l-red-500"
@@ -187,7 +189,8 @@ export default function Dashboard() {
           />
           <KPICard
             title="Taxas de Entrega"
-            value={kpis ? formatCentavos(kpis.taxasEntrega) : null}
+            numericValue={kpis ? kpis.taxasEntrega : null}
+            formatFn={formatCentavos}
             icon={<Truck className="h-5 w-5 text-blue-600" />}
             loading={kpisLoading}
             colorClass="border-l-4 border-l-blue-500"
@@ -252,7 +255,7 @@ export default function Dashboard() {
               {kpisLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : top5Data.length === 0 ? (
-                <p className="text-center py-12 text-muted-foreground">Sem dados no período</p>
+                <EmptyState icon={BarChart3} message="Sem dados no período" />
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
                   <BarChart data={top5Data} layout="vertical" margin={{ left: 20 }}>
@@ -276,7 +279,7 @@ export default function Dashboard() {
               {kpisLoading ? (
                 <Skeleton className="h-64 w-full" />
               ) : pieData.length === 0 ? (
-                <p className="text-center py-12 text-muted-foreground">Sem dados no período</p>
+                <EmptyState icon={BarChart3} message="Sem dados no período" />
               ) : (
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
@@ -355,14 +358,16 @@ export default function Dashboard() {
 
 function KPICard({
   title,
-  value,
+  numericValue,
+  formatFn,
   icon,
   loading,
   colorClass,
   valueClass,
 }: {
   title: string;
-  value: string | null;
+  numericValue: number | null;
+  formatFn: (v: number) => string;
   icon: React.ReactNode;
   loading: boolean;
   colorClass?: string;
@@ -375,10 +380,12 @@ function KPICard({
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
           {icon}
         </div>
-        {loading ? (
+        {loading || numericValue === null ? (
           <Skeleton className="h-8 w-32 mt-2" />
         ) : (
-          <p className={`text-2xl font-bold mt-2 ${valueClass ?? ""}`}>{value}</p>
+          <p className={`text-2xl font-bold mt-2 ${valueClass ?? ""}`}>
+            <CountUp end={numericValue} duration={800} formatFn={formatFn} />
+          </p>
         )}
       </CardContent>
     </Card>

@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { ShoppingCart, Plus, Pencil, Trash2, X, MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,11 +54,11 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  Confirmado: "bg-blue-100 text-blue-800 border-blue-300",
-  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400",
-  EntreguePago: "bg-red-100 text-red-700 border-red-300",
-  Concluido: "bg-green-100 text-green-800 border-green-300",
+  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
+  Confirmado: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+  EntreguePago: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+  Concluido: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
 };
 
 const pedidoSchema = z.object({
@@ -352,16 +355,12 @@ export default function Pedidos() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <ShoppingCart className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Pedidos</h1>
-          </div>
+        <PageHeading icon={<ShoppingCart className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Pedidos">
           <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Pedido
           </Button>
-        </div>
+        </PageHeading>
 
         {/* Filtros */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -391,9 +390,13 @@ export default function Pedidos() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : pedidosFiltrados.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado.</p>
+              <EmptyState icon={ShoppingCart} message="Nenhum pedido encontrado." actionLabel="Novo Pedido" onAction={abrirCriar} />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -410,7 +413,7 @@ export default function Pedidos() {
                   </TableHeader>
                   <TableBody>
                     {pedidosFiltrados.map((p) => (
-                      <TableRow key={p.id}>
+                      <TableRow key={p.id} className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-mono">#{p.id}</TableCell>
                         <TableCell>{p.nomeCliente ?? "—"}</TableCell>
                         <TableCell>{p.nomeColaborador}</TableCell>
@@ -462,12 +465,16 @@ export default function Pedidos() {
         {/* Cards Mobile */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           ) : pedidosFiltrados.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhum pedido encontrado.</p>
+            <EmptyState icon={ShoppingCart} message="Nenhum pedido encontrado." actionLabel="Novo Pedido" onAction={abrirCriar} />
           ) : (
             pedidosFiltrados.map((p) => (
-              <Card key={p.id} className="p-3">
+              <Card key={p.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-start gap-2">
                     <div>

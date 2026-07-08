@@ -34,6 +34,9 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Layers, Plus, Pencil, Trash2, X, MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -188,16 +191,12 @@ export default function Kits() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <Layers className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Kits</h1>
-          </div>
+        <PageHeading icon={<Layers className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Kits">
           <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Kit
           </Button>
-        </div>
+        </PageHeading>
 
         {/* Tabela Desktop */}
         <Card className="hidden sm:block">
@@ -206,9 +205,13 @@ export default function Kits() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : kits.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">Nenhum kit cadastrado.</p>
+              <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -223,7 +226,7 @@ export default function Kits() {
                   </TableHeader>
                   <TableBody>
                     {kits.map((kit) => (
-                      <TableRow key={kit.id}>
+                      <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-medium">{kit.nome}</TableCell>
                         <TableCell className="max-w-xs truncate">{kit.descricao ?? "—"}</TableCell>
                         <TableCell className="text-right">{formatCurrency(kit.valorAluguel)}</TableCell>
@@ -255,12 +258,16 @@ export default function Kits() {
         {/* Cards Mobile */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           ) : kits.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhum kit cadastrado.</p>
+            <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
           ) : (
             kits.map((kit) => (
-              <Card key={kit.id} className="p-3">
+              <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-start gap-2">
                     <div>

@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -34,11 +37,11 @@ type Pedido = {
 };
 
 const statusColors: Record<string, string> = {
-  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  Confirmado: "bg-blue-100 text-blue-800 border-blue-300",
-  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400",
-  EntreguePago: "bg-red-100 text-red-700 border-red-300",
-  Concluido: "bg-green-100 text-green-800 border-green-300",
+  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
+  Confirmado: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+  EntreguePago: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+  Concluido: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
 };
 
 const statusLabels: Record<string, string> = {
@@ -98,9 +101,7 @@ function GrupoDesktop({
       </CardHeader>
       <CardContent className="pt-0">
         {pedidos.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhum compromisso para este dia.
-          </p>
+          <EmptyState icon={Truck} message="Nenhum compromisso para este dia." />
         ) : (
           bairros.map((bairro, idx) => (
             <div key={bairro}>
@@ -136,7 +137,7 @@ function GrupoDesktop({
                 </TableHeader>
                 <TableBody>
                   {grupos[bairro].map((p) => (
-                    <TableRow key={p.id} className={selectedIds?.has(p.id) ? "bg-muted/40" : ""}>
+                    <TableRow key={p.id} className={`transition-colors duration-200 hover:bg-muted/50 ${selectedIds?.has(p.id) ? "bg-muted/40" : ""}`}>
                       {showCheckboxes && (
                         <TableCell>
                           <Checkbox
@@ -198,9 +199,7 @@ function GrupoMobile({
         <Badge variant="secondary">{pedidos.length}</Badge>
       </div>
       {pedidos.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4 bg-muted/30 rounded-lg">
-          Nenhum compromisso para este dia.
-        </p>
+        <EmptyState icon={Truck} message="Nenhum compromisso para este dia." />
       ) : (
         bairros.map((bairro) => (
           <div key={bairro} className="mb-4">
@@ -217,7 +216,7 @@ function GrupoMobile({
               {grupos[bairro].map((p) => (
                 <Card
                   key={p.id}
-                  className={`border shadow-sm ${selectedIds?.has(p.id) ? "border-primary bg-primary/5" : ""}`}
+                  className={`border shadow-sm transition-colors duration-200 hover:bg-muted/50 ${selectedIds?.has(p.id) ? "border-primary bg-primary/5" : ""}`}
                 >
                   <CardContent className="p-3 space-y-1">
                     <div className="flex items-start justify-between gap-2">
@@ -313,23 +312,14 @@ export default function Logistica() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <Truck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Logística</h1>
-              <p className="text-xs text-muted-foreground">
-                Entregas e coletas do dia, agrupadas por bairro
-              </p>
-            </div>
-          </div>
+        <PageHeading icon={<Truck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Logística">
           {!isLoading && (
             <Badge variant="secondary" className="text-sm px-3 py-1">
               {totalDia} compromisso{totalDia !== 1 ? "s" : ""} em{" "}
               {format(dataConsulta, "dd/MM")}
             </Badge>
           )}
-        </div>
+        </PageHeading>
 
         {/* Date Selector */}
         <Popover>
@@ -355,7 +345,11 @@ export default function Logistica() {
         </Popover>
 
         {isLoading ? (
-          <p className="text-center py-12 text-muted-foreground">Carregando compromissos...</p>
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
         ) : (
           <>
             {/* Desktop */}

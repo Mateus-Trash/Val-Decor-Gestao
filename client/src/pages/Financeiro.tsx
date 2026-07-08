@@ -34,6 +34,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -183,11 +186,7 @@ export default function Financeiro() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <DollarSign className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Financeiro</h1>
-          </div>
+        <PageHeading icon={<DollarSign className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Financeiro">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             {/* Filtro de período */}
             <Select
@@ -221,10 +220,10 @@ export default function Financeiro() {
               Nova Despesa
             </Button>
           </div>
-        </div>
+        </PageHeading>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-green-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -285,11 +284,13 @@ export default function Financeiro() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : transacoes.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">
-                Nenhuma transação neste período.
-              </p>
+              <EmptyState icon={DollarSign} message="Nenhuma transação neste período." actionLabel="Nova Despesa" onAction={abrirNovaDespesa} />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -308,7 +309,7 @@ export default function Financeiro() {
                       const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
                       const isManual = t.pedidoId === null;
                       return (
-                        <TableRow key={t.id}>
+                        <TableRow key={t.id} className="transition-colors duration-200 hover:bg-muted/50">
                           <TableCell className="whitespace-nowrap">
                             {format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
                           </TableCell>
@@ -360,15 +361,19 @@ export default function Financeiro() {
         {/* Cards Mobile */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           ) : transacoes.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhuma transação neste período.</p>
+            <EmptyState icon={DollarSign} message="Nenhuma transação neste período." actionLabel="Nova Despesa" onAction={abrirNovaDespesa} />
           ) : (
             transacoes.map((t) => {
               const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
               const isManual = t.pedidoId === null;
               return (
-                <Card key={t.id} className="p-3">
+                <Card key={t.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-start gap-2">
                       <div>

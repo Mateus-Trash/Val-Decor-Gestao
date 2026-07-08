@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { UserCheck, Plus, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -159,16 +162,12 @@ export default function Colaboradores() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <UserCheck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Colaboradores</h1>
-          </div>
+        <PageHeading icon={<UserCheck className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Colaboradores">
           <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Colaborador
           </Button>
-        </div>
+        </PageHeading>
 
         {/* Busca */}
         <Input
@@ -185,9 +184,13 @@ export default function Colaboradores() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : colaboradoresFiltrados.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado.</p>
+              <EmptyState icon={UserCheck} message="Nenhum colaborador cadastrado." actionLabel="Novo Colaborador" onAction={abrirCriar} />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -207,7 +210,7 @@ export default function Colaboradores() {
                     {colaboradoresFiltrados.map((c) => {
                       const resumo = resumoMap.get(c.id);
                       return (
-                        <TableRow key={c.id}>
+                        <TableRow key={c.id} className="transition-colors duration-200 hover:bg-muted/50">
                           <TableCell className="font-medium">{c.nome}</TableCell>
                           <TableCell>{c.funcao ?? "—"}</TableCell>
                           <TableCell>{c.email || "—"}</TableCell>
@@ -250,14 +253,18 @@ export default function Colaboradores() {
         {/* Cards Mobile */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           ) : colaboradoresFiltrados.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado.</p>
+            <EmptyState icon={UserCheck} message="Nenhum colaborador cadastrado." actionLabel="Novo Colaborador" onAction={abrirCriar} />
           ) : (
             colaboradoresFiltrados.map((c) => {
               const resumo = resumoMap.get(c.id);
               return (
-                <Card key={c.id} className="p-3">
+                <Card key={c.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-start gap-2">
                       <div>

@@ -7,6 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import {
@@ -24,11 +27,11 @@ import { ptBR } from "date-fns/locale";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
 
 const statusBadge: Record<string, { label: string; className: string }> = {
-  Pendente: { label: "Pendente", className: "bg-yellow-100 text-yellow-800 border-yellow-300" },
-  Confirmado: { label: "Confirmado", className: "bg-blue-100 text-blue-800 border-blue-300" },
-  EntregueNaoPago: { label: "Entregue (Não Pago)", className: "bg-red-200 text-red-900 border-red-400" },
-  EntreguePago: { label: "Entregue (Pago)", className: "bg-red-100 text-red-700 border-red-300" },
-  Concluido: { label: "Concluído", className: "bg-green-100 text-green-800 border-green-300" },
+  Pendente: { label: "Pendente", className: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" },
+  Confirmado: { label: "Confirmado", className: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800" },
+  EntregueNaoPago: { label: "Entregue (Não Pago)", className: "bg-red-200 text-red-900 border-red-400 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
+  EntreguePago: { label: "Entregue (Pago)", className: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
+  Concluido: { label: "Concluído", className: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800" },
 };
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
@@ -102,11 +105,7 @@ export default function Calendario() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-7 w-7 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Calendário</h1>
-          </div>
+        <PageHeading icon={<Calendar className="h-7 w-7 text-primary" />} title="Calendário">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button variant="outline" size="icon" onClick={mesPrevio}>
               <ChevronLeft className="h-4 w-4" />
@@ -123,12 +122,16 @@ export default function Calendario() {
               Hoje
             </Button>
           </div>
-        </div>
+        </PageHeading>
 
         {/* Calendário Mobile - Grade 7 colunas */}
         <Card className="block md:hidden p-3 sm:p-4">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
           ) : (
             <>
               {/* Cabeçalho dias da semana */}
@@ -158,7 +161,7 @@ export default function Calendario() {
                       onClick={() => setDiaAberto(dia)}
                       className={`min-h-16 sm:min-h-20 border rounded-lg p-1 sm:p-2 overflow-hidden flex flex-col text-left transition-colors hover:bg-muted/50 ${
                         ehHoje
-                          ? "border-blue-500 bg-blue-50"
+                          ? "border-primary bg-primary/10"
                           : "border-border bg-background"
                       }`}
                     >
@@ -200,7 +203,11 @@ export default function Calendario() {
         {/* Calendário Desktop - Grade 7 colunas */}
         <Card className="hidden md:block p-6">
           {isLoading ? (
-            <p className="text-center py-12 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
           ) : (
             <>
               {/* Cabeçalho dias da semana */}
@@ -231,7 +238,7 @@ export default function Calendario() {
                       onClick={() => setDiaAberto(dia)}
                       className={`min-h-20 border rounded-lg p-2 overflow-hidden flex flex-col text-left transition-colors hover:bg-muted/50 ${
                         ehHoje
-                          ? "border-blue-500 bg-blue-50"
+                          ? "border-primary bg-primary/10"
                           : ehMesAtual
                             ? "border-border bg-background"
                             : "border-border/50 bg-muted/30 opacity-50"
@@ -251,7 +258,7 @@ export default function Calendario() {
                           return (
                             <div
                               key={evento.id}
-                              className="text-xs bg-white border border-border rounded px-1 py-0.5 truncate"
+                              className="text-xs bg-background border border-border rounded px-1 py-0.5 truncate"
                             >
                               <p className="truncate font-medium">{nomeExibicao}</p>
                               <Badge
@@ -346,7 +353,7 @@ export default function Calendario() {
                 );
               })
             ) : (
-              <p className="text-center py-4 text-muted-foreground text-sm">Nenhum pedido neste dia</p>
+              <EmptyState icon={Calendar} message="Nenhum pedido neste dia." />
             )}
 
             {diaAberto && (

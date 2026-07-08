@@ -29,6 +29,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { Package, Plus, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -147,9 +150,9 @@ export default function Itens() {
         </Tooltip>
       );
     } else if (disponivel <= 2) {
-      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Baixo</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">Baixo</Badge>;
     } else {
-      return <Badge variant="outline" className="bg-green-100 text-green-800">OK</Badge>;
+      return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">OK</Badge>;
     }
   }
 
@@ -161,16 +164,12 @@ export default function Itens() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-3">
-            <Package className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Itens</h1>
-          </div>
+        <PageHeading icon={<Package className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Itens">
           <Button onClick={abrirCriar} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Item
           </Button>
-        </div>
+        </PageHeading>
 
         {/* Busca */}
         <Input
@@ -187,9 +186,13 @@ export default function Itens() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : itensFiltrados.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</p>
+              <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -207,7 +210,7 @@ export default function Itens() {
                   </TableHeader>
                   <TableBody>
                     {itensFiltrados.map((item) => (
-                      <TableRow key={item.id}>
+                      <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-medium">{item.nome}</TableCell>
                         <TableCell className="max-w-xs truncate">{item.descricao ?? "—"}</TableCell>
                         <TableCell className="text-right">{formatCurrency(item.valorAluguel)}</TableCell>
@@ -246,12 +249,16 @@ export default function Itens() {
         {/* Cards Mobile */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           ) : itensFiltrados.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">Nenhum item encontrado.</p>
+            <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
           ) : (
             itensFiltrados.map((item) => (
-              <Card key={item.id} className="p-3">
+              <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-start gap-2">
                     <div>

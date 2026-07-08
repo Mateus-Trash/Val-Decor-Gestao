@@ -21,6 +21,9 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { Wallet, CheckCircle2, Clock, CircleDollarSign } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeading } from "@/components/PageHeading";
+import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -120,15 +123,7 @@ export default function Comissoes() {
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Wallet className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Comissões</h1>
-            <p className="text-xs text-muted-foreground">
-              Histórico de comissões calculadas automaticamente ao concluir pedidos
-            </p>
-          </div>
-        </div>
+        <PageHeading icon={<Wallet className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Comissões" />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -159,7 +154,7 @@ export default function Comissoes() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="border-l-4 border-l-yellow-400">
             <CardHeader className="pb-1 pt-3 px-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -218,11 +213,13 @@ export default function Comissoes() {
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <p className="text-center py-12 text-muted-foreground">Carregando comissões...</p>
+                <div className="space-y-3 p-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
               ) : comissoesFiltradas.length === 0 ? (
-                <p className="text-center py-12 text-muted-foreground">
-                  Nenhuma comissão encontrada para os filtros selecionados.
-                </p>
+                <EmptyState icon={Wallet} message="Nenhuma comissão encontrada para os filtros selecionados." />
               ) : (
                 <Table>
                   <TableHeader>
@@ -246,7 +243,7 @@ export default function Comissoes() {
                     {comissoesFiltradas.map((c) => (
                       <TableRow
                         key={c.id}
-                        className={selected.has(c.id) ? "bg-muted/40" : ""}
+                        className={`transition-colors duration-200 hover:bg-muted/50 ${selected.has(c.id) ? "bg-muted/40" : ""}`}
                       >
                         <TableCell>
                           <Checkbox
@@ -265,11 +262,11 @@ export default function Comissoes() {
                         <TableCell className="text-sm">{formatDate(c.dataCalculo)}</TableCell>
                         <TableCell className="text-center">
                           {c.pago ? (
-                            <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs">
+                            <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
                               Pago
                             </Badge>
                           ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs">
+                            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
                               Pendente
                             </Badge>
                           )}
@@ -289,16 +286,18 @@ export default function Comissoes() {
         {/* Mobile Cards */}
         <div className="block sm:hidden space-y-3">
           {isLoading ? (
-            <p className="text-center py-12 text-muted-foreground">Carregando comissões...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full" />
+              ))}
+            </div>
           ) : comissoesFiltradas.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-              Nenhuma comissão encontrada.
-            </p>
+            <EmptyState icon={Wallet} message="Nenhuma comissão encontrada." />
           ) : (
             comissoesFiltradas.map((c) => (
               <Card
                 key={c.id}
-                className={`border shadow-sm ${selected.has(c.id) ? "border-primary bg-primary/5" : ""}`}
+                className={`border shadow-sm transition-colors duration-200 hover:bg-muted/50 ${selected.has(c.id) ? "border-primary bg-primary/5" : ""}`}
               >
                 <CardContent className="p-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -312,11 +311,11 @@ export default function Comissoes() {
                       <span className="font-medium text-sm truncate">{c.colaboradorNome ?? "—"}</span>
                     </div>
                     {c.pago ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs shrink-0">
+                      <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs shrink-0 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
                         Pago
                       </Badge>
                     ) : (
-                      <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs shrink-0">
+                      <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs shrink-0 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
                         Pendente
                       </Badge>
                     )}
