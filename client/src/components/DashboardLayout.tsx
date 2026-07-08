@@ -20,11 +20,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent, Sun, Moon } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -99,6 +100,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (isCollapsed) {
@@ -205,6 +207,18 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            <div className="flex items-center gap-2 mb-2 group-data-[collapsible=icon]:justify-center">
+              <button
+                onClick={toggleTheme}
+                className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                aria-label="Alternar tema"
+              >
+                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+              <div className="flex-1 group-data-[collapsible=icon]:hidden">
+                <span className="text-xs text-muted-foreground">{theme === "light" ? "Modo escuro" : "Modo claro"}</span>
+              </div>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -262,6 +276,13 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Alternar tema"
+            >
+              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </button>
           </div>
         )}
         <main className="flex-1 p-4">{children}</main>
