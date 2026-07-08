@@ -180,7 +180,7 @@ export default function Colaboradores() {
         />
 
         {/* Tabela Desktop */}
-        <Card className="hidden sm:block">
+        <Card className="gap-2 hidden sm:block">
           <CardHeader>
             <CardTitle>Lista de Colaboradores</CardTitle>
           </CardHeader>

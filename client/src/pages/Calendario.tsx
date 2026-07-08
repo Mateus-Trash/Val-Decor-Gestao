@@ -324,6 +324,23 @@ export default function Calendario() {
                     <div className="pr-4">
                       <p className="font-semibold text-sm">{pedido.nomeCliente}</p>
                       <p className="text-xs text-muted-foreground mb-2">Valor: R$ {(pedido.valorTotal / 100).toFixed(2)}</p>
+                      {(pedido.composicaoItens?.length > 0 || pedido.composicaoKits?.length > 0) && (
+                        <div className="rounded-md bg-white/60 dark:bg-black/20 p-2 space-y-1 mb-2">
+                          <p className="text-xs font-semibold text-muted-foreground">Composição</p>
+                          {pedido.composicaoItens?.map((item: any, idx: number) => (
+                            <div key={`item-${idx}`} className="flex justify-between text-xs">
+                              <span>{item.nome}</span>
+                              <span className="font-medium">{item.quantidade}x</span>
+                            </div>
+                          ))}
+                          {pedido.composicaoKits?.map((kit: any, idx: number) => (
+                            <div key={`kit-${idx}`} className="flex justify-between text-xs">
+                              <span>{kit.nome}</span>
+                              <span className="font-medium">{kit.quantidade}x</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       <div className="space-y-2">
                         <label className="text-xs font-medium">Status:</label>

@@ -156,7 +156,7 @@ export default function Comissoes() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="border-l-4 border-l-yellow-400">
+          <Card className="gap-2 border-l-4 border-l-yellow-400">
             <CardHeader className="pb-1 pt-3 px-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Clock className="h-4 w-4 text-yellow-500" />
@@ -167,7 +167,7 @@ export default function Comissoes() {
               <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPendente)}</p>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-green-400">
+          <Card className="gap-2 border-l-4 border-l-green-400">
             <CardHeader className="pb-1 pt-3 px-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />

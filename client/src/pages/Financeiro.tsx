@@ -243,7 +243,7 @@ export default function Financeiro() {
 
         {/* Cards de resumo */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="border-green-200">
+          <Card className="gap-2 border-green-200">
             <CardHeader className="pb-2 p-3 sm:p-6">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-green-600" />
@@ -255,7 +255,7 @@ export default function Financeiro() {
             </CardContent>
           </Card>
 
-          <Card className="border-red-200">
+          <Card className="gap-2 border-red-200">
             <CardHeader className="pb-2 p-3 sm:p-6">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-red-600" />
@@ -267,7 +267,7 @@ export default function Financeiro() {
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200">
+          <Card className="gap-2 border-blue-200">
             <CardHeader className="pb-2 p-3 sm:p-6">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Truck className="h-4 w-4 text-blue-600" />
@@ -279,7 +279,7 @@ export default function Financeiro() {
             </CardContent>
           </Card>
 
-          <Card className={saldo >= 0 ? "border-green-200" : "border-red-200"}>
+          <Card className={"gap-2 " + (saldo >= 0 ? "border-green-200" : "border-red-200")}>
             <CardHeader className="pb-2 p-3 sm:p-6">
               <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <DollarSign className={"h-4 w-4 " + (saldo >= 0 ? "text-green-600" : "text-red-600")} />
@@ -320,7 +320,7 @@ export default function Financeiro() {
         </div>
 
         {/* Tabela Desktop */}
-        <Card className="hidden sm:block">
+        <Card className="gap-2 hidden sm:block">
           <CardHeader>
             <CardTitle>
               Transações — {MESES[mesSelecionado]} {anoSelecionado}

@@ -34,6 +34,8 @@ type Pedido = {
   coletaAdiadaPara?: Date | string | null;
   status: string;
   observacoes?: string | null;
+  composicaoItens?: { nome: string; quantidade: number }[];
+  composicaoKits?: { nome: string; quantidade: number }[];
 };
 
 const statusColors: Record<string, string> = {
@@ -89,7 +91,7 @@ function GrupoDesktop({
   const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds?.has(id));
 
   return (
-    <Card>
+    <Card className="gap-2">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           {icone}
@@ -132,6 +134,7 @@ function GrupoDesktop({
                     <TableHead>Cliente</TableHead>
                     <TableHead>Endereço</TableHead>
                     <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Composição</TableHead>
                     <TableHead>Observações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -155,6 +158,11 @@ function GrupoDesktop({
                         <Badge className={`text-xs border ${statusColors[p.status] ?? ""}`}>
                           {statusLabels[p.status] ?? p.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                        {[...(p.composicaoItens ?? []), ...(p.composicaoKits ?? [])]
+                          .map((c) => `${c.nome} x${c.quantidade}`)
+                          .join(", ") || "—"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                         {p.observacoes ?? "—"}
@@ -240,6 +248,13 @@ function GrupoMobile({
                     <p className="text-xs text-muted-foreground">
                       {p.ruaEntrega}, {p.numeroEntrega} — {p.bairroEntrega}
                     </p>
+                    {((p.composicaoItens?.length ?? 0) > 0 || (p.composicaoKits?.length ?? 0) > 0) && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {[...(p.composicaoItens ?? []), ...(p.composicaoKits ?? [])]
+                          .map((c) => `${c.nome} x${c.quantidade}`)
+                          .join(", ")}
+                      </p>
+                    )}
                     {p.observacoes && (
                       <p className="text-xs text-muted-foreground italic">{p.observacoes}</p>
                     )}

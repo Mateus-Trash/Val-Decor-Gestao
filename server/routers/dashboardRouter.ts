@@ -1,6 +1,6 @@
-import { and, count, desc, eq, gte, isNotNull, lte, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lte, sql, sum, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens } from "../../drizzle/schema";
+import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens, kitsPedido, kits } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -38,7 +38,45 @@ export const dashboardRouter = router({
           )
         );
 
-      return result;
+      const pedidoIds = result.map((p) => p.id);
+      if (pedidoIds.length === 0) return [];
+
+      const itensCompRows = await db
+        .select({
+          pedidoId: itensPedido.pedidoId,
+          nome: itens.nome,
+          quantidade: itensPedido.quantidade,
+        })
+        .from(itensPedido)
+        .innerJoin(itens, eq(itensPedido.itemId, itens.id))
+        .where(inArray(itensPedido.pedidoId, pedidoIds));
+
+      const kitsCompRows = await db
+        .select({
+          pedidoId: kitsPedido.pedidoId,
+          nome: kits.nome,
+          quantidade: kitsPedido.quantidade,
+        })
+        .from(kitsPedido)
+        .innerJoin(kits, eq(kitsPedido.kitId, kits.id))
+        .where(inArray(kitsPedido.pedidoId, pedidoIds));
+
+      const itensMap = new Map<number, { nome: string; quantidade: number }[]>();
+      for (const row of itensCompRows) {
+        if (!itensMap.has(row.pedidoId)) itensMap.set(row.pedidoId, []);
+        itensMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
+      }
+      const kitsMap = new Map<number, { nome: string; quantidade: number }[]>();
+      for (const row of kitsCompRows) {
+        if (!kitsMap.has(row.pedidoId)) kitsMap.set(row.pedidoId, []);
+        kitsMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
+      }
+
+      return result.map((p) => ({
+        ...p,
+        composicaoItens: itensMap.get(p.id) ?? [],
+        composicaoKits: kitsMap.get(p.id) ?? [],
+      }));
     }),
 
   getKPIs: protectedProcedure

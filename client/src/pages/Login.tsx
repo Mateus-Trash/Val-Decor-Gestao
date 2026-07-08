@@ -1,19 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+
+const CHAVE_LEMBRAR = "valdecor:lembrarLogin";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [lembrar, setLembrar] = useState(false);
   const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const salvo = localStorage.getItem(CHAVE_LEMBRAR);
+    if (salvo) {
+      try {
+        const { email: emailSalvo, senha: senhaSalva } = JSON.parse(salvo);
+        setEmail(emailSalvo ?? "");
+        setSenha(senhaSalva ?? "");
+        setLembrar(true);
+      } catch {
+        localStorage.removeItem(CHAVE_LEMBRAR);
+      }
+    }
+  }, []);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
+      if (lembrar) {
+        localStorage.setItem(CHAVE_LEMBRAR, JSON.stringify({ email, senha }));
+      } else {
+        localStorage.removeItem(CHAVE_LEMBRAR);
+      }
       navigate("/");
       window.location.reload();
     },
@@ -29,7 +52,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
+      <Card className="gap-2 w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Val Decor Gestão</CardTitle>
           <p className="text-sm text-muted-foreground">Entre com suas credenciais</p>
@@ -57,6 +80,16 @@ export default function Login() {
                 onChange={(e) => setSenha(e.target.value)}
                 required
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="lembrar"
+                checked={lembrar}
+                onCheckedChange={(v) => setLembrar(!!v)}
+              />
+              <Label htmlFor="lembrar" className="text-sm font-normal cursor-pointer">
+                Lembrar de mim
+              </Label>
             </div>
             <Button
               type="submit"

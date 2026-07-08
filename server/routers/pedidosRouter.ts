@@ -628,7 +628,45 @@ export const pedidosRouter = router({
         )
         .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
 
-      return { entregas, coletas };
+      // Query composition details for itens and kits
+      const todosPedidoIds = [...entregas.map((p) => p.id), ...coletas.map((p) => p.id)];
+      if (todosPedidoIds.length === 0) return { entregas: [], coletas: [] };
+
+      const itensCompRows = await db
+        .select({
+          pedidoId: itensPedido.pedidoId,
+          nome: itens.nome,
+          quantidade: itensPedido.quantidade,
+        })
+        .from(itensPedido)
+        .innerJoin(itens, eq(itensPedido.itemId, itens.id))
+        .where(inArray(itensPedido.pedidoId, todosPedidoIds));
+
+      const kitsCompRows = await db
+        .select({
+          pedidoId: kitsPedido.pedidoId,
+          nome: kits.nome,
+          quantidade: kitsPedido.quantidade,
+        })
+        .from(kitsPedido)
+        .innerJoin(kits, eq(kitsPedido.kitId, kits.id))
+        .where(inArray(kitsPedido.pedidoId, todosPedidoIds));
+
+      const itensMap = new Map<number, { nome: string; quantidade: number }[]>();
+      for (const row of itensCompRows) {
+        if (!itensMap.has(row.pedidoId)) itensMap.set(row.pedidoId, []);
+        itensMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
+      }
+      const kitsMap = new Map<number, { nome: string; quantidade: number }[]>();
+      for (const row of kitsCompRows) {
+        if (!kitsMap.has(row.pedidoId)) kitsMap.set(row.pedidoId, []);
+        kitsMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
+      }
+
+      return {
+        entregas: entregas.map((p) => ({ ...p, composicaoItens: itensMap.get(p.id) ?? [], composicaoKits: kitsMap.get(p.id) ?? [] })),
+        coletas: coletas.map((p) => ({ ...p, composicaoItens: itensMap.get(p.id) ?? [], composicaoKits: kitsMap.get(p.id) ?? [] })),
+      };
     }),
 
   /**

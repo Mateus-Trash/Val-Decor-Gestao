@@ -123,3 +123,10 @@
 - [x] Pedidos: filtros por data, cliente, status, colaborador
 - [x] Compactar cards mobile (Itens, Kits, Colaboradores, Comissoes) para ocupar menos espaço
 - [x] pnpm check, testes, checkpoint e push
+
+## 4 Tarefas Independentes — Espaço Cards, Login, Calendário, Logística
+- [x] Tarefa 1: Corrigir gap-6 excessivo no EntityCard (adicionar gap-0) e varredura de outros Cards
+- [x] Tarefa 2: Adicionar "Lembrar de mim" no Login (localStorage)
+- [x] Tarefa 3: Composição do pedido no dialog do dia — Calendário.tsx (backend + frontend)
+- [x] Tarefa 4: Composição do pedido na Logística — Logistica.tsx (backend + frontend)
+- [x] pnpm type-check + pnpm test, checkpoint e push

@@ -182,7 +182,7 @@ export default function Itens() {
         />
 
         {/* Tabela Desktop */}
-        <Card className="hidden sm:block">
+        <Card className="gap-2 hidden sm:block">
           <CardHeader>
             <CardTitle>Catálogo de Itens</CardTitle>
           </CardHeader>

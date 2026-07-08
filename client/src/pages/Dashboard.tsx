@@ -223,7 +223,7 @@ export default function Dashboard() {
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Fluxo de Caixa Semanal */}
-          <Card>
+          <Card className="gap-2">
             <CardHeader>
               <CardTitle className="text-base">Fluxo de Caixa Semanal</CardTitle>
             </CardHeader>
@@ -247,7 +247,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Top 5 Itens */}
-          <Card>
+          <Card className="gap-2">
             <CardHeader>
               <CardTitle className="text-sm sm:text-base">Top 5 Itens Mais Alugados</CardTitle>
             </CardHeader>
@@ -271,7 +271,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Distribuição de Pedidos por Status */}
-          <Card>
+          <Card className="gap-2">
             <CardHeader>
               <CardTitle className="text-base">Distribuição de Pedidos por Status</CardTitle>
             </CardHeader>
@@ -307,7 +307,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Comparativo Mensal */}
-          <Card>
+          <Card className="gap-2">
             <CardHeader>
               <CardTitle className="text-base">Comparativo Mensal</CardTitle>
             </CardHeader>
@@ -374,7 +374,7 @@ function KPICard({
   valueClass?: string;
 }) {
   return (
-    <Card className={colorClass}>
+    <Card className={"gap-2 " + colorClass}>
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>

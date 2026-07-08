@@ -26,7 +26,7 @@ export default function EntityCard({
   children,
 }: EntityCardProps) {
   return (
-    <Card className="border-l-4 border-l-primary/60 p-2.5 transition-colors duration-200 hover:bg-muted/50">
+    <Card className="gap-0 border-l-4 border-l-primary/60 p-2.5 transition-colors duration-200 hover:bg-muted/50">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -40,7 +40,7 @@ export default function EntityCard({
 
       {/* Fields grid */}
       {fields.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-1.5">
           {fields.map((field, idx) => {
             const Icon = field.icon;
             return (
@@ -60,12 +60,12 @@ export default function EntityCard({
 
       {/* Extra content */}
       {children && (
-        <div className="mt-2">{children}</div>
+        <div className="mt-1.5">{children}</div>
       )}
 
       {/* Actions */}
       {actions && (
-        <div className="border-t mt-2 pt-1.5 flex justify-end">{actions}</div>
+        <div className="border-t mt-1.5 pt-1.5 flex justify-end">{actions}</div>
       )}
     </Card>
   );

@@ -201,7 +201,7 @@ export default function Kits() {
         </PageHeading>
 
         {/* Tabela Desktop */}
-        <Card className="hidden sm:block">
+        <Card className="gap-2 hidden sm:block">
           <CardHeader>
             <CardTitle>Catálogo de Kits</CardTitle>
           </CardHeader>
