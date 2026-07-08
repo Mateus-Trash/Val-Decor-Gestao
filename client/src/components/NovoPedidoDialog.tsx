@@ -266,7 +266,7 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
 
     const dataEvento = new Date(data.dataEvento);
     const dataEntrega = new Date(data.dataEntrega);
-    const valorTaxaEntrega = Math.round((data.valorTaxaEntrega || 0) * 100);
+    const valorTaxaEntrega = data.valorTaxaEntrega || 0;
 
     if (isEditing && pedidoParaEditar) {
       await updateMutation.mutateAsync({
