@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -126,6 +126,10 @@ export default function Pedidos() {
     return (value / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
+  function formatReais(value: number) {
+    return Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -182,7 +186,6 @@ export default function Pedidos() {
                       <TableHead>Colaborador</TableHead>
                       <TableHead>Data Evento</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
-                      <TableHead className="text-center">Itens/Kits</TableHead>
                       <TableHead className="text-right">Taxa</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -190,7 +193,8 @@ export default function Pedidos() {
                   </TableHeader>
                   <TableBody>
                     {pedidosFiltrados.map((p) => (
-                      <TableRow key={p.id} className="transition-colors duration-200 hover:bg-muted/50">
+                      <Fragment key={p.id}>
+                      <TableRow className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-mono">#{p.id}</TableCell>
                         <TableCell>{p.nomeCliente ?? "—"}</TableCell>
                         <TableCell>{p.nomeColaborador}</TableCell>
@@ -198,8 +202,7 @@ export default function Pedidos() {
                           {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(p.valorTotal)}</TableCell>
-                        <TableCell className="text-center text-xs">{p.totalItens} / {p.totalKits}</TableCell>
-                        <TableCell className="text-right text-xs">{formatCurrency(p.valorTaxaEntrega)}</TableCell>
+                        <TableCell className="text-right text-xs">{formatReais(p.valorTaxaEntrega)}</TableCell>
                         <TableCell>
                           <Select
                             value={p.status}
@@ -233,6 +236,25 @@ export default function Pedidos() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
+                      {(p.composicaoItens.length > 0 || p.composicaoKits.length > 0) && (
+                        <TableRow className="bg-muted/30 hover:bg-muted/40">
+                          <TableCell colSpan={8} className="py-2">
+                            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                              {p.composicaoItens.map((item, idx) => (
+                                <span key={`i-${idx}`} className="text-muted-foreground">
+                                  <span className="font-medium text-foreground">{item.nome}</span> — {item.quantidade}x
+                                </span>
+                              ))}
+                              {p.composicaoKits.map((kit, idx) => (
+                                <span key={`k-${idx}`} className="text-muted-foreground">
+                                  <span className="font-medium text-foreground">{kit.nome}</span> — {kit.quantidade}x
+                                </span>
+                              ))}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </Fragment>
                     ))}
                   </TableBody>
                 </Table>
@@ -279,9 +301,24 @@ export default function Pedidos() {
                   <p className="text-xs"><span className="font-medium">Colaborador:</span> {p.nomeColaborador}</p>
                   <p className="text-xs"><span className="font-medium">Data:</span> {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}</p>
                   <p className="text-xs"><span className="font-medium">Total:</span> {formatCurrency(p.valorTotal)}</p>
-                  <p className="text-xs"><span className="font-medium">Itens:</span> {p.totalItens} un.</p>
-                  <p className="text-xs"><span className="font-medium">Kits:</span> {p.totalKits} un.</p>
-                  <p className="text-xs"><span className="font-medium">Taxa de entrega:</span> {formatCurrency(p.valorTaxaEntrega)}</p>
+                  <p className="text-xs"><span className="font-medium">Taxa de entrega:</span> {formatReais(p.valorTaxaEntrega)}</p>
+                  {(p.composicaoItens.length > 0 || p.composicaoKits.length > 0) && (
+                    <div className="mt-2 rounded-md bg-muted/50 p-2 space-y-1">
+                      <p className="text-xs font-semibold text-muted-foreground">Composição</p>
+                      {p.composicaoItens.map((item, idx) => (
+                        <div key={`item-${idx}`} className="flex justify-between text-xs">
+                          <span>{item.nome}</span>
+                          <span className="font-medium">{item.quantidade}x</span>
+                        </div>
+                      ))}
+                      {p.composicaoKits.map((kit, idx) => (
+                        <div key={`kit-${idx}`} className="flex justify-between text-xs">
+                          <span>{kit.nome}</span>
+                          <span className="font-medium">{kit.quantidade}x</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex gap-2 pt-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -45,37 +45,41 @@ export const pedidosRouter = router({
       .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
       .orderBy(desc(pedidos.createdAt));
 
-    // Query grouped totals for itens and kits per pedido
-    const totalItensRows = await db
+    // Query composition details for itens and kits per pedido
+    const itensCompRows = await db
       .select({
         pedidoId: itensPedido.pedidoId,
-        total: sql<number>`COALESCE(SUM(${itensPedido.quantidade}), 0)`,
+        nome: itens.nome,
+        quantidade: itensPedido.quantidade,
       })
       .from(itensPedido)
-      .groupBy(itensPedido.pedidoId);
+      .innerJoin(itens, eq(itensPedido.itemId, itens.id));
 
-    const totalKitsRows = await db
+    const kitsCompRows = await db
       .select({
         pedidoId: kitsPedido.pedidoId,
-        total: sql<number>`COALESCE(SUM(${kitsPedido.quantidade}), 0)`,
+        nome: kits.nome,
+        quantidade: kitsPedido.quantidade,
       })
       .from(kitsPedido)
-      .groupBy(kitsPedido.pedidoId);
+      .innerJoin(kits, eq(kitsPedido.kitId, kits.id));
 
-    const itensMap = new Map<number, number>();
-    for (const row of totalItensRows) {
-      itensMap.set(row.pedidoId, Number(row.total));
+    const itensMap = new Map<number, { nome: string; quantidade: number }[]>();
+    for (const row of itensCompRows) {
+      if (!itensMap.has(row.pedidoId)) itensMap.set(row.pedidoId, []);
+      itensMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
     }
 
-    const kitsMap = new Map<number, number>();
-    for (const row of totalKitsRows) {
-      kitsMap.set(row.pedidoId, Number(row.total));
+    const kitsMap = new Map<number, { nome: string; quantidade: number }[]>();
+    for (const row of kitsCompRows) {
+      if (!kitsMap.has(row.pedidoId)) kitsMap.set(row.pedidoId, []);
+      kitsMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade });
     }
 
     return result.map((p) => ({
       ...p,
-      totalItens: itensMap.get(p.id) ?? 0,
-      totalKits: kitsMap.get(p.id) ?? 0,
+      composicaoItens: itensMap.get(p.id) ?? [],
+      composicaoKits: kitsMap.get(p.id) ?? [],
     }));
   }),
 
