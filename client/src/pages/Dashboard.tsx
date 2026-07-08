@@ -21,6 +21,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { PageHeading } from "@/components/PageHeading";
+import { Link } from "wouter";
 import { CountUp } from "@/components/CountUp";
 import { EmptyState } from "@/components/EmptyState";
 import {
@@ -409,7 +410,7 @@ export default function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {ranking.map((colab: any, idx: number) => (
-                    <div key={colab.colaboradorId} className="flex items-center gap-3">
+                    <Link key={colab.colaboradorId} href={`/comissoes?colabId=${colab.colaboradorId}`} className="flex items-center gap-3 rounded-lg p-1 -m-1 transition-colors hover:bg-muted/50 cursor-pointer">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                         {idx + 1}
                       </div>
@@ -424,7 +425,7 @@ export default function Dashboard() {
                         <p className="text-sm font-semibold">{formatCentavos(colab.totalVendas)}</p>
                         <p className="text-xs text-muted-foreground">comissão: {formatCentavos(colab.totalComissao)}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}

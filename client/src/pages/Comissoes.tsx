@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +53,12 @@ function formatDate(d: Date | string | null | undefined) {
 }
 
 export default function Comissoes() {
-  const [filtroColaborador, setFiltroColaborador] = useState<string>("todos");
+  const [location] = useLocation();
+  const colabIdFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.split("?")[1] ?? "");
+    return params.get("colabId") ?? "todos";
+  }, [location]);
+  const [filtroColaborador, setFiltroColaborador] = useState<string>(colabIdFromUrl);
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
