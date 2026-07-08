@@ -449,3 +449,49 @@ describe("estoque por data", () => {
     expect(dispDiaAnterior.find((i: any) => i.id === itemId)?.disponivel).toBe(10);
   });
 });
+
+describe("alertas de coleta atrasada", () => {
+  it("should flag a pedido as atrasado only after 3+ days without collection", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const sufixo = Date.now();
+
+    const colaboradorResult = await caller.colaboradores.create({
+      nome: `Colaborador Alerta ${sufixo}`,
+      email: `alerta${sufixo}@example.com`,
+      senha: "123456",
+    });
+    const colabs = await caller.colaboradores.list();
+    const colaboradorId = colabs.find((c: any) => c.email === `alerta${sufixo}@example.com`)!.id;
+
+    const itemResult = await caller.itens.create({
+      nome: `Item Alerta Teste ${sufixo}`,
+      valorAluguel: 1000,
+      quantidadeTotal: 5,
+    });
+    const itemId = (itemResult as any)[0].insertId;
+
+    const quatroDiasAtras = new Date();
+    quatroDiasAtras.setDate(quatroDiasAtras.getDate() - 4);
+
+    const pedido = await caller.pedidos.create({
+      nomeCliente: "Cliente Atrasado Teste",
+      colaboradorId,
+      dataEvento: quatroDiasAtras,
+      dataEntrega: quatroDiasAtras,
+      ruaEntrega: "Rua Teste",
+      bairroEntrega: "Centro",
+      numeroEntrega: "789",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 3, valorUnitario: 1000 }],
+      kits: [],
+    });
+
+    await caller.pedidos.updateStatus({ id: pedido.pedidoId, status: "EntregueNaoPago" });
+
+    const alertas = await caller.itens.getAlertasColeta();
+    const alertaDoPedido = alertas.find((a: any) => a.pedidoId === pedido.pedidoId);
+    expect(alertaDoPedido).toBeDefined();
+    expect(alertaDoPedido!.itensAfetados[0].quantidade).toBe(3);
+  });
+});

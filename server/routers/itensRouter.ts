@@ -3,7 +3,7 @@ import { z } from "zod";
 import { itens, itensPedido, pedidos } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getReservadoPorItemNaData } from "../estoqueUtils";
+import { getReservadoPorItemNaData, getAlertasColetaAtrasada } from "../estoqueUtils";
 
 export const itensRouter = router({
   list: protectedProcedure.query(async () => {
@@ -126,4 +126,9 @@ export const itensRouter = router({
         disponivel: item.quantidadeTotal - (reservado.get(item.id) || 0),
       }));
     }),
+  getAlertasColeta: protectedProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return getAlertasColetaAtrasada(db);
+  }),
 });

@@ -29,6 +29,7 @@ export default function Estoque() {
   const { data: kitsDisponibilidade = [] } = trpc.kits.getDisponibilidadePorData.useQuery({ data: dataConsulta });
   const { data: itensList = [], isLoading: itensLoading } = trpc.itens.list.useQuery();
   const { data: kitsList = [], isLoading: kitsLoading } = trpc.kits.list.useQuery();
+  const { data: alertasColeta = [] } = trpc.itens.getAlertasColeta.useQuery();
 
   const itensComDisponibilidade = useMemo(
     () =>
@@ -91,6 +92,27 @@ export default function Estoque() {
             <Calendar mode="single" selected={dataConsulta} onSelect={(date) => date && setDataConsulta(date)} locale={ptBR} />
           </PopoverContent>
         </Popover>
+
+        {/* Alertas de coleta atrasada */}
+        {alertasColeta.length > 0 && (
+          <div className="space-y-2">
+            {alertasColeta.map((alerta) => (
+              <Card key={alerta.pedidoId} className="border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+                <CardContent className="pt-4 pb-4 text-sm space-y-1">
+                  <p className="font-medium text-amber-900 dark:text-amber-200">
+                    ⚠️ Pedido de {alerta.nomeCliente} entregue há {alerta.diasAtraso} dias e ainda não coletado
+                  </p>
+                  {alerta.itensAfetados.map((ia) => (
+                    <p key={ia.itemId} className="text-amber-800 dark:text-amber-300">
+                      Se não for coletado, o estoque de <strong>{ia.nome}</strong> cai para{" "}
+                      <strong>{ia.disponivelSeNaoDevolver}</strong> (hoje ainda há {ia.disponivelHoje} disponíveis)
+                    </p>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Itens Section */}
         <div>
