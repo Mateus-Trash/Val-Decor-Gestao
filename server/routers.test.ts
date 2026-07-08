@@ -553,3 +553,69 @@ describe("aviso de dependência do dia anterior", () => {
     expect(itemDia2?.avisoRecolherDiaAnterior).toBe(100);
   });
 });
+
+describe("aviso de dependência do dia anterior para kits", () => {
+  it("should warn when previous day's units are needed to cover today's kit bookings", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const sufixo = Date.now();
+
+    const colaboradorResult = await caller.colaboradores.create({
+      nome: `Colaborador KitDep ${sufixo}`,
+      email: `kitdep${sufixo}@example.com`,
+      senha: "123456",
+    });
+    const colabs = await caller.colaboradores.list();
+    const colaboradorId = colabs.find((c: any) => c.email === `kitdep${sufixo}@example.com`)!.id;
+
+    const itemResult = await caller.itens.create({
+      nome: `Item KitDep Teste ${sufixo}`,
+      valorAluguel: 1000,
+      quantidadeTotal: 10,
+    });
+    const itemId = (itemResult as any)[0].insertId;
+
+    const kitResult = await caller.kits.create({
+      nome: `Kit Dep Teste ${sufixo}`,
+      valorAluguel: 2000,
+      itens: [{ itemId, quantidade: 1 }],
+    });
+    const kitId = kitResult.kitId;
+
+    const dia1 = new Date("2026-08-06T10:00:00");
+    const dia2 = new Date("2026-08-07T10:00:00");
+
+    const pedido1 = await caller.pedidos.create({
+      nomeCliente: "Cliente Kit Dia 1",
+      colaboradorId,
+      dataEvento: dia1,
+      dataEntrega: dia1,
+      ruaEntrega: "Rua A",
+      bairroEntrega: "Centro",
+      numeroEntrega: "1",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 10, valorUnitario: 1000 }],
+      kits: [],
+    });
+    await caller.pedidos.updateStatus({ id: pedido1.pedidoId, status: "EntregueNaoPago" });
+
+    await caller.pedidos.create({
+      nomeCliente: "Cliente Kit Dia 2",
+      colaboradorId,
+      dataEvento: dia2,
+      dataEntrega: dia2,
+      ruaEntrega: "Rua B",
+      bairroEntrega: "Centro",
+      numeroEntrega: "2",
+      valorTaxaEntrega: 0,
+      itens: [],
+      kits: [{ kitId, quantidade: 10, valorUnitario: 2000 }],
+    });
+
+    const disponibilidadeDia2 = await caller.kits.getDisponibilidadePorData({ data: dia2 });
+    const kitDia2 = disponibilidadeDia2.find((k: any) => k.id === kitId);
+    expect(kitDia2?.disponivel).toBe(0);
+    expect(kitDia2?.avisoRecolherDiaAnterior).not.toBeNull();
+    expect(kitDia2?.avisoRecolherDiaAnterior).toBeGreaterThan(0);
+  });
+});

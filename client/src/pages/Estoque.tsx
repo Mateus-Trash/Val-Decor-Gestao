@@ -53,6 +53,7 @@ export default function Estoque() {
         return {
           ...kit,
           disponivel: disp?.disponivel ?? 0,
+          avisoRecolherDiaAnterior: disp?.avisoRecolherDiaAnterior ?? null,
         };
       }),
     [kitsList, kitsDisponibilidade]
@@ -226,7 +227,14 @@ export default function Estoque() {
                     <TableBody>
                       {kitsComDisponibilidade.map((kit) => (
                         <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
-                          <TableCell className="font-medium">{kit.nome}</TableCell>
+                          <TableCell className="font-medium">
+                            {kit.nome}
+                            {kit.avisoRecolherDiaAnterior !== null && (
+                              <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
+                                ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
+                              </p>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">{kit.disponivel}</TableCell>
                           <TableCell className="text-center">{getSituacao(kit.disponivel)}</TableCell>
                         </TableRow>
@@ -253,7 +261,14 @@ export default function Estoque() {
                 <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-start gap-2">
-                      <p className="font-semibold">{kit.nome}</p>
+                      <div>
+                        <p className="font-semibold">{kit.nome}</p>
+                        {kit.avisoRecolherDiaAnterior !== null && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
+                          </p>
+                        )}
+                      </div>
                       <div>{getSituacao(kit.disponivel)}</div>
                     </div>
                     <div className="text-xs">

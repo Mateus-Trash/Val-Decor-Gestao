@@ -169,22 +169,46 @@ export const kitsRouter = router({
       const todosKits = await db.select().from(kits);
       const todosItens = await db.select().from(itens);
       const reservado = await getReservadoPorItemNaData(db, input.data);
+
+      const diaAnterior = new Date(input.data);
+      diaAnterior.setDate(diaAnterior.getDate() - 1);
+      const reservadoDiaAnterior = await getReservadoPorItemNaData(db, diaAnterior);
+
       const disponibilidadeItem = new Map(
         todosItens.map((i) => [i.id, i.quantidadeTotal - (reservado.get(i.id) || 0)])
       );
+      const disponibilidadeItemDiaAnterior = new Map(
+        todosItens.map((i) => [i.id, i.quantidadeTotal - (reservadoDiaAnterior.get(i.id) || 0)])
+      );
+      const reservadoDiaAnteriorMap = reservadoDiaAnterior;
+
       const resultado = [];
       for (const kit of todosKits) {
         const composicao = await db.select().from(kitItens).where(eq(kitItens.kitId, kit.id));
         if (composicao.length === 0) {
-          resultado.push({ id: kit.id, nome: kit.nome, disponivel: 0 });
+          resultado.push({ id: kit.id, nome: kit.nome, disponivel: 0, avisoRecolherDiaAnterior: null });
           continue;
         }
         let minDisponivel = Infinity;
+        let minDisponivelComColetaDiaAnterior = Infinity;
+        let precisaRecolherDiaAnterior = false;
         for (const ki of composicao) {
           const dispItem = disponibilidadeItem.get(ki.itemId) ?? 0;
+          const dispItemComColeta = dispItem + (reservadoDiaAnteriorMap.get(ki.itemId) || 0);
           minDisponivel = Math.min(minDisponivel, Math.floor(dispItem / ki.quantidade));
+          minDisponivelComColetaDiaAnterior = Math.min(minDisponivelComColetaDiaAnterior, Math.floor(dispItemComColeta / ki.quantidade));
+          if (dispItem <= 0 && (reservadoDiaAnteriorMap.get(ki.itemId) || 0) > 0) {
+            precisaRecolherDiaAnterior = true;
+          }
         }
-        resultado.push({ id: kit.id, nome: kit.nome, disponivel: Math.max(0, minDisponivel) });
+        const dispFinal = Math.max(0, minDisponivel);
+        const dispComColeta = Math.max(0, minDisponivelComColetaDiaAnterior);
+        resultado.push({
+          id: kit.id,
+          nome: kit.nome,
+          disponivel: dispFinal,
+          avisoRecolherDiaAnterior: dispFinal <= 0 && precisaRecolherDiaAnterior ? dispComColeta : null,
+        });
       }
       return resultado;
     }),
