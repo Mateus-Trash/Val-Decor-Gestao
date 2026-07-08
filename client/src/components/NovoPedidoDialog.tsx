@@ -13,6 +13,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
+import { dismissKeyboardOnEnter } from "@/lib/formUtils";
 
 const pedidoSchema = z.object({
   nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
@@ -303,12 +304,12 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{isEditing ? "Editar Pedido" : "Novo Pedido"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-6">
           {/* Seção 1: Dados Básicos */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold">Dados Básicos</h3>

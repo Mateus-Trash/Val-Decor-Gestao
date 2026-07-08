@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { dismissKeyboardOnEnter } from "@/lib/formUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -417,13 +418,13 @@ export default function Financeiro() {
 
       {/* Dialog nova despesa / editar */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
+        <DialogContent className="max-w-[95vw] sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Transação" : "Nova Despesa"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-4">
             <div className="space-y-1">
               <Label htmlFor="descricao">Descrição *</Label>
               <Input

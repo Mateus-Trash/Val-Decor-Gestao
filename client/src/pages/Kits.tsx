@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { dismissKeyboardOnEnter } from "@/lib/formUtils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -301,13 +302,13 @@ export default function Kits() {
 
       {/* Dialog criar/editar */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) fecharDialog(); }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>
               {editandoId !== null ? "Editar Kit" : "Novo Kit"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-4">
             {/* Campos básicos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
