@@ -43,15 +43,15 @@
 }
 
 :root {
-  --primary: var(--color-teal-700);
-  --primary-foreground: var(--color-teal-50);
-  --sidebar-primary: var(--color-teal-600);
-  --sidebar-primary-foreground: var(--color-teal-50);
-  --chart-1: var(--color-teal-300);
-  --chart-2: var(--color-teal-500);
-  --chart-3: var(--color-teal-600);
-  --chart-4: var(--color-teal-700);
-  --chart-5: var(--color-teal-800);
+  --primary: var(--color-rose-700);
+  --primary-foreground: var(--color-rose-50);
+  --sidebar-primary: var(--color-rose-600);
+  --sidebar-primary-foreground: var(--color-rose-50);
+  --chart-1: var(--color-rose-300);
+  --chart-2: var(--color-rose-500);
+  --chart-3: var(--color-rose-600);
+  --chart-4: var(--color-rose-700);
+  --chart-5: var(--color-rose-800);
   --radius: 0.65rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.235 0.015 65);
@@ -69,20 +69,20 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: var(--color-teal-600);
+  --ring: var(--color-rose-600);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.235 0.015 65);
   --sidebar-accent: oklch(0.967 0.001 286.375);
   --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
   --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: var(--color-teal-600);
+  --sidebar-ring: var(--color-rose-600);
 }
 
 .dark {
-  --primary: var(--color-teal-700);
-  --primary-foreground: var(--color-teal-50);
-  --sidebar-primary: var(--color-teal-500);
-  --sidebar-primary-foreground: var(--color-teal-50);
+  --primary: var(--color-rose-700);
+  --primary-foreground: var(--color-rose-50);
+  --sidebar-primary: var(--color-rose-500);
+  --sidebar-primary-foreground: var(--color-rose-50);
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.85 0.005 65);
   --card: oklch(0.21 0.006 285.885);
@@ -99,18 +99,18 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: var(--color-teal-400);
-  --chart-1: var(--color-teal-300);
-  --chart-2: var(--color-teal-500);
-  --chart-3: var(--color-teal-600);
-  --chart-4: var(--color-teal-700);
-  --chart-5: var(--color-teal-800);
+  --ring: var(--color-rose-400);
+  --chart-1: var(--color-rose-300);
+  --chart-2: var(--color-rose-500);
+  --chart-3: var(--color-rose-600);
+  --chart-4: var(--color-rose-700);
+  --chart-5: var(--color-rose-800);
   --sidebar: oklch(0.21 0.006 285.885);
   --sidebar-foreground: oklch(0.85 0.005 65);
   --sidebar-accent: oklch(0.274 0.006 286.033);
   --sidebar-accent-foreground:  oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: var(--color-teal-400);
+  --sidebar-ring: var(--color-rose-400);
 }
 
 @layer base {
