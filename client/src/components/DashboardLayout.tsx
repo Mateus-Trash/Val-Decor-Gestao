@@ -20,15 +20,23 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Calendar, label: "Calendário", path: "/calendario" },
+  { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
+  { icon: Package, label: "Itens", path: "/itens" },
+  { icon: Shirt, label: "Kits", path: "/kits" },
+  { icon: Package, label: "Estoque", path: "/estoque" },
+  { icon: Users, label: "Colaboradores", path: "/colaboradores" },
+  { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+  { icon: Truck, label: "Logística", path: "/logistica" },
+  { icon: Percent, label: "Comissões", path: "/comissoes" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
