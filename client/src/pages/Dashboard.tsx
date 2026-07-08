@@ -85,6 +85,13 @@ export default function Dashboard() {
     ano,
   });
 
+  const { data: ranking, isLoading: rankingLoading } = trpc.dashboard.getRankingColaboradores.useQuery({
+    dataInicio,
+    dataFim,
+  });
+
+  const { data: alertasColeta = [] } = trpc.itens.getAlertasColeta.useQuery();
+
   const meses = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => ({
       value: String(i + 1),
@@ -160,7 +167,7 @@ export default function Dashboard() {
         </PageHeading>
 
         {/* Cards de KPI */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <KPICard
             title="Faturamento do Mês"
             numericValue={kpis ? kpis.faturamentoTotal : null}
@@ -195,6 +202,22 @@ export default function Dashboard() {
             loading={kpisLoading}
             colorClass="border-l-4 border-l-blue-500"
           />
+          <KPICard
+            title="Ticket Médio"
+            numericValue={kpis ? kpis.ticketMedio : null}
+            formatFn={formatCentavos}
+            icon={<DollarSign className="h-5 w-5 text-indigo-600" />}
+            loading={kpisLoading}
+            colorClass="border-l-4 border-l-indigo-500"
+          />
+          <KPICard
+            title="Taxa de Conclusão"
+            numericValue={kpis ? kpis.taxaConclusao : null}
+            formatFn={(v) => `${v.toFixed(1)}%`}
+            icon={<TrendingUp className="h-5 w-5 text-teal-600" />}
+            loading={kpisLoading}
+            colorClass="border-l-4 border-l-teal-500"
+          />
         </div>
 
         {/* Badges de status de pedidos */}
@@ -219,6 +242,30 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Alertas de Coleta Atrasada */}
+        {alertasColeta.length > 0 && (
+          <Card className="border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 gap-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                ⚠️ {alertasColeta.length} {alertasColeta.length === 1 ? "pedido" : "pedidos"} com coleta atrasada
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1.5">
+              {alertasColeta
+                .sort((a: any, b: any) => b.diasAtraso - a.diasAtraso)
+                .slice(0, 3)
+                .map((alerta: any) => (
+                  <p key={alerta.pedidoId} className="text-xs text-amber-800 dark:text-amber-300">
+                    <strong>{alerta.nomeCliente}</strong> — entregue há {alerta.diasAtraso} dias
+                  </p>
+                ))}
+              {alertasColeta.length > 3 && (
+                <p className="text-xs text-amber-700 dark:text-amber-400">+{alertasColeta.length - 3} outro(s) — veja em Estoque</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -346,6 +393,41 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : null}
+            </CardContent>
+          </Card>
+
+          {/* Ranking de Colaboradores */}
+          <Card className="gap-2">
+            <CardHeader>
+              <CardTitle className="text-sm sm:text-base">Ranking de Colaboradores</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {rankingLoading ? (
+                <Skeleton className="h-64 w-full" />
+              ) : !ranking || ranking.length === 0 ? (
+                <EmptyState icon={BarChart3} message="Sem dados no período" />
+              ) : (
+                <div className="space-y-3">
+                  {ranking.map((colab: any, idx: number) => (
+                    <div key={colab.colaboradorId} className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                        {idx + 1}
+                      </div>
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                        {colab.nome.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{colab.nome}</p>
+                        <p className="text-xs text-muted-foreground">{colab.totalPedidos} pedido(s)</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-semibold">{formatCentavos(colab.totalVendas)}</p>
+                        <p className="text-xs text-muted-foreground">comissão: {formatCentavos(colab.totalComissao)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

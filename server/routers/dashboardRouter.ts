@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, isNotNull, lte, sql, sum, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens, kitsPedido, kits } from "../../drizzle/schema";
+import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens, kitsPedido, kits, comissoes } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -93,6 +93,9 @@ export const dashboardRouter = router({
         taxasEntrega: 0,
         totalDespesas: 0,
         saldo: 0,
+        totalPedidosNoPeriodo: 0,
+        taxaConclusao: 0,
+        ticketMedio: 0,
         pedidosPorStatus: [] as { status: string; count: number }[],
         top5Itens: [] as { nome: string; totalQuantidade: number }[],
       };
@@ -132,8 +135,13 @@ export const dashboardRouter = router({
         )
         .groupBy(pedidos.status);
 
-      // Top 5 itens mais alugados
-      const top5 = await db
+      const totalPedidosNoPeriodo = pedidosStatus.reduce((acc, p) => acc + Number(p.count), 0);
+      const pedidosConcluidos = Number(pedidosStatus.find((p) => p.status === "Concluido")?.count ?? 0);
+      const taxaConclusao = totalPedidosNoPeriodo > 0 ? (pedidosConcluidos / totalPedidosNoPeriodo) * 100 : 0;
+      const ticketMedio = totalPedidosNoPeriodo > 0 ? Math.round(faturamentoTotal / totalPedidosNoPeriodo) : 0;
+
+      // Top 5 itens mais alugados (itens diretos + kits, ranqueados juntos)
+      const topItensDiretos = await db
         .select({
           nome: itens.nome,
           totalQuantidade: sum(itensPedido.quantidade),
@@ -141,23 +149,35 @@ export const dashboardRouter = router({
         .from(itensPedido)
         .innerJoin(itens, eq(itensPedido.itemId, itens.id))
         .innerJoin(pedidos, eq(itensPedido.pedidoId, pedidos.id))
-        .where(
-          and(
-            gte(pedidos.createdAt, input.dataInicio),
-            lte(pedidos.createdAt, input.dataFim)
-          )
-        )
-        .groupBy(itens.id, itens.nome)
-        .orderBy(desc(sum(itensPedido.quantidade)))
-        .limit(5);
+        .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
+        .groupBy(itens.id, itens.nome);
+
+      const topKits = await db
+        .select({
+          nome: kits.nome,
+          totalQuantidade: sum(kitsPedido.quantidade),
+        })
+        .from(kitsPedido)
+        .innerJoin(kits, eq(kitsPedido.kitId, kits.id))
+        .innerJoin(pedidos, eq(kitsPedido.pedidoId, pedidos.id))
+        .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
+        .groupBy(kits.id, kits.nome);
+
+      const top5 = [...topItensDiretos, ...topKits]
+        .map((t) => ({ nome: t.nome, totalQuantidade: Number(t.totalQuantidade ?? 0) }))
+        .sort((a, b) => b.totalQuantidade - a.totalQuantidade)
+        .slice(0, 5);
 
       return {
         faturamentoTotal,
         taxasEntrega,
         totalDespesas,
         saldo,
+        totalPedidosNoPeriodo,
+        taxaConclusao,
+        ticketMedio,
         pedidosPorStatus: pedidosStatus.map(p => ({ status: p.status, count: Number(p.count) })),
-        top5Itens: top5.map(t => ({ nome: t.nome, totalQuantidade: Number(t.totalQuantidade ?? 0) })),
+        top5Itens: top5,
       };
     }),
 
@@ -260,5 +280,46 @@ export const dashboardRouter = router({
       }
 
       return semanas;
+    }),
+
+  getRankingColaboradores: protectedProcedure
+    .input(z.object({ dataInicio: z.coerce.date(), dataFim: z.coerce.date() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const vendas = await db
+        .select({
+          colaboradorId: pedidos.colaboradorId,
+          nome: colaboradores.nome,
+          totalVendas: sum(pedidos.valorTotal),
+          totalPedidos: count(),
+        })
+        .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
+        .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
+        .groupBy(pedidos.colaboradorId, colaboradores.nome);
+
+      const comissoesPorColab = await db
+        .select({
+          colaboradorId: comissoes.colaboradorId,
+          totalComissao: sum(comissoes.valor),
+        })
+        .from(comissoes)
+        .where(and(gte(comissoes.dataCalculo, input.dataInicio), lte(comissoes.dataCalculo, input.dataFim)))
+        .groupBy(comissoes.colaboradorId);
+
+      const comissaoMap = new Map(comissoesPorColab.map((c) => [c.colaboradorId, Number(c.totalComissao ?? 0)]));
+
+      return vendas
+        .map((v) => ({
+          colaboradorId: v.colaboradorId,
+          nome: v.nome,
+          totalVendas: Number(v.totalVendas ?? 0),
+          totalPedidos: Number(v.totalPedidos),
+          totalComissao: comissaoMap.get(v.colaboradorId) ?? 0,
+        }))
+        .sort((a, b) => b.totalVendas - a.totalVendas)
+        .slice(0, 5);
     }),
 });

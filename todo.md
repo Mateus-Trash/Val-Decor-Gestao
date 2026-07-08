@@ -130,3 +130,12 @@
 - [x] Tarefa 3: Composição do pedido no dialog do dia — Calendário.tsx (backend + frontend)
 - [x] Tarefa 4: Composição do pedido na Logística — Logistica.tsx (backend + frontend)
 - [x] pnpm type-check + pnpm test, checkpoint e push
+
+## Dashboard: Top 5 com kits, ticket médio, taxa conclusão, ranking colaboradores
+- [x] Backend: Top 5 itens+kits juntos no getKPIs
+- [x] Backend: Ticket médio e taxa de conclusão no getKPIs
+- [x] Backend: Novo endpoint getRankingColaboradores
+- [x] Frontend: 2 novos KPI cards (ticket médio, taxa conclusão)
+- [x] Frontend: Card de alertas de coleta atrasada
+- [x] Frontend: Card de ranking de colaboradores
+- [x] pnpm check + pnpm test, checkpoint e push
