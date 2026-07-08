@@ -25,7 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { ShoppingCart, Plus, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { ShoppingCart, Plus, Pencil, Trash2, MoreVertical, User, Calendar, DollarSign, Truck } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -275,67 +276,67 @@ export default function Pedidos() {
             <EmptyState icon={ShoppingCart} message="Nenhum pedido encontrado." actionLabel="Novo Pedido" onAction={abrirCriar} />
           ) : (
             pedidosFiltrados.map((p) => (
-              <Card key={p.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-semibold">#{p.id}</p>
-                      <p className="text-xs text-muted-foreground">{p.nomeCliente || "Sem cliente"}</p>
-                    </div>
-                    <Select
-                      value={p.status}
-                      onValueChange={(value) =>
-                        updateStatusMutation.mutate({ id: p.id, status: value as typeof statusOptions[number] })
-                      }
-                    >
-                      <SelectTrigger className={`w-28 h-8 text-xs border ${statusColors[p.status] ?? ""}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statusOptions.map((s) => (
-                          <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <p className="text-xs"><span className="font-medium">Colaborador:</span> {p.nomeColaborador}</p>
-                  <p className="text-xs"><span className="font-medium">Data:</span> {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}</p>
-                  <p className="text-xs"><span className="font-medium">Total:</span> {formatCurrency(p.valorTotal)}</p>
-                  <p className="text-xs"><span className="font-medium">Taxa de entrega:</span> {formatReais(p.valorTaxaEntrega)}</p>
-                  {(p.composicaoItens.length > 0 || p.composicaoKits.length > 0) && (
-                    <div className="mt-2 rounded-md bg-muted/50 p-2 space-y-1">
-                      <p className="text-xs font-semibold text-muted-foreground">Composição</p>
-                      {p.composicaoItens.map((item, idx) => (
-                        <div key={`item-${idx}`} className="flex justify-between text-xs">
-                          <span>{item.nome}</span>
-                          <span className="font-medium">{item.quantidade}x</span>
-                        </div>
+              <EntityCard
+                key={p.id}
+                title={`#${p.id}`}
+                subtitle={p.nomeCliente || "Sem cliente"}
+                badge={
+                  <Select
+                    value={p.status}
+                    onValueChange={(value) =>
+                      updateStatusMutation.mutate({ id: p.id, status: value as typeof statusOptions[number] })
+                    }
+                  >
+                    <SelectTrigger className={`w-28 h-8 text-xs border ${statusColors[p.status] ?? ""}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((s) => (
+                        <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
                       ))}
-                      {p.composicaoKits.map((kit, idx) => (
-                        <div key={`kit-${idx}`} className="flex justify-between text-xs">
-                          <span>{kit.nome}</span>
-                          <span className="font-medium">{kit.quantidade}x</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="flex gap-2 pt-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => abrirEditar(p.id)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => confirmarDelete(p.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    </SelectContent>
+                  </Select>
+                }
+                fields={[
+                  { icon: User, label: "Colaborador", value: p.nomeColaborador },
+                  { icon: Calendar, label: "Data", value: p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—" },
+                  { icon: DollarSign, label: "Total", value: formatCurrency(p.valorTotal) },
+                  { icon: Truck, label: "Taxa Entrega", value: formatReais(p.valorTaxaEntrega) },
+                ]}
+                actions={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => abrirEditar(p.id)}>
+                        <Pencil className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => confirmarDelete(p.id)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+              >
+                {(p.composicaoItens.length > 0 || p.composicaoKits.length > 0) && (
+                  <div className="rounded-md bg-muted/50 p-2 space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground">Composição</p>
+                    {p.composicaoItens.map((item, idx) => (
+                      <div key={`item-${idx}`} className="flex justify-between text-xs">
+                        <span>{item.nome}</span>
+                        <span className="font-medium">{item.quantidade}x</span>
+                      </div>
+                    ))}
+                    {p.composicaoKits.map((kit, idx) => (
+                      <div key={`kit-${idx}`} className="flex justify-between text-xs">
+                        <span>{kit.nome}</span>
+                        <span className="font-medium">{kit.quantidade}x</span>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              </Card>
+                )}
+              </EntityCard>
             ))
           )}
         </div>

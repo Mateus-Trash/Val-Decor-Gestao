@@ -34,7 +34,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Layers, Plus, Pencil, Trash2, X, MoreVertical } from "lucide-react";
+import { Layers, Plus, Pencil, Trash2, X, MoreVertical, DollarSign } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -268,33 +269,31 @@ export default function Kits() {
             <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
           ) : (
             kits.map((kit) => (
-              <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-semibold">{kit.nome}</p>
-                      <p className="text-xs text-muted-foreground">{kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—"}</p>
-                    </div>
-                    <p className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</p>
-                  </div>
-                  <p className="text-xs"><span className="font-medium">Valor:</span> {formatCurrency(kit.valorAluguel)}</p>
-                 <div className="flex gap-2 pt-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => abrirEditar(kit)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                 </div>
-               </div>
-             </Card>
+              <EntityCard
+                key={kit.id}
+                title={kit.nome}
+                subtitle={kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—"}
+                badge={<span className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</span>}
+                fields={[
+                  { icon: DollarSign, label: "Valor", value: formatCurrency(kit.valorAluguel) },
+                  { icon: Layers, label: "Itens", value: String(kit.itens.length) },
+                ]}
+                actions={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => abrirEditar(kit)}>
+                        <Pencil className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+              />
             ))
           )}
         </div>

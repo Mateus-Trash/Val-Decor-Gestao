@@ -26,7 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { UserCheck, Plus, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { UserCheck, Plus, Pencil, Trash2, MoreVertical, Mail, Phone, DollarSign, ShoppingCart } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -265,38 +266,33 @@ export default function Colaboradores() {
             colaboradoresFiltrados.map((c) => {
               const resumo = resumoMap.get(c.id);
               return (
-                <Card key={c.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="font-semibold">{c.nome}</p>
-                        <p className="text-xs text-muted-foreground">{c.funcao || "—"}</p>
-                      </div>
-                      <p className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{c.percentualComissao}%</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="font-medium">Email:</span> {c.email || "—"}</div>
-                      <div><span className="font-medium">Tel:</span> {c.telefone || "—"}</div>
-                      <div><span className="font-medium">Comissão:</span> {resumo ? (resumo.totalComissao / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0,00"}</div>
-                      <div><span className="font-medium">Pedidos:</span> {resumo?.quantidadePedidos ?? 0}</div>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => abrirEditar(c)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => confirmarDelete(c.id)} className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </Card>
+                <EntityCard
+                  key={c.id}
+                  title={c.nome}
+                  subtitle={c.funcao || "—"}
+                  badge={<span className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{c.percentualComissao}%</span>}
+                  fields={[
+                    { icon: Mail, label: "Email", value: c.email || "—" },
+                    { icon: Phone, label: "Tel", value: c.telefone || "—" },
+                    { icon: DollarSign, label: "Comissão", value: resumo ? (resumo.totalComissao / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "R$ 0,00" },
+                    { icon: ShoppingCart, label: "Pedidos", value: String(resumo?.quantidadePedidos ?? 0) },
+                  ]}
+                  actions={
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => abrirEditar(c)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmarDelete(c.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  }
+                />
               );
             })
           )}

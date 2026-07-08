@@ -34,7 +34,8 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical } from "lucide-react";
+import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical, Hash } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -374,42 +375,31 @@ export default function Financeiro() {
               const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
               const isManual = t.pedidoId === null;
               return (
-                <Card key={t.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="font-semibold">{t.descricao || "—"}</p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}</p>
-                      </div>
-                      <Badge variant="outline" className={`text-xs ${badge.className}`}>
-                        {badge.label}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="font-medium">Pedido:</span> {t.pedidoId ? `#${t.pedidoId}` : "—"}</div>
-                      <div className={`text-right font-medium ${t.tipo === "despesa" ? "text-red-600" : "text-green-600"}`}>
-                        {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
-                      </div>
-                    </div>
-                   {isManual && (
-                     <div className="flex gap-2 pt-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => abrirEditar(t)}>
-                              <Pencil className="h-4 w-4 mr-2" /> Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
-                              <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                     </div>
-                   )}
-                  </div>
-                </Card>
+                <EntityCard
+                  key={t.id}
+                  title={t.descricao || "—"}
+                  subtitle={format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
+                  badge={<Badge variant="outline" className={`text-xs ${badge.className}`}>{badge.label}</Badge>}
+                  fields={[
+                    { icon: Hash, label: "Pedido", value: t.pedidoId ? `#${t.pedidoId}` : "—" },
+                    { icon: DollarSign, label: "Valor", value: `${t.tipo === "despesa" ? "−" : "+"}${formatCurrency(t.valor)}` },
+                  ]}
+                  actions={isManual ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => abrirEditar(t)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : undefined}
+                />
               );
             })
           )}

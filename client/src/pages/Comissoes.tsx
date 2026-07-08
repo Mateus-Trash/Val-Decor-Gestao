@@ -20,7 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
-import { Wallet, CheckCircle2, Clock, CircleDollarSign } from "lucide-react";
+import { Wallet, CheckCircle2, Clock, Calendar, DollarSign } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -295,46 +296,41 @@ export default function Comissoes() {
             <EmptyState icon={Wallet} message="Nenhuma comissão encontrada." />
           ) : (
             comissoesFiltradas.map((c) => (
-              <Card
+              <EntityCard
                 key={c.id}
-                className={`border shadow-sm transition-colors duration-200 hover:bg-muted/50 ${selected.has(c.id) ? "border-primary bg-primary/5" : ""}`}
+                title={c.colaboradorNome ?? "—"}
+                subtitle={`#${c.pedidoId} — ${c.pedidoCliente}`}
+                badge={
+                  c.pago ? (
+                    <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs shrink-0 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
+                      Pago
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs shrink-0 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
+                      Pendente
+                    </Badge>
+                  )
+                }
+                fields={[
+                  { icon: DollarSign, label: "Valor", value: formatCurrency(c.valor) },
+                  { icon: Calendar, label: "Calculado", value: formatDate(c.dataCalculo) },
+                ]}
               >
-                <CardContent className="p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Checkbox
-                        checked={selected.has(c.id)}
-                        onCheckedChange={() => toggleOne(c.id)}
-                        aria-label={`Selecionar comissão ${c.id}`}
-                        className="shrink-0"
-                      />
-                      <span className="font-medium text-sm truncate">{c.colaboradorNome ?? "—"}</span>
-                    </div>
-                    {c.pago ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-300 border text-xs shrink-0 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
-                        Pago
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300 border text-xs shrink-0 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800">
-                        Pendente
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <CircleDollarSign className="h-3.5 w-3.5 shrink-0" />
-                    <span>#{c.pedidoId} — {c.pedidoCliente}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-foreground">{formatCurrency(c.valor)}</span>
-                    <span className="text-xs text-muted-foreground">{formatDate(c.dataCalculo)}</span>
-                  </div>
-                  {c.pago && c.dataPagamento && (
-                    <p className="text-xs text-muted-foreground">
-                      Pago em: {formatDate(c.dataPagamento)}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={selected.has(c.id)}
+                    onCheckedChange={() => toggleOne(c.id)}
+                    aria-label={`Selecionar comissão ${c.id}`}
+                    className="shrink-0"
+                  />
+                  <span className="text-xs text-muted-foreground">Selecionar</span>
+                </div>
+                {c.pago && c.dataPagamento && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pago em: {formatDate(c.dataPagamento)}
+                  </p>
+                )}
+              </EntityCard>
             ))
           )}
         </div>

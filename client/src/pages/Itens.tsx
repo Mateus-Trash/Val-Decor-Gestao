@@ -29,7 +29,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
-import { Package, Plus, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, MoreVertical, DollarSign, Hash } from "lucide-react";
+import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -259,38 +260,33 @@ export default function Itens() {
             <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
           ) : (
             itensFiltrados.map((item) => (
-              <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-semibold">{item.nome}</p>
-                      <p className="text-xs text-muted-foreground">{item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}</p>
-                    </div>
-                    <div>{getSituacao(item.quantidadeDisponivel)}</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="font-medium">Aluguel:</span> {formatCurrency(item.valorAluguel)}</div>
-                    <div><span className="font-medium">Custo:</span> {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}</div>
-                    <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
-                    <div><span className="font-medium">Disponível:</span> {item.quantidadeDisponivel}</div>
-                  </div>
-                 <div className="flex gap-2 pt-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => abrirEditar(item)}>
-                          <Pencil className="h-4 w-4 mr-2" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                 </div>
-               </div>
-             </Card>
+              <EntityCard
+                key={item.id}
+                title={item.nome}
+                subtitle={item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}
+                badge={getSituacao(item.quantidadeDisponivel)}
+                fields={[
+                  { icon: DollarSign, label: "Aluguel", value: formatCurrency(item.valorAluguel) },
+                  { icon: DollarSign, label: "Custo", value: item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—" },
+                  { icon: Hash, label: "Total", value: String(item.quantidadeTotal) },
+                  { icon: Package, label: "Disponível", value: String(item.quantidadeDisponivel) },
+                ]}
+                actions={
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => abrirEditar(item)}>
+                        <Pencil className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                }
+              />
             ))
           )}
         </div>
