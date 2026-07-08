@@ -42,6 +42,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Link } from "wouter";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -464,7 +465,11 @@ export default function Financeiro() {
                           <div className="flex items-center gap-1.5">
                             <Package className="h-3 w-3 text-muted-foreground" />
                             <span className="text-muted-foreground">Pedido:</span>
-                            <span className="font-medium font-mono">{t.pedidoId ? "#" + t.pedidoId : "—"}</span>
+                            {t.pedidoId ? (
+                              <Link href="/pedidos" className="font-medium font-mono text-primary hover:underline">#{t.pedidoId}</Link>
+                            ) : (
+                              <span className="font-medium font-mono">—</span>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
