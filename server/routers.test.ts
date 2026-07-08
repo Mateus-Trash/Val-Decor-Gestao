@@ -495,3 +495,61 @@ describe("alertas de coleta atrasada", () => {
     expect(alertaDoPedido!.itensAfetados[0].quantidade).toBe(3);
   });
 });
+
+describe("aviso de dependência do dia anterior", () => {
+  it("should warn when previous day's units are needed to cover today's bookings", async () => {
+    const ctx = createAuthContext();
+    const caller = appRouter.createCaller(ctx);
+    const sufixo = Date.now();
+
+    const colaboradorResult = await caller.colaboradores.create({
+      nome: `Colaborador Dep ${sufixo}`,
+      email: `dep${sufixo}@example.com`,
+      senha: "123456",
+    });
+    const colabs = await caller.colaboradores.list();
+    const colaboradorId = colabs.find((c: any) => c.email === `dep${sufixo}@example.com`)!.id;
+
+    const itemResult = await caller.itens.create({
+      nome: `Item Dependencia Teste ${sufixo}`,
+      valorAluguel: 1000,
+      quantidadeTotal: 100,
+    });
+    const itemId = (itemResult as any)[0].insertId;
+
+    const dia1 = new Date("2026-07-06T10:00:00");
+    const dia2 = new Date("2026-07-07T10:00:00");
+
+    const pedido1 = await caller.pedidos.create({
+      nomeCliente: "Cliente Dia 1",
+      colaboradorId,
+      dataEvento: dia1,
+      dataEntrega: dia1,
+      ruaEntrega: "Rua A",
+      bairroEntrega: "Centro",
+      numeroEntrega: "1",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 100, valorUnitario: 1000 }],
+      kits: [],
+    });
+    await caller.pedidos.updateStatus({ id: pedido1.pedidoId, status: "EntregueNaoPago" });
+
+    await caller.pedidos.create({
+      nomeCliente: "Cliente Dia 2",
+      colaboradorId,
+      dataEvento: dia2,
+      dataEntrega: dia2,
+      ruaEntrega: "Rua B",
+      bairroEntrega: "Centro",
+      numeroEntrega: "2",
+      valorTaxaEntrega: 0,
+      itens: [{ itemId, quantidade: 100, valorUnitario: 1000 }],
+      kits: [],
+    });
+
+    const disponibilidadeDia2 = await caller.itens.getDisponibilidadePorData({ data: dia2 });
+    const itemDia2 = disponibilidadeDia2.find((i: any) => i.id === itemId);
+    expect(itemDia2?.disponivel).toBe(0);
+    expect(itemDia2?.avisoRecolherDiaAnterior).toBe(100);
+  });
+});

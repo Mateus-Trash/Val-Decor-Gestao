@@ -31,6 +31,8 @@ export default function Estoque() {
   const { data: kitsList = [], isLoading: kitsLoading } = trpc.kits.list.useQuery();
   const { data: alertasColeta = [] } = trpc.itens.getAlertasColeta.useQuery();
 
+  const diaAnteriorLabel = format(new Date(dataConsulta.getTime() - 86400000), "dd/MM");
+
   const itensComDisponibilidade = useMemo(
     () =>
       itensList.map((item) => {
@@ -38,6 +40,7 @@ export default function Estoque() {
         return {
           ...item,
           disponivel: disp?.disponivel ?? item.quantidadeTotal,
+          avisoRecolherDiaAnterior: disp?.avisoRecolherDiaAnterior ?? null,
         };
       }),
     [itensList, itensDisponibilidade]
@@ -141,7 +144,14 @@ export default function Estoque() {
                     <TableBody>
                       {itensComDisponibilidade.map((item) => (
                         <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
-                          <TableCell className="font-medium">{item.nome}</TableCell>
+                          <TableCell className="font-medium">
+                            {item.nome}
+                            {item.avisoRecolherDiaAnterior && (
+                              <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
+                                ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
+                              </p>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
                           <TableCell className="text-right">{item.disponivel}</TableCell>
                           <TableCell className="text-center">{getSituacao(item.disponivel)}</TableCell>
@@ -169,7 +179,14 @@ export default function Estoque() {
                 <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-start gap-2">
-                      <p className="font-semibold">{item.nome}</p>
+                      <div>
+                        <p className="font-semibold">{item.nome}</p>
+                        {item.avisoRecolherDiaAnterior && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
+                          </p>
+                        )}
+                      </div>
                       <div>{getSituacao(item.disponivel)}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">

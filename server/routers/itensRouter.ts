@@ -119,12 +119,22 @@ export const itensRouter = router({
       if (!db) return [];
       const todosItens = await db.select().from(itens);
       const reservado = await getReservadoPorItemNaData(db, input.data);
-      return todosItens.map((item) => ({
-        id: item.id,
-        nome: item.nome,
-        quantidadeTotal: item.quantidadeTotal,
-        disponivel: item.quantidadeTotal - (reservado.get(item.id) || 0),
-      }));
+
+      const diaAnterior = new Date(input.data);
+      diaAnterior.setDate(diaAnterior.getDate() - 1);
+      const reservadoDiaAnterior = await getReservadoPorItemNaData(db, diaAnterior);
+
+      return todosItens.map((item) => {
+        const disponivel = item.quantidadeTotal - (reservado.get(item.id) || 0);
+        const emAbertoDiaAnterior = reservadoDiaAnterior.get(item.id) || 0;
+        return {
+          id: item.id,
+          nome: item.nome,
+          quantidadeTotal: item.quantidadeTotal,
+          disponivel,
+          avisoRecolherDiaAnterior: disponivel <= 0 && emAbertoDiaAnterior > 0 ? emAbertoDiaAnterior : null,
+        };
+      });
     }),
   getAlertasColeta: protectedProcedure.query(async () => {
     const db = await getDb();
