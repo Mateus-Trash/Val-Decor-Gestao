@@ -15,10 +15,9 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
 
   const user: AuthenticatedUser = {
     id: 1,
-    openId: "sample-user",
     email: "sample@example.com",
     name: "Sample User",
-    loginMethod: "manus",
+    passwordHash: "$2a$10$fakehashfortest",
     role: "user",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -27,6 +26,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
 
   const ctx: TrpcContext = {
     user,
+    colaborador: null,
     req: {
       protocol: "https",
       headers: {},

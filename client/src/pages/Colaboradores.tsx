@@ -33,7 +33,9 @@ import { toast } from "sonner";
 
 const colaboradorSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  email: z.string().email("Email inválido"),
+  senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional().or(z.literal("")),
+  novaSenha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional().or(z.literal("")),
   telefone: z.string().optional(),
   funcao: z.string().optional(),
   percentualComissao: z.number().int().min(0).max(100).optional(),
@@ -104,7 +106,7 @@ export default function Colaboradores() {
 
   function abrirCriar() {
     setEditandoId(null);
-    reset({ nome: "", email: "", telefone: "", funcao: "", percentualComissao: 10 });
+    reset({ nome: "", email: "", senha: "", novaSenha: "", telefone: "", funcao: "", percentualComissao: 10 });
     setDialogOpen(true);
   }
 
@@ -113,6 +115,8 @@ export default function Colaboradores() {
     reset({
       nome: c.nome,
       email: c.email ?? "",
+      senha: "",
+      novaSenha: "",
       telefone: c.telefone ?? "",
       funcao: c.funcao ?? "",
       percentualComissao: c.percentualComissao,
@@ -127,15 +131,25 @@ export default function Colaboradores() {
   }
 
   function onSubmit(data: ColaboradorForm) {
-    const payload = {
-      ...data,
-      email: data.email || undefined,
-      percentualComissao: data.percentualComissao ?? 10,
-    };
     if (editandoId !== null) {
-      updateMutation.mutate({ id: editandoId, ...payload });
+      updateMutation.mutate({
+        id: editandoId,
+        nome: data.nome,
+        email: data.email,
+        telefone: data.telefone,
+        funcao: data.funcao,
+        percentualComissao: data.percentualComissao ?? 10,
+        novaSenha: data.novaSenha || undefined,
+      });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate({
+        nome: data.nome,
+        email: data.email,
+        senha: data.senha || "",
+        telefone: data.telefone,
+        funcao: data.funcao,
+        percentualComissao: data.percentualComissao ?? 10,
+      });
     }
   }
 
@@ -315,7 +329,7 @@ export default function Colaboradores() {
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input id="email" type="email" {...register("email")} placeholder="email@exemplo.com" />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email.message}</p>
@@ -332,6 +346,24 @@ export default function Colaboradores() {
               <Label htmlFor="funcao">Função</Label>
               <Input id="funcao" {...register("funcao")} placeholder="Ex: Entregador, Gerente" />
             </div>
+
+            {editandoId === null ? (
+              <div className="space-y-1">
+                <Label htmlFor="senha">Senha *</Label>
+                <Input id="senha" type="password" {...register("senha")} placeholder="Mínimo 6 caracteres" />
+                {errors.senha && (
+                  <p className="text-sm text-destructive">{errors.senha.message}</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label htmlFor="novaSenha">Nova senha (deixe em branco para manter a atual)</Label>
+                <Input id="novaSenha" type="password" {...register("novaSenha")} placeholder="Nova senha" />
+                {errors.novaSenha && (
+                  <p className="text-sm text-destructive">{errors.novaSenha.message}</p>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isPending}>

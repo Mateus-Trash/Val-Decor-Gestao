@@ -88,3 +88,25 @@
 - [x] client/src/pages/Pedidos.tsx: remover dataColeta, usar getDisponibilidadePorData
 - [x] Remover referências remanescentes a dataColeta em todo o projeto
 - [x] pnpm check e pnpm test: corrigir testes quebrados
+
+## Substituição de Auth: Manus OAuth → Login próprio email/senha
+- [x] Instalar bcryptjs, jsonwebtoken e @types
+- [x] Schema: remover openId/loginMethod de users, adicionar passwordHash, tornar email notNull unique
+- [x] Schema: adicionar userId (int, nullable, unique) em colaboradores
+- [x] Gerar e aplicar migration
+- [x] Criar server/_core/authUtils.ts (hash, verify, signToken, verifyToken)
+- [x] Atualizar server/_core/context.ts: remover sdk, usar verifyToken + buscar colaborador
+- [x] Adicionar auth.login mutation em server/routers.ts
+- [x] auth.me retornar colaboradorId vinculado
+- [x] colaboradoresRouter.create: criar user + colaborador em transação
+- [x] colaboradoresRouter.update: campo novaSenha opcional
+- [x] Deletar server/_core/oauth.ts e sdk.ts, remover de index.ts
+- [x] Criar server/scripts/createUser.ts (CLI admin)
+- [x] Criar client/src/pages/Login.tsx
+- [x] Atualizar App.tsx com rota /login
+- [x] Atualizar client/src/const.ts: remover getLoginUrl
+- [x] Atualizar useAuth.ts: redirect para /login
+- [x] DashboardLayout.tsx: useAuth com redirectOnUnauthenticated
+- [x] Colaboradores.tsx: campo senha no criar, novaSenha no editar
+- [x] NovoPedidoDialog.tsx: pré-preencher colaboradorId se vinculado
+- [x] pnpm check e pnpm test sem erros

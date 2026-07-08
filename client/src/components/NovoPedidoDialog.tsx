@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Plus, Trash2 } from "lucide-react";
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const pedidoSchema = z.object({
   nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
@@ -46,9 +46,13 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
   const [qtdKit, setQtdKit] = useState<string>("1");
 
   const utils = trpc.useUtils();
+  const { data: meData } = trpc.auth.me.useQuery();
   const { data: colaboradoresList = [] } = trpc.colaboradores.list.useQuery();
   const { data: itensList = [] } = trpc.itens.list.useQuery();
   const { data: kitsList = [] } = trpc.kits.list.useQuery();
+
+  const colaboradorVinculado = meData?.colaboradorId ?? null;
+  const colaboradorNome = meData?.colaboradorNome ?? null;
 
   const createMutation = trpc.pedidos.create.useMutation({
     onSuccess: () => {
@@ -64,6 +68,12 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
   const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<PedidoForm>({
     resolver: zodResolver(pedidoSchema),
   });
+
+  useEffect(() => {
+    if (colaboradorVinculado && open) {
+      reset((prev) => ({ ...prev, colaboradorId: String(colaboradorVinculado) }));
+    }
+  }, [colaboradorVinculado, open, reset]);
 
   const dataEntregaValue = watch("dataEntrega");
   const dataParaDisponibilidade = useMemo(() => {
@@ -224,7 +234,12 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
 
               <div>
                 <Label htmlFor="colaboradorId" className="text-xs">Colaborador</Label>
-                <Controller
+                {colaboradorVinculado ? (
+                  <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-sm">
+                    {colaboradorNome || "Colaborador vinculado"}
+                  </div>
+                ) : (
+                  <Controller
                   name="colaboradorId"
                   control={control}
                   render={({ field }) => (
@@ -242,6 +257,7 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial }: No
                     </Select>
                   )}
                 />
+                )}
                 {errors.colaboradorId && <p className="text-xs text-red-500 mt-1">{errors.colaboradorId.message}</p>}
               </div>
 

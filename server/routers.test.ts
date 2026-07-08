@@ -10,10 +10,9 @@ type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 function createAuthContext(): TrpcContext {
   const user: AuthenticatedUser = {
     id: 1,
-    openId: "test-user",
     email: "test@example.com",
     name: "Test User",
-    loginMethod: "manus",
+    passwordHash: "$2a$10$fakehashfortest",
     role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -22,6 +21,7 @@ function createAuthContext(): TrpcContext {
 
   const ctx: TrpcContext = {
     user,
+    colaborador: null,
     req: {
       protocol: "https",
       headers: {},
@@ -52,6 +52,7 @@ describe("Routers", () => {
         await caller.colaboradores.create({
           nome: "Test Colaborador",
           email: "",
+          senha: "123456",
         });
         expect.fail("Should have thrown validation error");
       } catch (error: any) {
@@ -66,6 +67,7 @@ describe("Routers", () => {
         const result = await caller.colaboradores.create({
           nome: "Test Colaborador 2",
           email: "test2@example.com",
+          senha: "123456",
         });
         expect(result).toBeDefined();
       } catch (error: any) {
@@ -81,6 +83,7 @@ describe("Routers", () => {
         await caller.colaboradores.create({
           nome: "Test Colaborador",
           email: "test@example.com",
+          senha: "123456",
           percentualComissao: 150,
         });
         expect.fail("Should have thrown validation error");
@@ -261,7 +264,16 @@ describe("Routers", () => {
       const ctx = createAuthContext();
       const caller = appRouter.createCaller(ctx);
       const result = await caller.auth.me();
-      expect(result).toEqual(ctx.user);
+      expect(result).toMatchObject({
+        id: 1,
+        email: "test@example.com",
+        name: "Test User",
+        role: "admin",
+        colaboradorId: null,
+        colaboradorNome: null,
+      });
+      // passwordHash should NOT be exposed
+      expect((result as any).passwordHash).toBeUndefined();
     });
 
     it("should clear cookie on logout", async () => {
@@ -287,9 +299,12 @@ describe("pedidos - comissão", () => {
     const colaboradorResult = await caller.colaboradores.create({
       nome: `Colaborador Teste ${sufixo}`,
       email: `colaborador${sufixo}@example.com`,
+      senha: "123456",
       percentualComissao: 10,
     });
-    const colaboradorId = (colaboradorResult as any)[0].insertId;
+    // After refactor, create returns { success: true }; get the colaborador by listing
+    const colabs = await caller.colaboradores.list();
+    const colaboradorId = colabs.find(c => c.email === `colaborador${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
       nome: `Item Comissão Teste ${sufixo}`,
@@ -394,8 +409,10 @@ describe("estoque por data", () => {
     const colaboradorResult = await caller.colaboradores.create({
       nome: `Colaborador Estoque ${sufixo}`,
       email: `estoque${sufixo}@example.com`,
+      senha: "123456",
     });
-    const colaboradorId = (colaboradorResult as any)[0].insertId;
+    const colabs2 = await caller.colaboradores.list();
+    const colaboradorId = colabs2.find(c => c.email === `estoque${sufixo}@example.com`)!.id;
 
     const itemResult = await caller.itens.create({
       nome: `Item Estoque Teste ${sufixo}`,
