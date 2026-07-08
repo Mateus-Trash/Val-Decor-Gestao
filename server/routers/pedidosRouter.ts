@@ -253,6 +253,8 @@ export const pedidosRouter = router({
     .input(
       z.object({
         id: z.number().int().positive(),
+        nomeCliente: z.string().min(1, "Nome do cliente é obrigatório").optional(),
+        colaboradorId: z.number().int().positive().optional(),
         dataEvento: z.coerce.date().optional(),
         dataEntrega: z.coerce.date().optional(),
         ruaEntrega: z.string().optional(),
@@ -260,13 +262,185 @@ export const pedidosRouter = router({
         numeroEntrega: z.string().optional(),
         observacoes: z.string().optional(),
         valorTaxaEntrega: z.number().min(0).optional(),
+        itens: z.array(
+          z.object({
+            itemId: z.number().int().positive(),
+            quantidade: z.number().int().positive(),
+            valorUnitario: z.number().int().positive(),
+          })
+        ).optional(),
+        kits: z.array(
+          z.object({
+            kitId: z.number().int().positive(),
+            quantidade: z.number().int().positive(),
+            valorUnitario: z.number().int().positive(),
+          })
+        ).optional(),
       })
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const { id, ...campos } = input;
-      return db.update(pedidos).set(campos).where(eq(pedidos.id, id));
+      const { id, itens: novosItens, kits: novosKits, ...campos } = input;
+      const camposUpdate: Record<string, unknown> = { ...campos };
+
+      // Buscar pedido atual para saber a dataEntrega atual (necessário para estoque)
+      const [pedidoAtual] = await db
+        .select()
+        .from(pedidos)
+        .where(eq(pedidos.id, id))
+        .limit(1);
+      if (!pedidoAtual) throw new Error("Pedido não encontrado");
+
+      const dataEntregaEfetiva = input.dataEntrega ?? pedidoAtual.dataEntrega;
+
+      // Se itens ou kits foram enviados, refazer composição
+      if (novosItens !== undefined || novosKits !== undefined) {
+        const itensArr = novosItens ?? [];
+        const kitsArr = novosKits ?? [];
+
+        // ─── Consolidar demanda total por item (diretos + kits) ───
+        const demandaPorItem = new Map<number, number>();
+        for (const item of itensArr) {
+          demandaPorItem.set(item.itemId, (demandaPorItem.get(item.itemId) || 0) + item.quantidade);
+        }
+        for (const kit of kitsArr) {
+          const kitItensResult = await db
+            .select({ itemId: kitItens.itemId, quantidade: kitItens.quantidade })
+            .from(kitItens)
+            .where(eq(kitItens.kitId, kit.kitId));
+          for (const ki of kitItensResult) {
+            const qtdNecessaria = kit.quantidade * ki.quantidade;
+            demandaPorItem.set(ki.itemId, (demandaPorItem.get(ki.itemId) || 0) + qtdNecessaria);
+          }
+        }
+
+        // ─── Verificar estoque por data (excluindo o próprio pedido da reserva) ───
+        const reservadoNaData = await getReservadoPorItemNaData(db, dataEntregaEfetiva);
+        // Subtrair a reserva do próprio pedido (itens diretos + kits atuais)
+        const itensAtuais = await db
+          .select({ itemId: itensPedido.itemId, quantidade: itensPedido.quantidade })
+          .from(itensPedido)
+          .where(eq(itensPedido.pedidoId, id));
+        for (const ia of itensAtuais) {
+          reservadoNaData.set(ia.itemId, (reservadoNaData.get(ia.itemId) || 0) - ia.quantidade);
+        }
+        const kitsAtuais = await db
+          .select({ kitId: kitsPedido.kitId, quantidade: kitsPedido.quantidade })
+          .from(kitsPedido)
+          .where(eq(kitsPedido.pedidoId, id));
+        for (const ka of kitsAtuais) {
+          const composicao = await db.select().from(kitItens).where(eq(kitItens.kitId, ka.kitId));
+          for (const ki of composicao) {
+            const qtd = ka.quantidade * ki.quantidade;
+            reservadoNaData.set(ki.itemId, (reservadoNaData.get(ki.itemId) || 0) - qtd);
+          }
+        }
+
+        for (const [itemId, qtdTotal] of Array.from(demandaPorItem.entries())) {
+          const [itemDb] = await db
+            .select({ nome: itens.nome, quantidadeTotal: itens.quantidadeTotal })
+            .from(itens)
+            .where(eq(itens.id, itemId))
+            .limit(1);
+          if (!itemDb) throw new Error(`Item com id ${itemId} não encontrado`);
+          const disponivel = itemDb.quantidadeTotal - (reservadoNaData.get(itemId) || 0);
+          if (disponivel < qtdTotal) {
+            throw new Error(`Estoque insuficiente para ${itemDb.nome} nesta data`);
+          }
+        }
+
+        // ─── Deletar composição antiga ───
+        await db.delete(itensPedido).where(eq(itensPedido.pedidoId, id));
+        await db.delete(kitsPedido).where(eq(kitsPedido.pedidoId, id));
+
+        // ─── Inserir nova composição ───
+        for (const item of itensArr) {
+          await db.insert(itensPedido).values({
+            pedidoId: id,
+            itemId: item.itemId,
+            quantidade: item.quantidade,
+            valorUnitario: item.valorUnitario,
+          });
+        }
+        for (const kit of kitsArr) {
+          await db.insert(kitsPedido).values({
+            pedidoId: id,
+            kitId: kit.kitId,
+            quantidade: kit.quantidade,
+            valorUnitario: kit.valorUnitario,
+          });
+        }
+
+        // ─── Recalcular valorTotal ───
+        const totalItens = itensArr.reduce((acc, i) => acc + i.valorUnitario * i.quantidade, 0);
+        const totalKits = kitsArr.reduce((acc, k) => acc + k.valorUnitario * k.quantidade, 0);
+        const valorTotal = totalItens + totalKits;
+        camposUpdate.valorTotal = valorTotal;
+
+        // ─── Atualizar transação financeira de receita ───
+        const receitaExistente = await db
+          .select()
+          .from(transacoesFinanceiras)
+          .where(
+            and(
+              eq(transacoesFinanceiras.pedidoId, id),
+              eq(transacoesFinanceiras.tipo, "receita")
+            )
+          );
+        if (receitaExistente.length > 0) {
+          await db
+            .update(transacoesFinanceiras)
+            .set({ valor: valorTotal })
+            .where(eq(transacoesFinanceiras.id, receitaExistente[0].id));
+        } else {
+          await db.insert(transacoesFinanceiras).values({
+            pedidoId: id,
+            tipo: "receita",
+            descricao: `Pedido #${id}`,
+            valor: valorTotal,
+          });
+        }
+      }
+
+      // ─── Atualizar transação de taxa_entrega se valorTaxaEntrega mudou ───
+      if (input.valorTaxaEntrega !== undefined) {
+        const taxaExistente = await db
+          .select()
+          .from(transacoesFinanceiras)
+          .where(
+            and(
+              eq(transacoesFinanceiras.pedidoId, id),
+              eq(transacoesFinanceiras.tipo, "taxa_entrega")
+            )
+          );
+        const taxaValorCentavos = Math.round(input.valorTaxaEntrega * 100);
+
+        if (taxaValorCentavos > 0) {
+          if (taxaExistente.length > 0) {
+            await db
+              .update(transacoesFinanceiras)
+              .set({ valor: taxaValorCentavos })
+              .where(eq(transacoesFinanceiras.id, taxaExistente[0].id));
+          } else {
+            await db.insert(transacoesFinanceiras).values({
+              pedidoId: id,
+              tipo: "taxa_entrega",
+              descricao: `Taxa de entrega - Pedido #${id}`,
+              valor: taxaValorCentavos,
+            });
+          }
+        } else {
+          // Se taxa passou a 0, remover transação existente
+          if (taxaExistente.length > 0) {
+            await db
+              .delete(transacoesFinanceiras)
+              .where(eq(transacoesFinanceiras.id, taxaExistente[0].id));
+          }
+        }
+      }
+
+      return db.update(pedidos).set(camposUpdate).where(eq(pedidos.id, id));
     }),
 
   updateStatus: protectedProcedure
