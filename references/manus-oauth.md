@@ -41,47 +41,78 @@ const callbackUrl = `${window.location.origin}/api/oauth/callback`;
 // Returns: "https://myapp.manus.space/api/oauth/callback"
 ```
 
-On the backend, it's recommended to pass this as state:
+The callback redirect URI is carried in `state`. But `state` is fully
+attacker-controllable, so you MUST also bind it to the browser that started the
+login with a one-time nonce. Skip this and you have an OAuth login CSRF /
+session-fixation hole: a victim can be silently signed into the attacker's
+account (they redeem the attacker's `code`), leaking everything the victim then
+enters into that account.
+
+Expose login as an **action** (`startLogin`), not a URL getter. It mints the
+nonce, writes the cookie, and navigates — all at call time — and returns void, so
+there is nothing to stash across renders.
 
 ```ts
-// Frontend: Include origin in state when initiating login
-export const getLoginUrl = (returnPath?: string) => {
-  const redirectUrl = `${window.location.origin}/api/oauth/callback`;
+// Frontend: mint a one-time nonce, keep one copy in a host-only cookie and
+// echo the other in `state`, then navigate. Call this from an event handler.
+export const startLogin = () => {
+  const redirectUri = `${window.location.origin}/api/oauth/callback`;
 
-  // Encode origin and return path in state
-  const state = JSON.stringify({
-    origin: window.location.origin,
-    returnPath: returnPath || "/",
-  });
+  const nonce = crypto.randomUUID();
+  // The __Host- prefix forces the cookie host-only (Secure, Path=/, no Domain),
+  // so a sibling *.manus.space site cannot plant a matching value.
+  document.cookie = `__Host-oauth_state=${nonce}; Path=/; Max-Age=600; SameSite=None; Secure`;
+
+  const state = btoa(JSON.stringify({ redirectUri, nonce }));
 
   const params = new URLSearchParams({
     app_id: APP_ID,
-    redirect_url: redirectUrl,
-    state: state,
+    redirect_url: redirectUri,
+    state,
   });
 
-  return `${OAUTH_PORTAL_URL}/login?${params.toString()}`;
+  window.location.href = `${OAUTH_PORTAL_URL}/login?${params.toString()}`;
 };
 ```
 
-You can then parse this out using the `req.query` from the state:
+⚠️ **Never build the login URL during render** (`href={getLoginUrl()}`,
+`loginUrl={...}`, or a `useMemo`/default-prop that calls it). Because minting
+writes the nonce cookie, a re-render would overwrite the cookie and desync it
+from the `state` of an in-flight login — the callback then rejects the real
+login with `invalid oauth state`. Trigger it only from an event/effect:
+`<button onClick={() => startLogin()}>Sign in</button>`.
+
+On the callback, compare the two copies BEFORE redeeming the `code`, and fail
+closed on any mismatch:
 
 ```ts
-// Backend: Extract origin from state in the callback
+// Backend: verify the nonce, then exchange the code.
 router.get("/api/oauth/callback", async (req, res) => {
   const { code, state } = req.query;
+  const { redirectUri, nonce } = JSON.parse(atob(state as string));
 
-  // Parse the state to get frontend origin
-  const { origin, returnPath } = JSON.parse(state as string);
+  // ✅ CSRF guard: the state nonce must match the cookie set at login start.
+  const expected = parseCookie(req.headers.cookie ?? "")["__Host-oauth_state"];
+  if (!nonce || nonce !== expected) {
+    res.status(403).json({ error: "invalid oauth state" });
+    return; // never exchange the code on mismatch
+  }
+  res.clearCookie("__Host-oauth_state", { path: "/", secure: true, sameSite: "none" });
 
-  // Exchange code for token and set cookie
-  const token = await exchangeCodeForToken(code);
+  const token = await exchangeCodeForToken(code, redirectUri);
   res.cookie(COOKIE_NAME, token, cookieOptions);
 
-  // ✅ Redirect using the origin from state
-  res.redirect(`${origin}${returnPath}`);
+  // ✅ Redirect to a fixed in-app path — never to a URL taken from user input.
+  res.redirect("/");
 });
 ```
+
+**Two important properties of the nonce/cookie flow:**
+
+- **Mint the nonce only when you actually navigate to the login URL** (in the click handler or a redirect effect), never on every render — otherwise a re-render overwrites the cookie and desyncs it from an in-flight `state`, and your own guard 403s the login.
+- **`decodeOAuthState` must never throw** — the callback receives a fully user-controlled `state`, so a malformed value must fail closed (return an empty/nonce-less result → 403), not raise. On Express 4 an async throw here has no error wrapper and can hang the request or crash the process.
+
+The nonce cookie is `Secure`, so the login flow requires a context where cookies can be set and sent: production HTTPS works; local `http://localhost` works in Chrome/Firefox; a plain-HTTP non-localhost address or a cookie-blocked embedded context (Safari ITP iframe, some WebViews) will fail closed. Manus preview auto-login does not go through this redirect flow, so it is unaffected.
 
 ## Generating Invite URLs / Redirect URLs
 

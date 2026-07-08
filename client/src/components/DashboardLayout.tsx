@@ -19,25 +19,17 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl } from "@/const";
+import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, UserCheck, Package, Layers, ShoppingCart, DollarSign, Calendar as CalendarIcon, Truck, Warehouse, Wallet } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: CalendarIcon, label: "Calendário", path: "/calendario" },
-  { icon: UserCheck, label: "Colaboradores", path: "/colaboradores" },
-  { icon: Package, label: "Itens", path: "/itens" },
-  { icon: Layers, label: "Kits", path: "/kits" },
-    { icon: Warehouse, label: "Estoque", path: "/estoque" },
-    { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
-  { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
-  { icon: Truck, label: "Logística", path: "/logistica" },
-  { icon: Wallet, label: "Comissões", path: "/comissoes" },
+  { icon: LayoutDashboard, label: "Page 1", path: "/" },
+  { icon: Users, label: "Page 2", path: "/some-path" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -77,9 +69,7 @@ export default function DashboardLayout({
             </p>
           </div>
           <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
+            onClick={() => startLogin()}
             size="lg"
             className="w-full shadow-lg hover:shadow-xl transition-all"
           >
