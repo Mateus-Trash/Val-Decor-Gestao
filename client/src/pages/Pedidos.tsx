@@ -33,6 +33,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
+import { ptBR } from "date-fns/locale";
 
 const statusOptions = ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"] as const;
 
@@ -55,12 +56,16 @@ const statusColors: Record<string, string> = {
 export default function Pedidos() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("Todos");
+  const [filtroColaborador, setFiltroColaborador] = useState<string>("todos");
+  const [filtroDataInicio, setFiltroDataInicio] = useState<string>("");
+  const [filtroDataFim, setFiltroDataFim] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
 
   const { data: pedidosList = [], isLoading } = trpc.pedidos.list.useQuery();
+  const { data: colaboradoresList = [] } = trpc.colaboradores.list.useQuery();
 
   // Buscar pedido completo quando editando
   const { data: pedidoParaEditar } = trpc.pedidos.getById.useQuery(
@@ -91,6 +96,17 @@ export default function Pedidos() {
     if (filtroStatus !== "Todos") {
       resultado = resultado.filter((p) => p.status === filtroStatus);
     }
+    if (filtroColaborador !== "todos") {
+      resultado = resultado.filter((p) => p.colaboradorId === Number(filtroColaborador));
+    }
+    if (filtroDataInicio) {
+      const inicio = new Date(filtroDataInicio + "T00:00:00");
+      resultado = resultado.filter((p) => new Date(p.dataEvento) >= inicio);
+    }
+    if (filtroDataFim) {
+      const fim = new Date(filtroDataFim + "T23:59:59");
+      resultado = resultado.filter((p) => new Date(p.dataEvento) <= fim);
+    }
     if (busca.trim()) {
       const termo = busca.toLowerCase();
       resultado = resultado.filter(
@@ -100,7 +116,7 @@ export default function Pedidos() {
       );
     }
     return resultado;
-  }, [pedidosList, filtroStatus, busca]);
+  }, [pedidosList, filtroStatus, busca, filtroColaborador, filtroDataInicio, filtroDataFim]);
 
   function abrirCriar() {
     setEditandoId(null);
@@ -143,24 +159,64 @@ export default function Pedidos() {
         </PageHeading>
 
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          <Input
-            placeholder="Buscar cliente ou colaborador..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="flex-1"
-          />
-          <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filtrar status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Todos">Todos</SelectItem>
-              {statusOptions.map((s) => (
-                <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <Input
+              placeholder="Buscar cliente ou colaborador..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="flex-1"
+            />
+            <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos os status</SelectItem>
+                {statusOptions.map((s) => (
+                  <SelectItem key={s} value={s}>{statusLabels[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filtroColaborador} onValueChange={setFiltroColaborador}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Colaborador" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os colaboradores</SelectItem>
+                {colaboradoresList.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 flex-1">
+              <Input
+                type="date"
+                value={filtroDataInicio}
+                onChange={(e) => setFiltroDataInicio(e.target.value)}
+                className="flex-1 text-sm"
+              />
+              <span className="text-xs text-muted-foreground shrink-0">até</span>
+              <Input
+                type="date"
+                value={filtroDataFim}
+                onChange={(e) => setFiltroDataFim(e.target.value)}
+                className="flex-1 text-sm"
+              />
+            </div>
+            {(filtroDataInicio || filtroDataFim || filtroColaborador !== "todos") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={() => { setFiltroDataInicio(""); setFiltroDataFim(""); setFiltroColaborador("todos"); }}
+              >
+                Limpar filtros
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Tabela Desktop */}
@@ -265,7 +321,7 @@ export default function Pedidos() {
         </Card>
 
         {/* Cards Mobile */}
-        <div className="block sm:hidden space-y-3">
+        <div className="block sm:hidden space-y-2">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (

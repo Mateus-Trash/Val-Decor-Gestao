@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical } from "lucide-react";
+import { DollarSign, Plus, Pencil, Trash2, TrendingUp, TrendingDown, Truck, MoreVertical, ChevronDown, ChevronUp, Calendar, User, FileText, Package } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -64,16 +64,25 @@ const tipoBadge: Record<string, { label: string; className: string }> = {
   taxa_entrega: { label: "Taxa Entrega", className: "bg-blue-100 text-blue-800 border-blue-300" },
 };
 
+const tipoOptions = [
+  { value: "todos", label: "Todos os tipos" },
+  { value: "receita", label: "Receita" },
+  { value: "despesa", label: "Despesa" },
+  { value: "taxa_entrega", label: "Taxa de Entrega" },
+];
+
 export default function Financeiro() {
   const hoje = new Date();
-  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth()); // 0-indexed
+  const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth());
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [filtroTipo, setFiltroTipo] = useState<string>("todos");
+  const [filtroColaborador, setFiltroColaborador] = useState<string>("todos");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
 
-  // Calcular início e fim do período selecionado
   const { dataInicio, dataFim } = useMemo(() => {
     const base = new Date(anoSelecionado, mesSelecionado, 1);
     return {
@@ -87,11 +96,23 @@ export default function Financeiro() {
     dataFim,
   });
 
-  const transacoes = periodo?.transacoes ?? [];
+  const { data: colaboradoresList = [] } = trpc.colaboradores.list.useQuery();
+
+  const transacoesBrutas = periodo?.transacoes ?? [];
   const totalReceitas = periodo?.totalReceitas ?? 0;
   const totalDespesas = periodo?.totalDespesas ?? 0;
   const totalTaxas = periodo?.totalTaxas ?? 0;
   const saldo = periodo?.saldo ?? 0;
+
+  // Filtros client-side por tipo e colaborador
+  const transacoes = useMemo(() => {
+    return transacoesBrutas.filter((t) => {
+      const matchTipo = filtroTipo === "todos" || t.tipo === filtroTipo;
+      const matchColab = filtroColaborador === "todos" ||
+        (t.colaboradorId != null && t.colaboradorId === Number(filtroColaborador));
+      return matchTipo && matchColab;
+    });
+  }, [transacoesBrutas, filtroTipo, filtroColaborador]);
 
   const createMutation = trpc.financeiros.create.useMutation({
     onSuccess: () => {
@@ -99,7 +120,7 @@ export default function Financeiro() {
       utils.financeiros.listByPeriodo.invalidate();
       fecharDialog();
     },
-    onError: (e) => toast.error(`Erro: ${e.message}`),
+    onError: (e) => toast.error("Erro: " + e.message),
   });
 
   const updateMutation = trpc.financeiros.update.useMutation({
@@ -108,7 +129,7 @@ export default function Financeiro() {
       utils.financeiros.listByPeriodo.invalidate();
       fecharDialog();
     },
-    onError: (e) => toast.error(`Erro: ${e.message}`),
+    onError: (e) => toast.error("Erro: " + e.message),
   });
 
   const deleteMutation = trpc.financeiros.delete.useMutation({
@@ -116,7 +137,7 @@ export default function Financeiro() {
       toast.success("Transação removida!");
       utils.financeiros.listByPeriodo.invalidate();
     },
-    onError: (e) => toast.error(`Erro: ${e.message}`),
+    onError: (e) => toast.error("Erro: " + e.message),
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<DespesaForm, unknown, DespesaForm>({
@@ -178,9 +199,7 @@ export default function Financeiro() {
     return (value / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
-  // Anos disponíveis: 3 anos atrás até 2 anos à frente
   const anosDisponiveis = Array.from({ length: 6 }, (_, i) => hoje.getFullYear() - 3 + i);
-
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -189,7 +208,6 @@ export default function Financeiro() {
         {/* Header */}
         <PageHeading icon={<DollarSign className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Financeiro">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            {/* Filtro de período */}
             <Select
               value={String(mesSelecionado)}
               onValueChange={(v) => setMesSelecionado(Number(v))}
@@ -224,56 +242,81 @@ export default function Financeiro() {
         </PageHeading>
 
         {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="border-green-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardHeader className="pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-green-600" />
                 Receitas
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalReceitas)}</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <p className="text-lg sm:text-2xl font-bold text-green-600">{formatCurrency(totalReceitas)}</p>
             </CardContent>
           </Card>
 
           <Card className="border-red-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardHeader className="pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <TrendingDown className="h-4 w-4 text-red-600" />
                 Despesas
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalDespesas)}</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <p className="text-lg sm:text-2xl font-bold text-red-600">{formatCurrency(totalDespesas)}</p>
             </CardContent>
           </Card>
 
           <Card className="border-blue-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardHeader className="pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Truck className="h-4 w-4 text-blue-600" />
-                Taxas de Entrega
+                Taxas
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalTaxas)}</p>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <p className="text-lg sm:text-2xl font-bold text-blue-600">{formatCurrency(totalTaxas)}</p>
             </CardContent>
           </Card>
 
           <Card className={saldo >= 0 ? "border-green-200" : "border-red-200"}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <DollarSign className={`h-4 w-4 ${saldo >= 0 ? "text-green-600" : "text-red-600"}`} />
+            <CardHeader className="pb-2 p-3 sm:p-6">
+              <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <DollarSign className={"h-4 w-4 " + (saldo >= 0 ? "text-green-600" : "text-red-600")} />
                 Saldo
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className={`text-2xl font-bold ${saldo >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+              <p className={"text-lg sm:text-2xl font-bold " + (saldo >= 0 ? "text-green-600" : "text-red-600")}>
                 {formatCurrency(saldo)}
               </p>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              {tipoOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filtroColaborador} onValueChange={setFiltroColaborador}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Colaborador" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os colaboradores</SelectItem>
+              {colaboradoresList.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tabela Desktop */}
@@ -300,6 +343,7 @@ export default function Financeiro() {
                       <TableHead>Data</TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Tipo</TableHead>
+                      <TableHead>Colaborador</TableHead>
                       <TableHead>Pedido</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
@@ -316,9 +360,16 @@ export default function Financeiro() {
                           </TableCell>
                           <TableCell>{t.descricao ?? "—"}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={`text-xs ${badge.className}`}>
+                            <Badge variant="outline" className={"text-xs " + badge.className}>
                               {badge.label}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {t.colaboradorNome ? (
+                              <span className="text-sm">{t.colaboradorNome}</span>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             {t.pedidoId ? (
@@ -327,7 +378,7 @@ export default function Financeiro() {
                               <span className="text-muted-foreground text-sm">—</span>
                             )}
                           </TableCell>
-                          <TableCell className={`text-right font-medium ${t.tipo === "despesa" ? "text-red-600" : "text-green-600"}`}>
+                          <TableCell className={"text-right font-medium " + (t.tipo === "despesa" ? "text-red-600" : "text-green-600")}>
                             {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -359,7 +410,7 @@ export default function Financeiro() {
           </CardContent>
         </Card>
 
-        {/* Lista Mobile — linhas compactas */}
+        {/* Lista Mobile — linhas expansíveis com detalhes */}
         <div className="block sm:hidden">
           {isLoading ? (
             <div className="space-y-2">
@@ -375,39 +426,83 @@ export default function Financeiro() {
                 const badge = tipoBadge[t.tipo] ?? { label: t.tipo, className: "" };
                 const isManual = t.pedidoId === null;
                 const valorClass = t.tipo === "despesa" ? "text-red-600" : "text-green-600";
+                const isExpanded = expandedId === t.id;
                 return (
-                  <div key={t.id} className="flex items-center gap-3 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate">{t.descricao || "—"}</span>
-                        <Badge variant="outline" className={"text-[10px] px-1.5 py-0 shrink-0 " + badge.className}>
-                          {badge.label}
-                        </Badge>
+                  <div key={t.id}>
+                    <div
+                      className="flex items-center gap-2 py-2.5 cursor-pointer"
+                      onClick={() => setExpandedId(isExpanded ? null : t.id)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate">{t.descricao || "—"}</span>
+                          <Badge variant="outline" className={"text-[10px] px-1.5 py-0 shrink-0 " + badge.className}>
+                            {badge.label}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}
-                        {t.pedidoId && <span className="ml-2 font-mono">#{t.pedidoId}</span>}
-                      </p>
+                      <span className={"text-sm font-semibold shrink-0 " + valorClass}>
+                        {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                      )}
                     </div>
-                    <span className={"text-sm font-semibold shrink-0 " + valorClass}>
-                      {t.tipo === "despesa" ? "−" : "+"}{formatCurrency(t.valor)}
-                    </span>
-                    {isManual ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><MoreVertical className="h-4 w-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => abrirEditar(t)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => confirmarDelete(t.id)} className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground shrink-0 w-7 text-center">Auto</span>
+                    {isExpanded && (
+                      <div className="pb-3 space-y-2">
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Colaborador:</span>
+                            <span className="font-medium truncate">{t.colaboradorNome || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Package className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Pedido:</span>
+                            <span className="font-medium font-mono">{t.pedidoId ? "#" + t.pedidoId : "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Data:</span>
+                            <span className="font-medium">{format(new Date(t.data), "dd/MM/yyyy", { locale: ptBR })}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <FileText className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground">Origem:</span>
+                            <span className="font-medium">{isManual ? "Manual" : "Automática"}</span>
+                          </div>
+                        </div>
+                        {t.pedidoCliente && (
+                          <p className="text-xs text-muted-foreground">
+                            Cliente: <span className="font-medium text-foreground">{t.pedidoCliente}</span>
+                          </p>
+                        )}
+                        {isManual && (
+                          <div className="flex gap-2 pt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={(e) => { e.stopPropagation(); abrirEditar(t); }}
+                            >
+                              <Pencil className="h-3 w-3 mr-1" /> Editar
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7 text-destructive"
+                              onClick={(e) => { e.stopPropagation(); confirmarDelete(t.id); }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" /> Excluir
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 );

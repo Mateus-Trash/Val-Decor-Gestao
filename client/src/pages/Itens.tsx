@@ -249,7 +249,7 @@ export default function Itens() {
         </Card>
 
         {/* Cards Mobile */}
-        <div className="block sm:hidden space-y-3">
+        <div className="block sm:hidden space-y-2">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (

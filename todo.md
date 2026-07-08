@@ -116,3 +116,10 @@
 - [x] Substituir tabelas de composição (itens/kits) por cards/listas responsivas no mobile
 - [x] Ajustar rows de seleção de itens/kits (Select + Input + Button) para empilhamento vertical no mobile
 - [x] pnpm check sem erros, checkpoint e push
+
+## Melhorias de UX — Filtros e Compactação
+- [x] Financeiro: linhas expansíveis com detalhes (toque para expandir)
+- [x] Financeiro: filtros por colaborador, data e tipo (aluguel, despesa, taxa de entrega)
+- [x] Pedidos: filtros por data, cliente, status, colaborador
+- [x] Compactar cards mobile (Itens, Kits, Colaboradores, Comissoes) para ocupar menos espaço
+- [x] pnpm check, testes, checkpoint e push

@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { transacoesFinanceiras } from "../../drizzle/schema";
+import { transacoesFinanceiras, pedidos, colaboradores } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 
@@ -25,10 +25,24 @@ export const financeirosRouter = router({
       const db = await getDb();
       if (!db) return { transacoes: [], totalReceitas: 0, totalDespesas: 0, totalTaxas: 0, saldo: 0 };
 
-      // Buscar transações no período
+      // Buscar transações no período com join para colaborador e cliente
       const transacoes = await db
-        .select()
+        .select({
+          id: transacoesFinanceiras.id,
+          pedidoId: transacoesFinanceiras.pedidoId,
+          tipo: transacoesFinanceiras.tipo,
+          descricao: transacoesFinanceiras.descricao,
+          valor: transacoesFinanceiras.valor,
+          data: transacoesFinanceiras.data,
+          createdAt: transacoesFinanceiras.createdAt,
+          updatedAt: transacoesFinanceiras.updatedAt,
+          colaboradorId: pedidos.colaboradorId,
+          colaboradorNome: colaboradores.nome,
+          pedidoCliente: pedidos.nomeCliente,
+        })
         .from(transacoesFinanceiras)
+        .leftJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .leftJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(
           and(
             gte(transacoesFinanceiras.data, input.dataInicio),
