@@ -1,22 +1,21 @@
 #!/bin/bash
-# Fix esbuild binary permissions for hosting environments
-# The esbuild binary may not have execute permissions after pnpm install
-# on some hosting platforms (e.g., Hostinger shared hosting)
+# Fix esbuild binary permissions for hosting environments (e.g., Hostinger shared hosting)
+# esbuild's postinstall is blocked to prevent EACCES errors, so we fix permissions here
 
-ESBUILD_DIRS=$(find node_modules/.pnpm -maxdepth 1 -name "esbuild@*" -type d 2>/dev/null)
+# Find and fix ALL esbuild binaries regardless of path structure
+find node_modules -name "esbuild" -type f -path "*/bin/*" -exec chmod +x {} \; 2>/dev/null || true
 
-for dir in $ESBUILD_DIRS; do
-  BIN="$dir/node_modules/esbuild/bin/esbuild"
-  if [ -f "$BIN" ]; then
-    chmod +x "$BIN" 2>/dev/null || true
-  fi
-done
+# Also fix any esbuild binaries in @esbuild platform packages
+find node_modules -path "*/@esbuild/*/bin/esbuild" -exec chmod +x {} \; 2>/dev/null || true
 
-# Also fix @tailwindcss/oxide if present
-OXIDE_DIRS=$(find node_modules/.pnpm -maxdepth 1 -name "@tailwindcss+oxide*" -type d 2>/dev/null)
+# Fix esbuild binary in pnpm store
+find node_modules/.pnpm -name "esbuild" -type f -path "*/bin/*" -exec chmod +x {} \; 2>/dev/null || true
 
-for dir in $OXIDE_DIRS; do
-  find "$dir" -name "*.node" -exec chmod +x {} \; 2>/dev/null || true
-done
+# Fix @tailwindcss/oxide native bindings
+find node_modules -name "*.node" -exec chmod +x {} \; 2>/dev/null || true
+
+# Broad catch: make everything in bin directories executable
+find node_modules -path "*/esbuild/bin/*" -type f -exec chmod +x {} \; 2>/dev/null || true
+find node_modules -path "*/@esbuild/*/bin/*" -type f -exec chmod +x {} \; 2>/dev/null || true
 
 exit 0
