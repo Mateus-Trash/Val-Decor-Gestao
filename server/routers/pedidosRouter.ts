@@ -480,6 +480,58 @@ export const pedidosRouter = router({
         }
       }
 
+      // ─── Se colaborador mudou e pedido está Concluído, refazer comissão ───
+      if (input.colaboradorId !== undefined && input.colaboradorId !== pedidoAtual.colaboradorId) {
+        const comissaoExistente = await db
+          .select()
+          .from(comissoes)
+          .where(eq(comissoes.pedidoId, id))
+          .limit(1);
+
+        if (comissaoExistente.length > 0) {
+          // Remover comissão antiga
+          await db.delete(comissoes).where(eq(comissoes.id, comissaoExistente[0].id));
+
+          // Remover transação financeira de despesa da comissão antiga
+          await db
+            .delete(transacoesFinanceiras)
+            .where(
+              and(
+                eq(transacoesFinanceiras.pedidoId, id),
+                eq(transacoesFinanceiras.tipo, "despesa"),
+                like(transacoesFinanceiras.descricao, "Comissão%")
+              )
+            );
+
+          // Criar nova comissão para o novo colaborador
+          const novoColab = await db
+            .select()
+            .from(colaboradores)
+            .where(eq(colaboradores.id, input.colaboradorId))
+            .limit(1);
+
+          if (novoColab.length > 0) {
+            const valorTotalEfetivo = Number(camposUpdate.valorTotal ?? pedidoAtual.valorTotal);
+            const novaComissao = Math.floor(
+              (valorTotalEfetivo * novoColab[0].percentualComissao) / 100
+            );
+
+            await db.insert(comissoes).values({
+              colaboradorId: input.colaboradorId,
+              pedidoId: id,
+              valor: novaComissao,
+            });
+
+            await db.insert(transacoesFinanceiras).values({
+              pedidoId: id,
+              tipo: "despesa",
+              descricao: `Comissão - ${novoColab[0].nome}`,
+              valor: novaComissao,
+            });
+          }
+        }
+      }
+
       // ─── Atualizar transação de taxa_entrega se valorTaxaEntrega mudou ───
       if (input.valorTaxaEntrega !== undefined) {
         const taxaExistente = await db
