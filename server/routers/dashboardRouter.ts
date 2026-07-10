@@ -318,7 +318,8 @@ export const dashboardRouter = router({
           totalComissao: sum(comissoes.valor),
         })
         .from(comissoes)
-        .where(and(gte(comissoes.dataCalculo, input.dataInicio), lte(comissoes.dataCalculo, input.dataFim)))
+        .innerJoin(pedidos, eq(comissoes.pedidoId, pedidos.id))
+        .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
         .groupBy(comissoes.colaboradorId);
 
       const comissaoMap = new Map(comissoesPorColab.map((c) => [c.colaboradorId, Number(c.totalComissao ?? 0)]));
