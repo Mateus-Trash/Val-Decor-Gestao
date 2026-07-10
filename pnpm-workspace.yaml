@@ -1,9 +1,13 @@
-# pnpm 11.x uses allowBuilds (replaces onlyBuiltDependencies)
+# pnpm 11.x uses allowBuilds
+# esbuild: false — skip esbuild's postinstall (it fails with EACCES on shared hosting)
+# We fix permissions with our own postinstall script instead
 allowBuilds:
-  esbuild: true
+  esbuild: false
   "@tailwindcss/oxide": true
 
-# pnpm 10.x uses onlyBuiltDependencies (kept for backward compatibility)
+# pnpm 10.x compatibility
 onlyBuiltDependencies:
-  - esbuild
   - "@tailwindcss/oxide"
+
+neverBuiltDependencies:
+  - esbuild
