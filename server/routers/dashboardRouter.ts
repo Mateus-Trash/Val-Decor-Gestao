@@ -144,27 +144,39 @@ export const dashboardRouter = router({
       const topItensDiretos = await db
         .select({
           nome: itens.nome,
+          valorUnitario: itensPedido.valorUnitario,
+          valorPadrao: itens.valorAluguel,
           totalQuantidade: sum(itensPedido.quantidade),
         })
         .from(itensPedido)
         .innerJoin(itens, eq(itensPedido.itemId, itens.id))
         .innerJoin(pedidos, eq(itensPedido.pedidoId, pedidos.id))
         .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
-        .groupBy(itens.id, itens.nome);
+        .groupBy(itens.id, itens.nome, itensPedido.valorUnitario, itens.valorAluguel);
 
       const topKits = await db
         .select({
           nome: kits.nome,
+          valorUnitario: kitsPedido.valorUnitario,
+          valorPadrao: kits.valorAluguel,
           totalQuantidade: sum(kitsPedido.quantidade),
         })
         .from(kitsPedido)
         .innerJoin(kits, eq(kitsPedido.kitId, kits.id))
         .innerJoin(pedidos, eq(kitsPedido.pedidoId, pedidos.id))
         .where(and(gte(pedidos.createdAt, input.dataInicio), lte(pedidos.createdAt, input.dataFim)))
-        .groupBy(kits.id, kits.nome);
+        .groupBy(kits.id, kits.nome, kitsPedido.valorUnitario, kits.valorAluguel);
+
+      const formatarNomeComPreco = (nome: string, valorUnitario: number, valorPadrao: number) =>
+        valorUnitario !== valorPadrao
+          ? `${nome} (R$ ${(valorUnitario / 100).toFixed(2).replace(".", ",")})`
+          : nome;
 
       const top5 = [...topItensDiretos, ...topKits]
-        .map((t) => ({ nome: t.nome, totalQuantidade: Number(t.totalQuantidade ?? 0) }))
+        .map((t) => ({
+          nome: formatarNomeComPreco(t.nome, Number(t.valorUnitario), Number(t.valorPadrao)),
+          totalQuantidade: Number(t.totalQuantidade ?? 0),
+        }))
         .sort((a, b) => b.totalQuantidade - a.totalQuantidade)
         .slice(0, 5);
 
