@@ -254,9 +254,23 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
     setItensComposicao((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  function removerKit(idx: number) {
-    setKitsComposicao((prev) => prev.filter((_, i) => i !== idx));
-  }
+function removerKit(idx: number) {
+  setKitsComposicao((prev) => prev.filter((_, i) => i !== idx));
+}
+
+function atualizarValorItem(idx: number, novoValorReais: string) {
+  const valorCentavos = Math.round((parseFloat(novoValorReais) || 0) * 100);
+  setItensComposicao((prev) =>
+    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: valorCentavos } : c))
+  );
+}
+
+function atualizarValorKit(idx: number, novoValorReais: string) {
+  const valorCentavos = Math.round((parseFloat(novoValorReais) || 0) * 100);
+  setKitsComposicao((prev) =>
+    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: valorCentavos } : c))
+  );
+}
 
   async function onSubmit(data: PedidoForm) {
     if (itensComposicao.length === 0 && kitsComposicao.length === 0) {
@@ -560,9 +574,18 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{item.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.quantidade}x &times; R$ {(item.valorUnitario / 100).toFixed(2)}
-                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>{item.quantidade}x &times; R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={(item.valorUnitario / 100).toFixed(2)}
+                          onChange={(e) => atualizarValorItem(idx, e.target.value)}
+                          className="h-6 w-20 text-xs px-1"
+                          aria-label={`Valor unitário de ${item.nome}`}
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold">
@@ -593,9 +616,18 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{kit.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {kit.quantidade}x &times; R$ {(kit.valorUnitario / 100).toFixed(2)}
-                      </p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>{kit.quantidade}x &times; R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={(kit.valorUnitario / 100).toFixed(2)}
+                          onChange={(e) => atualizarValorKit(idx, e.target.value)}
+                          className="h-6 w-20 text-xs px-1"
+                          aria-label={`Valor unitário de ${kit.nome}`}
+                        />
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold">
