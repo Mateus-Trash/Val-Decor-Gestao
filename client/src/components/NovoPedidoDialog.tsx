@@ -30,6 +30,20 @@ type PedidoForm = z.infer<typeof pedidoSchema>;
 type ItemPedido = { itemId: number; nome: string; quantidade: number; valorUnitario: number };
 type KitPedido = { kitId: number; nome: string; quantidade: number; valorUnitario: number };
 
+// Formata centavos para exibição estilo Pix: 900 -> "9,00"
+function formatCurrencyBR(cents: number): string {
+  const reais = Math.floor(cents / 100);
+  const centavos = cents % 100;
+  return `${reais},${centavos.toString().padStart(2, '0')}`;
+}
+
+// Converte input do usuário em centavos (estilo Pix: digita só números)
+function parseCurrencyInput(input: string): number {
+  const digits = input.replace(/\D/g, '');
+  if (!digits) return 0;
+  return parseInt(digits, 10);
+}
+
 interface NovoPedidoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -255,17 +269,15 @@ function removerKit(idx: number) {
   setKitsComposicao((prev) => prev.filter((_, i) => i !== idx));
 }
 
-function atualizarValorItem(idx: number, novoValorReais: string) {
-  const valorCentavos = Math.round((parseFloat(novoValorReais) || 0) * 100);
+function atualizarValorItem(idx: number, novoValorCentavos: number) {
   setItensComposicao((prev) =>
-    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: valorCentavos } : c))
+    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: novoValorCentavos } : c))
   );
 }
 
-function atualizarValorKit(idx: number, novoValorReais: string) {
-  const valorCentavos = Math.round((parseFloat(novoValorReais) || 0) * 100);
+function atualizarValorKit(idx: number, novoValorCentavos: number) {
   setKitsComposicao((prev) =>
-    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: valorCentavos } : c))
+    prev.map((c, i) => (i === idx ? { ...c, valorUnitario: novoValorCentavos } : c))
   );
 }
 
@@ -414,13 +426,23 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
 
             <div>
               <Label htmlFor="valorTaxaEntrega" className="text-xs">Taxa de Entrega (R$)</Label>
-              <Input
-                id="valorTaxaEntrega"
-                type="number"
-                step="0.01"
-                {...register("valorTaxaEntrega", { valueAsNumber: true })}
-                placeholder="0.00"
-                className="text-sm"
+              <Controller
+                name="valorTaxaEntrega"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id="valorTaxaEntrega"
+                    type="text"
+                    inputMode="numeric"
+                    value={formatCurrencyBR(field.value ? Math.round(field.value * 100) : 0)}
+                    onChange={(e) => {
+                      const cents = parseCurrencyInput(e.target.value);
+                      field.onChange(cents / 100);
+                    }}
+                    placeholder="0,00"
+                    className="text-sm"
+                  />
+                )}
               />
             </div>
 
@@ -561,11 +583,10 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <span>{item.quantidade}x &times; R$</span>
                         <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={(item.valorUnitario / 100).toFixed(2)}
-                          onChange={(e) => atualizarValorItem(idx, e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatCurrencyBR(item.valorUnitario)}
+                          onChange={(e) => atualizarValorItem(idx, parseCurrencyInput(e.target.value))}
                           className="h-6 w-20 text-xs px-1"
                           aria-label={`Valor unitário de ${item.nome}`}
                         />
@@ -603,11 +624,10 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <span>{kit.quantidade}x &times; R$</span>
                         <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={(kit.valorUnitario / 100).toFixed(2)}
-                          onChange={(e) => atualizarValorKit(idx, e.target.value)}
+                          type="text"
+                          inputMode="numeric"
+                          value={formatCurrencyBR(kit.valorUnitario)}
+                          onChange={(e) => atualizarValorKit(idx, parseCurrencyInput(e.target.value))}
                           className="h-6 w-20 text-xs px-1"
                           aria-label={`Valor unitário de ${kit.nome}`}
                         />
