@@ -1,4 +1,24 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+
+// Load .env from multiple possible locations (including Hostinger default)
+const envPaths = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "..", ".env"),
+  path.resolve(process.cwd(), ".builds", "config", ".env"),
+  path.resolve(process.cwd(), "..", ".builds", "config", ".env"),
+  "/files/domains/valdecoracoes.com/public_html/.builds/config/.env",
+];
+
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`[ENV] Loaded from: ${envPath}`);
+    break;
+  }
+}
+
 import express from "express";
 import { createServer } from "http";
 import net from "net";
