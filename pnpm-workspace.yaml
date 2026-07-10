@@ -1,3 +1,9 @@
+# pnpm 11.x uses allowBuilds (replaces onlyBuiltDependencies)
+allowBuilds:
+  esbuild: true
+  "@tailwindcss/oxide": true
+
+# pnpm 10.x uses onlyBuiltDependencies (kept for backward compatibility)
 onlyBuiltDependencies:
   - esbuild
   - "@tailwindcss/oxide"
