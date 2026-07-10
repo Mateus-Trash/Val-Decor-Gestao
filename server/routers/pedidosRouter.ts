@@ -433,6 +433,53 @@ export const pedidosRouter = router({
         }
       }
 
+      // ─── Recalcular comissão se o pedido já estiver Concluído ───
+      if (camposUpdate.valorTotal !== undefined) {
+        const comissaoExistente = await db
+          .select()
+          .from(comissoes)
+          .where(eq(comissoes.pedidoId, id))
+          .limit(1);
+
+        if (comissaoExistente.length > 0) {
+          const colab = await db
+            .select()
+            .from(colaboradores)
+            .where(eq(colaboradores.id, pedidoAtual.colaboradorId))
+            .limit(1);
+
+          if (colab.length > 0) {
+            const novoValorComissao = Math.floor(
+              (Number(camposUpdate.valorTotal) * colab[0].percentualComissao) / 100
+            );
+
+            await db
+              .update(comissoes)
+              .set({ valor: novoValorComissao })
+              .where(eq(comissoes.id, comissaoExistente[0].id));
+
+            // Atualizar também a transação financeira de despesa da comissão
+            const despesaComissao = await db
+              .select()
+              .from(transacoesFinanceiras)
+              .where(
+                and(
+                  eq(transacoesFinanceiras.pedidoId, id),
+                  eq(transacoesFinanceiras.tipo, "despesa")
+                )
+              )
+              .limit(1);
+
+            if (despesaComissao.length > 0) {
+              await db
+                .update(transacoesFinanceiras)
+                .set({ valor: novoValorComissao })
+                .where(eq(transacoesFinanceiras.id, despesaComissao[0].id));
+            }
+          }
+        }
+      }
+
       // ─── Atualizar transação de taxa_entrega se valorTaxaEntrega mudou ───
       if (input.valorTaxaEntrega !== undefined) {
         const taxaExistente = await db
