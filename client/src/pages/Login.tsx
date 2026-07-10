@@ -54,6 +54,11 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="gap-2 w-full max-w-sm">
         <CardHeader className="text-center">
+          <img
+            src="/val-decor-logo.png"
+            alt="Val Decor"
+            className="w-32 h-32 mx-auto object-contain"
+          />
           <CardTitle className="text-2xl font-bold">Val Decor Gestão</CardTitle>
           <p className="text-sm text-muted-foreground">Entre com suas credenciais</p>
         </CardHeader>
