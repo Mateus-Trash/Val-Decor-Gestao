@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Val Decor Gestão</string>
+    <string name="title_activity_main">Val Decor Gestão</string>
+    <string name="package_name">com.valdecor.gestao</string>
+    <string name="custom_url_scheme">com.valdecor.gestao</string>
+</resources>
