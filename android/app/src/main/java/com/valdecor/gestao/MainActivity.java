@@ -24,6 +24,18 @@ public class MainActivity extends BridgeActivity {
         // Make navigation bar transparent so content fills to the bottom
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
 
+        // Use dark icons on status bar (visible on white/light background)
+        getWindow().getInsetsController().setSystemBarsAppearance(
+            android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+            android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+        );
+
+        // Use dark icons on navigation bar (visible on white/light background)
+        getWindow().getInsetsController().setSystemBarsAppearance(
+            android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+            android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+        );
+
         // Set the WebView background to white to prevent black screen during loading
         if (bridge != null && bridge.getWebView() != null) {
             WebView webView = bridge.getWebView();
