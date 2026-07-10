@@ -175,11 +175,22 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src="/val-decor-logo-nav-small.png"
+                    alt="Val Decor"
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
                   <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    Val Decor
                   </span>
                 </div>
-              ) : null}
+              ) : (
+                <img
+                  src="/val-decor-logo-nav-small.png"
+                  alt="Val Decor"
+                  className="h-8 w-8 shrink-0 object-contain mx-auto"
+                />
+              )}
             </div>
           </SidebarHeader>
 
@@ -269,6 +280,11 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
               <div className="flex items-center gap-3">
+                <img
+                  src="/val-decor-logo-nav-small.png"
+                  alt="Val Decor"
+                  className="h-7 w-7 shrink-0 object-contain"
+                />
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
                     {activeMenuItem?.label ?? "Menu"}

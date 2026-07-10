@@ -55,7 +55,7 @@ export default function Login() {
       <Card className="gap-2 w-full max-w-sm">
         <CardHeader className="text-center">
           <img
-            src="/val-decor-logo.png"
+            src="/val-decor-logo-transparent.png"
             alt="Val Decor"
             className="w-32 h-32 mx-auto object-contain"
           />

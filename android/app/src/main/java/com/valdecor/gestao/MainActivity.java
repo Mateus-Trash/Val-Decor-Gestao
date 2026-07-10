@@ -1,10 +1,14 @@
 package com.valdecor.gestao;
 
 import android.os.Bundle;
+import android.os.Build;
 import android.view.WindowManager;
 import android.view.View;
 import android.webkit.WebView;
 import android.graphics.Color;
+
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -17,30 +21,21 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         // Edge-to-edge: extend app behind status bar and navigation bar
-        getWindow().setDecorFitsSystemWindows(false);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-        // Make status bar transparent so content fills to the top
+        // Make status bar and navigation bar transparent
         getWindow().setStatusBarColor(Color.TRANSPARENT);
-        // Make navigation bar transparent so content fills to the bottom
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
 
-        // Use dark icons on status bar (visible on white/light background)
-        getWindow().getInsetsController().setSystemBarsAppearance(
-            android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
-            android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-        );
-
-        // Use dark icons on navigation bar (visible on white/light background)
-        getWindow().getInsetsController().setSystemBarsAppearance(
-            android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
-            android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-        );
+        // Use WindowInsetsControllerCompat for dark system bar icons (compatible with API 24+)
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
+        controller.setAppearanceLightNavigationBars(true);
 
         // Set the WebView background to white to prevent black screen during loading
         if (bridge != null && bridge.getWebView() != null) {
             WebView webView = bridge.getWebView();
             webView.setBackgroundColor(Color.WHITE);
-            // Force the web view to fill the entire screen
             webView.setFitsSystemWindows(false);
         }
     }
