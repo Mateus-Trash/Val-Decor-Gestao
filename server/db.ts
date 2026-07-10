@@ -8,11 +8,15 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
+      console.log("[Database] Connecting with URL:", process.env.DATABASE_URL.replace(/:[^:@]+@/, ":****@"));
       _db = drizzle(process.env.DATABASE_URL);
+      console.log("[Database] Connected successfully");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Failed to connect:", error);
       _db = null;
     }
+  } else if (!_db && !process.env.DATABASE_URL) {
+    console.error("[Database] DATABASE_URL is not set!");
   }
   return _db;
 }
@@ -35,8 +39,16 @@ export async function getUserByEmail(email: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error: any) {
+    console.error("[Database] getUserByEmail error:", error?.message || error);
+    console.error("[Database] Error code:", error?.code || "N/A");
+    console.error("[Database] Error errno:", error?.errno || "N/A");
+    console.error("[Database] Error sqlMessage:", error?.sqlMessage || "N/A");
+    throw error;
+  }
 }
 
 export async function getColaboradorByUserId(userId: number) {
