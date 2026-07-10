@@ -43,10 +43,13 @@ export async function getUserByEmail(email: string) {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result.length > 0 ? result[0] : undefined;
   } catch (error: any) {
-    console.error("[Database] getUserByEmail error:", error?.message || error);
-    console.error("[Database] Error code:", error?.code || "N/A");
-    console.error("[Database] Error errno:", error?.errno || "N/A");
-    console.error("[Database] Error sqlMessage:", error?.sqlMessage || "N/A");
+    console.error("[Database] getUserByEmail FULL ERROR:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    if (error?.cause) {
+      console.error("[Database] CAUSE:", JSON.stringify(error.cause, Object.getOwnPropertyNames(error.cause), 2));
+    }
+    if (error?.stack) {
+      console.error("[Database] STACK:", error.stack);
+    }
     throw error;
   }
 }
