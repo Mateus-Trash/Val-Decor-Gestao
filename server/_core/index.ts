@@ -2,13 +2,16 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 
-// Load .env from multiple possible locations (including Hostinger default)
+// Load .env from multiple possible locations (including Hostinger default and home directory)
+const homeDir = process.env.HOME || process.env.USERPROFILE || "/root";
 const envPaths = [
   path.resolve(process.cwd(), ".env"),
   path.resolve(process.cwd(), "..", ".env"),
   path.resolve(process.cwd(), ".builds", "config", ".env"),
   path.resolve(process.cwd(), "..", ".builds", "config", ".env"),
+  path.resolve(homeDir, ".env"),
   "/files/domains/valdecoracoes.com/public_html/.builds/config/.env",
+  `/home/${process.env.USER || "u984101939"}/.env`,
 ];
 
 for (const envPath of envPaths) {
