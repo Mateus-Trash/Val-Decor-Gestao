@@ -1,11 +1,12 @@
 module.exports = {
   hooks: {
-    readPackage(pkg) {
+    readPackageJson: async (pkg) => {
       // Allow build scripts for critical dependencies
-      if (['@tailwindcss/oxide', 'esbuild'].includes(pkg.name)) {
-        pkg.scripts = pkg.scripts || {};
+      if (pkg.name === '@tailwindcss/oxide' || pkg.name === 'esbuild') {
+        if (!pkg.pnpm) pkg.pnpm = {};
+        pkg.pnpm.allowBuild = true;
       }
       return pkg;
-    }
-  }
-}
+    },
+  },
+};
