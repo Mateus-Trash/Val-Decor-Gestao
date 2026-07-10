@@ -12,7 +12,7 @@ async function fetchComissoes(db: NonNullable<Awaited<ReturnType<typeof getDb>>>
       colaboradorNome: colaboradores.nome,
       pedidoId: comissoes.pedidoId,
       pedidoCliente: pedidos.nomeCliente,
-      pedidoDataEvento: pedidos.dataEvento,
+      pedidoData: pedidos.data,
       valor: comissoes.valor,
       dataCalculo: comissoes.dataCalculo,
       pago: comissoes.pago,

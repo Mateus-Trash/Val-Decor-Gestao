@@ -30,7 +30,7 @@ type Pedido = {
   ruaEntrega: string;
   bairroEntrega: string;
   numeroEntrega: string;
-  dataEntrega: Date | string;
+  data: Date | string;
   coletaAdiadaPara?: Date | string | null;
   status: string;
   observacoes?: string | null;

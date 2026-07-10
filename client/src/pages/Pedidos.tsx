@@ -101,11 +101,11 @@ export default function Pedidos() {
     }
     if (filtroDataInicio) {
       const inicio = new Date(filtroDataInicio + "T00:00:00");
-      resultado = resultado.filter((p) => new Date(p.dataEvento) >= inicio);
+      resultado = resultado.filter((p) => new Date(p.data) >= inicio);
     }
     if (filtroDataFim) {
       const fim = new Date(filtroDataFim + "T23:59:59");
-      resultado = resultado.filter((p) => new Date(p.dataEvento) <= fim);
+      resultado = resultado.filter((p) => new Date(p.data) <= fim);
     }
     if (busca.trim()) {
       const termo = busca.toLowerCase();
@@ -256,7 +256,7 @@ export default function Pedidos() {
                         <TableCell>{p.nomeCliente ?? "—"}</TableCell>
                         <TableCell>{p.nomeColaborador}</TableCell>
                         <TableCell>
-                          {p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—"}
+                          {p.data ? format(new Date(p.data), "dd/MM/yyyy") : "—"}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(p.valorTotal)}</TableCell>
                         <TableCell className="text-right text-xs">{formatReais(p.valorTaxaEntrega)}</TableCell>
@@ -355,7 +355,7 @@ export default function Pedidos() {
                 }
                 fields={[
                   { icon: User, label: "Colaborador", value: p.nomeColaborador },
-                  { icon: Calendar, label: "Data", value: p.dataEvento ? format(new Date(p.dataEvento), "dd/MM/yyyy") : "—" },
+                  { icon: Calendar, label: "Data", value: p.data ? format(new Date(p.data), "dd/MM/yyyy") : "—" },
                   { icon: DollarSign, label: "Total", value: formatCurrency(p.valorTotal) },
                   { icon: Truck, label: "Taxa Entrega", value: formatReais(p.valorTaxaEntrega) },
                 ]}
@@ -406,8 +406,7 @@ export default function Pedidos() {
           id: pedidoParaEditar.id,
           nomeCliente: pedidoParaEditar.nomeCliente,
           colaboradorId: pedidoParaEditar.colaboradorId,
-          dataEvento: pedidoParaEditar.dataEvento,
-          dataEntrega: pedidoParaEditar.dataEntrega,
+          data: pedidoParaEditar.data,
           ruaEntrega: pedidoParaEditar.ruaEntrega,
           bairroEntrega: pedidoParaEditar.bairroEntrega,
           numeroEntrega: pedidoParaEditar.numeroEntrega,

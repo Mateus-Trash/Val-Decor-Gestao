@@ -36,7 +36,7 @@ type Comissao = {
   colaboradorNome: string | null;
   pedidoId: number;
   pedidoCliente: string;
-  pedidoDataEvento: Date | string;
+  pedidoData: Date | string;
   valor: number;
   dataCalculo: Date | string;
   pago: boolean;

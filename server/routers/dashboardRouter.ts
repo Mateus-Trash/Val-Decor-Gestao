@@ -23,7 +23,7 @@ export const dashboardRouter = router({
         .select({
           id: pedidos.id,
           status: pedidos.status,
-          dataEvento: pedidos.dataEvento,
+          data: pedidos.data,
           nomeCliente: pedidos.nomeCliente,
           nomeColaborador: colaboradores.nome,
           valorTotal: pedidos.valorTotal,
@@ -32,9 +32,9 @@ export const dashboardRouter = router({
         .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(
           and(
-            gte(pedidos.dataEvento, dataInicio),
-            lte(pedidos.dataEvento, dataFim),
-            isNotNull(pedidos.dataEvento)
+            gte(pedidos.data, dataInicio),
+            lte(pedidos.data, dataFim),
+            isNotNull(pedidos.data)
           )
         );
 

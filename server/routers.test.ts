@@ -201,8 +201,7 @@ describe("Routers", () => {
       try {
         await caller.pedidos.create({
           colaboradorId: 1,
-          dataEvento: new Date(),
-          dataEntrega: new Date(),
+          data: new Date(),
           valorTotal: 10000,
           status: "InvalidStatus" as any,
         });
@@ -218,8 +217,7 @@ describe("Routers", () => {
       try {
         const result = await caller.pedidos.create({
           colaboradorId: 1,
-          dataEvento: new Date(),
-          dataEntrega: new Date(),
+          data: new Date(),
           valorTotal: 10000,
         });
         expect(result).toBeDefined();
@@ -316,8 +314,7 @@ describe("pedidos - comissão", () => {
     const pedido = await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Comissao",
       colaboradorId,
-      dataEvento: new Date("2026-08-10T12:00:00"),
-      dataEntrega: new Date("2026-08-10T08:00:00"),
+      data: new Date("2026-08-10T08:00:00"),
       ruaEntrega: "Rua Teste",
       bairroEntrega: "Centro",
       numeroEntrega: "123",
@@ -401,7 +398,7 @@ describe("entregas", () => {
 });
 
 describe("estoque por data", () => {
-  it("should show item as unavailable only on the exact dataEntrega day, and available on any other day", async () => {
+  it("should show item as unavailable only on the exact data day, and available on any other day", async () => {
     const ctx = createAuthContext();
     const caller = appRouter.createCaller(ctx);
     const sufixo = Date.now();
@@ -427,8 +424,7 @@ describe("estoque por data", () => {
     await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Estoque",
       colaboradorId,
-      dataEvento: dataReservada,
-      dataEntrega: dataReservada,
+      data: dataReservada,
       ruaEntrega: "Avenida Teste",
       bairroEntrega: "Vila",
       numeroEntrega: "456",
@@ -441,7 +437,9 @@ describe("estoque por data", () => {
     expect(dispNoDia.find((i: any) => i.id === itemId)?.disponivel).toBe(0);
 
     // Em data futura qualquer, o item está disponível (não trava a agenda)
-    const dispDiaFuturo = await caller.itens.getDisponibilidadePorData({ data: new Date("2026-09-20T12:00:00") });
+    const dataFuturo = new Date(dataReservada);
+    dataFuturo.setDate(dataFuturo.getDate() + 7);
+    const dispDiaFuturo = await caller.itens.getDisponibilidadePorData({ data: dataFuturo });
     expect(dispDiaFuturo.find((i: any) => i.id === itemId)?.disponivel).toBe(10);
 
     // Mas em data anterior à entrega, o item está livre
@@ -477,8 +475,7 @@ describe("alertas de coleta atrasada", () => {
     const pedido = await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Atrasado",
       colaboradorId,
-      dataEvento: quatroDiasAtras,
-      dataEntrega: quatroDiasAtras,
+      data: quatroDiasAtras,
       ruaEntrega: "Rua Teste",
       bairroEntrega: "Centro",
       numeroEntrega: "789",
@@ -523,8 +520,7 @@ describe("aviso de dependência do dia anterior", () => {
     const pedido1 = await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Dia 1",
       colaboradorId,
-      dataEvento: dia1,
-      dataEntrega: dia1,
+      data: dia1,
       ruaEntrega: "Rua A",
       bairroEntrega: "Centro",
       numeroEntrega: "1",
@@ -537,8 +533,7 @@ describe("aviso de dependência do dia anterior", () => {
     await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Dia 2",
       colaboradorId,
-      dataEvento: dia2,
-      dataEntrega: dia2,
+      data: dia2,
       ruaEntrega: "Rua B",
       bairroEntrega: "Centro",
       numeroEntrega: "2",
@@ -588,8 +583,7 @@ describe("aviso de dependência do dia anterior para kits", () => {
     const pedido1 = await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Kit Dia 1",
       colaboradorId,
-      dataEvento: dia1,
-      dataEntrega: dia1,
+      data: dia1,
       ruaEntrega: "Rua A",
       bairroEntrega: "Centro",
       numeroEntrega: "1",
@@ -602,8 +596,7 @@ describe("aviso de dependência do dia anterior para kits", () => {
     await caller.pedidos.create({
       nomeCliente: "TEST_Cliente Kit Dia 2",
       colaboradorId,
-      dataEvento: dia2,
-      dataEntrega: dia2,
+      data: dia2,
       ruaEntrega: "Rua B",
       bairroEntrega: "Centro",
       numeroEntrega: "2",

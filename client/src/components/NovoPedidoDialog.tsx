@@ -18,8 +18,7 @@ import { dismissKeyboardOnEnter } from "@/lib/formUtils";
 const pedidoSchema = z.object({
   nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
   colaboradorId: z.string().min(1, "Colaborador é obrigatório"),
-  dataEvento: z.string().min(1, "Data do evento é obrigatória"),
-  dataEntrega: z.string().min(1, "Data de entrega é obrigatória"),
+  data: z.string().min(1, "Data é obrigatória"),
   ruaEntrega: z.string().min(1, "Rua é obrigatória"),
   bairroEntrega: z.string().min(1, "Bairro é obrigatório"),
   numeroEntrega: z.string().min(1, "Número é obrigatório"),
@@ -39,8 +38,7 @@ interface NovoPedidoDialogProps {
     id: number;
     nomeCliente: string;
     colaboradorId: number;
-    dataEvento: Date;
-    dataEntrega: Date;
+    data: Date;
     ruaEntrega: string;
     bairroEntrega: string;
     numeroEntrega: string;
@@ -103,8 +101,7 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
       reset({
         nomeCliente: pedidoParaEditar.nomeCliente,
         colaboradorId: String(pedidoParaEditar.colaboradorId),
-        dataEvento: format(new Date(pedidoParaEditar.dataEvento), "yyyy-MM-dd'T'HH:mm"),
-        dataEntrega: format(new Date(pedidoParaEditar.dataEntrega), "yyyy-MM-dd'T'HH:mm"),
+        data: format(new Date(pedidoParaEditar.data), "yyyy-MM-dd'T'HH:mm"),
         ruaEntrega: pedidoParaEditar.ruaEntrega,
         bairroEntrega: pedidoParaEditar.bairroEntrega,
         numeroEntrega: pedidoParaEditar.numeroEntrega,
@@ -135,11 +132,11 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
     }
   }, [pedidoParaEditar, open, reset, colaboradorVinculado]);
 
-  const dataEntregaValue = watch("dataEntrega");
+  const dataValue = watch("data");
   const dataParaDisponibilidade = useMemo(() => {
-    if (dataEntregaValue) return new Date(dataEntregaValue);
+    if (dataValue) return new Date(dataValue);
     return new Date();
-  }, [dataEntregaValue]);
+  }, [dataValue]);
 
   const { data: disponibilidadeItens = [] } = trpc.itens.getDisponibilidadePorData.useQuery(
     { data: dataParaDisponibilidade },
@@ -278,8 +275,7 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
       return;
     }
 
-    const dataEvento = new Date(data.dataEvento);
-    const dataEntrega = new Date(data.dataEntrega);
+    const dataPedido = new Date(data.data);
     const valorTaxaEntrega = data.valorTaxaEntrega || 0;
 
     if (isEditing && pedidoParaEditar) {
@@ -287,8 +283,7 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
         id: pedidoParaEditar.id,
         nomeCliente: data.nomeCliente,
         colaboradorId: Number(data.colaboradorId),
-        dataEvento,
-        dataEntrega,
+        data: dataPedido,
         ruaEntrega: data.ruaEntrega,
         bairroEntrega: data.bairroEntrega,
         numeroEntrega: data.numeroEntrega,
@@ -301,8 +296,7 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
       await createMutation.mutateAsync({
         nomeCliente: data.nomeCliente,
         colaboradorId: Number(data.colaboradorId),
-        dataEvento,
-        dataEntrega,
+        data: dataPedido,
         ruaEntrega: data.ruaEntrega,
         bairroEntrega: data.bairroEntrega,
         numeroEntrega: data.numeroEntrega,
@@ -372,25 +366,15 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
               </div>
 
               <div>
-                <Label htmlFor="dataEvento" className="text-xs">Data do Evento</Label>
+                <Label htmlFor="data" className="text-xs">Data</Label>
                 <Input
-                  id="dataEvento"
+                  id="data"
                   type="datetime-local"
-                  {...register("dataEvento")}
+                  {...register("data")}
                   defaultValue={dataInicial ? format(dataInicial, "yyyy-MM-dd'T'HH:mm") : ""}
                   className="text-sm"
                 />
-                {errors.dataEvento && <p className="text-xs text-red-500 mt-1">{errors.dataEvento.message}</p>}
-              </div>
-
-              <div>
-                <Label htmlFor="dataEntrega" className="text-xs">Data de Entrega</Label>
-                <Input
-                  id="dataEntrega"
-                  type="datetime-local"
-                  {...register("dataEntrega")}
-                  className="text-sm"
-                />
+                {errors.data && <p className="text-xs text-red-500 mt-1">{errors.data.message}</p>}
               </div>
             </div>
 
@@ -489,9 +473,9 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
                   </SelectContent>
                 </Select>
                 <div className="flex gap-2 items-center">
-                  {dataEntregaValue && (
+                  {dataValue && (
                     <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
-                      em {format(new Date(dataEntregaValue), "dd/MM")}
+                      em {format(new Date(dataValue), "dd/MM")}
                     </span>
                   )}
                   <Input
@@ -507,9 +491,9 @@ function atualizarValorKit(idx: number, novoValorReais: string) {
                   </Button>
                 </div>
               </div>
-              {dataEntregaValue && (
+              {dataValue && (
                 <p className="text-xs text-muted-foreground sm:hidden">
-                  Disponibilidade em {format(new Date(dataEntregaValue), "dd/MM")}
+                  Disponibilidade em {format(new Date(dataValue), "dd/MM")}
                 </p>
               )}
               {erroQtdItem && <p className="text-xs text-red-500">{erroQtdItem}</p>}

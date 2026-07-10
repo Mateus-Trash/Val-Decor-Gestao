@@ -73,7 +73,7 @@ export default function Calendario() {
   const pedidosPorDia = useMemo(() => {
     const mapa: Record<string, typeof pedidos> = {};
     pedidos.forEach((p) => {
-      const chave = format(new Date(p.dataEvento), "yyyy-MM-dd");
+      const chave = format(new Date(p.data), "yyyy-MM-dd");
       if (!mapa[chave]) mapa[chave] = [];
       mapa[chave].push(p);
     });

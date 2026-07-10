@@ -28,8 +28,7 @@ export const pedidosRouter = router({
         id: pedidos.id,
         nomeCliente: pedidos.nomeCliente,
         colaboradorId: pedidos.colaboradorId,
-        dataEvento: pedidos.dataEvento,
-        dataEntrega: pedidos.dataEntrega,
+        data: pedidos.data,
         ruaEntrega: pedidos.ruaEntrega,
         bairroEntrega: pedidos.bairroEntrega,
         numeroEntrega: pedidos.numeroEntrega,
@@ -94,8 +93,7 @@ export const pedidosRouter = router({
           id: pedidos.id,
           nomeCliente: pedidos.nomeCliente,
           colaboradorId: pedidos.colaboradorId,
-          dataEvento: pedidos.dataEvento,
-          dataEntrega: pedidos.dataEntrega,
+          data: pedidos.data,
           ruaEntrega: pedidos.ruaEntrega,
           bairroEntrega: pedidos.bairroEntrega,
           numeroEntrega: pedidos.numeroEntrega,
@@ -151,8 +149,7 @@ export const pedidosRouter = router({
       z.object({
         nomeCliente: z.string().min(1, "Nome do cliente é obrigatório"),
         colaboradorId: z.number().int().positive(),
-        dataEvento: z.coerce.date(),
-        dataEntrega: z.coerce.date(),
+        data: z.coerce.date(),
         ruaEntrega: z.string().min(1, "Rua é obrigatória"),
         bairroEntrega: z.string().min(1, "Bairro é obrigatório"),
         numeroEntrega: z.string().min(1, "Número é obrigatório"),
@@ -201,7 +198,7 @@ export const pedidosRouter = router({
       }
 
       // ─── Verificar estoque por data ───
-      const reservadoNaData = await getReservadoPorItemNaData(db, input.dataEntrega);
+      const reservadoNaData = await getReservadoPorItemNaData(db, input.data);
       for (const [itemId, qtdTotal] of Array.from(demandaPorItem.entries())) {
         const [itemDb] = await db
           .select({ nome: itens.nome, quantidadeTotal: itens.quantidadeTotal })
@@ -230,8 +227,7 @@ export const pedidosRouter = router({
       const result = await db.insert(pedidos).values({
         nomeCliente: input.nomeCliente,
         colaboradorId: input.colaboradorId,
-        dataEvento: input.dataEvento,
-        dataEntrega: input.dataEntrega,
+        data: input.data,
         ruaEntrega: input.ruaEntrega,
         bairroEntrega: input.bairroEntrega,
         numeroEntrega: input.numeroEntrega,
@@ -290,8 +286,7 @@ export const pedidosRouter = router({
         id: z.number().int().positive(),
         nomeCliente: z.string().min(1, "Nome do cliente é obrigatório").optional(),
         colaboradorId: z.number().int().positive().optional(),
-        dataEvento: z.coerce.date().optional(),
-        dataEntrega: z.coerce.date().optional(),
+        data: z.coerce.date().optional(),
         ruaEntrega: z.string().optional(),
         bairroEntrega: z.string().optional(),
         numeroEntrega: z.string().optional(),
@@ -319,7 +314,7 @@ export const pedidosRouter = router({
       const { id, itens: novosItens, kits: novosKits, ...campos } = input;
       const camposUpdate: Record<string, unknown> = { ...campos };
 
-      // Buscar pedido atual para saber a dataEntrega atual (necessário para estoque)
+      // Buscar pedido atual para saber a data atual (necessário para estoque)
       const [pedidoAtual] = await db
         .select()
         .from(pedidos)
@@ -327,7 +322,7 @@ export const pedidosRouter = router({
         .limit(1);
       if (!pedidoAtual) throw new Error("Pedido não encontrado");
 
-      const dataEntregaEfetiva = input.dataEntrega ?? pedidoAtual.dataEntrega;
+      const dataEfetiva = input.data ?? pedidoAtual.data;
 
       // Se itens ou kits foram enviados, refazer composição
       if (novosItens !== undefined || novosKits !== undefined) {
@@ -351,7 +346,7 @@ export const pedidosRouter = router({
         }
 
         // ─── Verificar estoque por data (excluindo o próprio pedido da reserva) ───
-        const reservadoNaData = await getReservadoPorItemNaData(db, dataEntregaEfetiva);
+        const reservadoNaData = await getReservadoPorItemNaData(db, dataEfetiva);
         // Subtrair a reserva do próprio pedido (itens diretos + kits atuais)
         const itensAtuais = await db
           .select({ itemId: itensPedido.itemId, quantidade: itensPedido.quantidade })
@@ -581,9 +576,9 @@ export const pedidosRouter = router({
 
   /**
    * Retorna entregas e coletas do dia para a tela de Logística.
-   * - Entregas: DATE(dataEntrega) = data selecionada AND status != Concluido
+   * - Entregas: DATE(data) = data selecionada AND status != Concluido
    * - Coletas: data de coleta efetiva = data selecionada AND status != Concluido
-   *   Data de coleta efetiva = coletaAdiadaPara se preenchido, senão dataEntrega + 1 dia
+   *   Data de coleta efetiva = coletaAdiadaPara se preenchido, senão data + 1 dia
    * Ambos os grupos são ordenados por bairroEntrega para otimizar rota.
    */
   listByDataLogistica: protectedProcedure
@@ -594,20 +589,20 @@ export const pedidosRouter = router({
 
       const dataStr = input.data.toISOString().slice(0, 10);
 
-      // Entregas: DATE(dataEntrega) = data selecionada AND status != Concluido
+      // Entregas: DATE(data) = data selecionada AND status != Concluido
       const entregas = await db
         .select()
         .from(pedidos)
         .where(
           and(
-            sql`DATE(${pedidos.dataEntrega}) = ${dataStr}`,
+            sql`DATE(${pedidos.data}) = ${dataStr}`,
             sql`${pedidos.status} != 'Concluido'`
           )
         )
         .orderBy(pedidos.bairroEntrega, pedidos.nomeCliente);
 
       // Coletas: data de coleta efetiva = data selecionada AND status != Concluido
-      // Data de coleta efetiva = coletaAdiadaPara se preenchido, senão dataEntrega + 1 dia
+      // Data de coleta efetiva = coletaAdiadaPara se preenchido, senão data + 1 dia
       const dataAnterior = addDays(input.data, -1).toISOString().slice(0, 10);
       const coletas = await db
         .select()
@@ -617,10 +612,10 @@ export const pedidosRouter = router({
             or(
               // Coleta adiada: coletaAdiadaPara = data selecionada
               sql`DATE(${pedidos.coletaAdiadaPara}) = ${dataStr}`,
-              // Coleta normal: coletaAdiadaPara é null E dataEntrega + 1 = data selecionada
+              // Coleta normal: coletaAdiadaPara é null E data + 1 = data selecionada
               and(
                 isNull(pedidos.coletaAdiadaPara),
-                sql`DATE(${pedidos.dataEntrega}) = ${dataAnterior}`
+                sql`DATE(${pedidos.data}) = ${dataAnterior}`
               )
             ),
             sql`${pedidos.status} != 'Concluido'`
@@ -671,7 +666,7 @@ export const pedidosRouter = router({
 
   /**
    * Posterga a coleta de uma lista de pedidos para o dia seguinte.
-   * Incrementa coletaAdiadaPara em 1 dia (base = coletaAdiadaPara atual ?? dataEntrega + 1 dia).
+   * Incrementa coletaAdiadaPara em 1 dia (base = coletaAdiadaPara atual ?? data + 1 dia).
    */
   postergarColeta: protectedProcedure
     .input(z.object({ pedidoIds: z.array(z.number().int().positive()).min(1) }))
@@ -681,15 +676,15 @@ export const pedidosRouter = router({
 
       // Buscar os pedidos para calcular a nova data
       const pedidosParaPostergar = await db
-        .select({ id: pedidos.id, dataEntrega: pedidos.dataEntrega, coletaAdiadaPara: pedidos.coletaAdiadaPara })
+        .select({ id: pedidos.id, data: pedidos.data, coletaAdiadaPara: pedidos.coletaAdiadaPara })
         .from(pedidos)
         .where(inArray(pedidos.id, input.pedidoIds));
 
-      // Para cada pedido, calcular nova data: (coletaAdiadaPara ?? dataEntrega + 1) + 1 dia
+      // Para cada pedido, calcular nova data: (coletaAdiadaPara ?? data + 1) + 1 dia
       for (const pedido of pedidosParaPostergar) {
         const baseColeta = pedido.coletaAdiadaPara
           ? new Date(pedido.coletaAdiadaPara)
-          : addDays(new Date(pedido.dataEntrega), 1);
+          : addDays(new Date(pedido.data), 1);
         const novaData = addDays(baseColeta, 1);
         await db
           .update(pedidos)

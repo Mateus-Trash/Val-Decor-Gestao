@@ -4,7 +4,7 @@ import { itens, itensPedido, kitsPedido, kitItens, pedidos } from "../drizzle/sc
  * Retorna um Map<itemId, quantidadeReservada> somando reservas diretas (itensPedido)
  * e via kits (kitsPedido expandido por kitItens) de todos os pedidos cujo:
  * - status é DIFERENTE de "Concluido"
- * - dataEntrega é igual à data informada (DATE(dataEntrega) = DATE(data))
+ * - data é igual à data informada (DATE(data) = DATE(data))
  *
  * Ou seja, o item fica reservado apenas no dia exato de entrega.
  * Em qualquer outro dia (passado ou futuro), o item está disponível normalmente.
@@ -17,7 +17,7 @@ export async function getReservadoPorItemNaData(db: any, data: Date): Promise<Ma
     .where(
       and(
         ne(pedidos.status, "Concluido"),
-        eq(sql`DATE(${pedidos.dataEntrega})`, sql`DATE(${data})`)
+        eq(sql`DATE(${pedidos.data})`, sql`DATE(${data})`)
       )
     );
 
@@ -53,7 +53,7 @@ const DIAS_LIMITE_ALERTA_COLETA = 3;
 export interface AlertaColeta {
   pedidoId: number;
   nomeCliente: string;
-  dataEntrega: Date;
+  data: Date;
   diasAtraso: number;
   itensAfetados: {
     itemId: number;
@@ -73,13 +73,13 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
     .select({
       id: pedidos.id,
       nomeCliente: pedidos.nomeCliente,
-      dataEntrega: pedidos.dataEntrega,
+      data: pedidos.data,
     })
     .from(pedidos)
     .where(
       and(
         inArray(pedidos.status, ["EntregueNaoPago", "EntreguePago"]),
-        sql`DATE(${pedidos.dataEntrega}) <= DATE(${limite})`
+        sql`DATE(${pedidos.data}) <= DATE(${limite})`
       )
     );
 
@@ -92,7 +92,7 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
   const alertas: AlertaColeta[] = [];
 
   for (const pedido of pedidosAtrasados) {
-    const diasAtraso = Math.floor((hoje.getTime() - new Date(pedido.dataEntrega).getTime()) / 86400000);
+    const diasAtraso = Math.floor((hoje.getTime() - new Date(pedido.data).getTime()) / 86400000);
 
     const itensDiretos = await db
       .select({ itemId: itensPedido.itemId, quantidade: itensPedido.quantidade })
@@ -131,7 +131,7 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
     alertas.push({
       pedidoId: pedido.id,
       nomeCliente: pedido.nomeCliente,
-      dataEntrega: pedido.dataEntrega,
+      data: pedido.data,
       diasAtraso,
       itensAfetados,
     });
