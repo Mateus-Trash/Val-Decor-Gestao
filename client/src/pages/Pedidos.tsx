@@ -33,7 +33,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
+import ImportarPedidosDialog from "@/components/ImportarPedidosDialog";
 import { ptBR } from "date-fns/locale";
+import { Upload } from "lucide-react";
 
 const statusOptions = ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"] as const;
 
@@ -60,6 +62,7 @@ export default function Pedidos() {
   const [filtroDataInicio, setFiltroDataInicio] = useState<string>("");
   const [filtroDataFim, setFiltroDataFim] = useState<string>("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importarOpen, setImportarOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
@@ -152,10 +155,16 @@ export default function Pedidos() {
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Header */}
         <PageHeading icon={<ShoppingCart className="h-6 sm:h-7 w-6 sm:w-7 text-primary" />} title="Pedidos">
-          <Button onClick={abrirCriar} className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Pedido
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => setImportarOpen(true)} variant="outline" className="w-full sm:w-auto">
+              <Upload className="mr-2 h-4 w-4" />
+              Importar por Texto
+            </Button>
+            <Button onClick={abrirCriar} className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Pedido
+            </Button>
+          </div>
         </PageHeading>
 
         {/* Filtros */}
@@ -397,6 +406,12 @@ export default function Pedidos() {
           )}
         </div>
       </div>
+
+      {/* Dialog de importação por texto */}
+      <ImportarPedidosDialog
+        open={importarOpen}
+        onOpenChange={setImportarOpen}
+      />
 
       {/* Dialog criar/editar usando NovoPedidoDialog */}
       <NovoPedidoDialog
