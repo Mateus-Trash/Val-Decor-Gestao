@@ -79,12 +79,18 @@ export const colaboradoresRouter = router({
       // Update colaborador fields
       await db.update(colaboradores).set(updates).where(eq(colaboradores.id, id));
 
-      // If novaSenha provided, update the linked user's passwordHash
-      if (novaSenha) {
-        const col = await db.select().from(colaboradores).where(eq(colaboradores.id, id)).limit(1);
-        if (col.length > 0 && col[0].userId) {
-          const newHash = await hashPassword(novaSenha);
-          await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, col[0].userId));
+      // Sync email and password to the linked user table (used for login)
+      const col = await db.select().from(colaboradores).where(eq(colaboradores.id, id)).limit(1);
+      if (col.length > 0 && col[0].userId) {
+        const userUpdates: { email?: string; passwordHash?: string } = {};
+        if (input.email && input.email !== col[0].email) {
+          userUpdates.email = input.email;
+        }
+        if (novaSenha) {
+          userUpdates.passwordHash = await hashPassword(novaSenha);
+        }
+        if (Object.keys(userUpdates).length > 0) {
+          await db.update(users).set(userUpdates).where(eq(users.id, col[0].userId));
         }
       }
 
