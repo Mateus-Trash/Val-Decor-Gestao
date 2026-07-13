@@ -690,8 +690,25 @@ export const pedidosRouter = router({
 
       // Entregas: DATE(data) = data selecionada AND status != Concluido
       const entregas = await db
-        .select()
+        .select({
+          id: pedidos.id,
+          nomeCliente: pedidos.nomeCliente,
+          colaboradorId: pedidos.colaboradorId,
+          data: pedidos.data,
+          ruaEntrega: pedidos.ruaEntrega,
+          bairroEntrega: pedidos.bairroEntrega,
+          numeroEntrega: pedidos.numeroEntrega,
+          valorTotal: pedidos.valorTotal,
+          valorTaxaEntrega: pedidos.valorTaxaEntrega,
+          status: pedidos.status,
+          observacoes: pedidos.observacoes,
+          coletaAdiadaPara: pedidos.coletaAdiadaPara,
+          createdAt: pedidos.createdAt,
+          updatedAt: pedidos.updatedAt,
+          nomeColaborador: colaboradores.nome,
+        })
         .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(
           and(
             sql`DATE(${pedidos.data}) = ${dataStr}`,
@@ -704,8 +721,25 @@ export const pedidosRouter = router({
       // Data de coleta efetiva = coletaAdiadaPara se preenchido, senão data + 1 dia
       const dataAnterior = addDays(input.data, -1).toISOString().slice(0, 10);
       const coletas = await db
-        .select()
+        .select({
+          id: pedidos.id,
+          nomeCliente: pedidos.nomeCliente,
+          colaboradorId: pedidos.colaboradorId,
+          data: pedidos.data,
+          ruaEntrega: pedidos.ruaEntrega,
+          bairroEntrega: pedidos.bairroEntrega,
+          numeroEntrega: pedidos.numeroEntrega,
+          valorTotal: pedidos.valorTotal,
+          valorTaxaEntrega: pedidos.valorTaxaEntrega,
+          status: pedidos.status,
+          observacoes: pedidos.observacoes,
+          coletaAdiadaPara: pedidos.coletaAdiadaPara,
+          createdAt: pedidos.createdAt,
+          updatedAt: pedidos.updatedAt,
+          nomeColaborador: colaboradores.nome,
+        })
         .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
         .where(
           and(
             or(

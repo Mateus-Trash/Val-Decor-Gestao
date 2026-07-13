@@ -27,6 +27,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { ShoppingCart, Plus, Pencil, Trash2, MoreVertical, User, Calendar, DollarSign, Truck } from "lucide-react";
 import EntityCard from "@/components/EntityCard";
+import { formatarResumoPedido } from "@/lib/pedidoFormat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -343,8 +344,8 @@ export default function Pedidos() {
             pedidosFiltrados.map((p) => (
               <EntityCard
                 key={p.id}
-                title={`#${p.id}`}
-                subtitle={p.nomeCliente || "Sem cliente"}
+                title={formatarResumoPedido(p)}
+                subtitle={`#${p.id} · ${p.nomeCliente || "Sem cliente"}`}
                 badge={
                   <Select
                     value={p.status}

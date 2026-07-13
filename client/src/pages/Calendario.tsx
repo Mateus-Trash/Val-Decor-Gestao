@@ -25,6 +25,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
+import { formatarResumoPedido } from "@/lib/pedidoFormat";
 
 const statusBadge: Record<string, { label: string; className: string }> = {
   Pendente: { label: "Pendente", className: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" },
@@ -175,14 +176,13 @@ export default function Calendario() {
                             label: evento.status,
                             className: "",
                           };
-                          const nomeExibicao = evento.nomeCliente || `Pedido #${evento.id}`;
                           const [bgColor, textColor] = badge.className.split(" ").slice(0, 2);
                           return (
                             <div
                               key={evento.id}
                               className={`text-[8px] sm:text-xs rounded px-1 py-0.5 truncate ${bgColor} ${textColor}`}
                             >
-                              {nomeExibicao.substring(0, 10)}
+                              {formatarResumoPedido(evento).substring(0, 12)}
                             </div>
                           );
                         })}
@@ -254,13 +254,12 @@ export default function Calendario() {
                             label: evento.status,
                             className: "",
                           };
-                          const nomeExibicao = evento.nomeCliente || `Pedido #${evento.id}`;
                           return (
                             <div
                               key={evento.id}
                               className="text-xs bg-background border border-border rounded px-1 py-0.5 truncate"
                             >
-                              <p className="truncate font-medium">{nomeExibicao}</p>
+                              <p className="truncate font-medium">{formatarResumoPedido(evento)}</p>
                               <Badge
                                 variant="outline"
                                 className={`text-xs h-5 ${badge.className}`}
@@ -322,7 +321,8 @@ export default function Calendario() {
                     {/* Badge de status no canto - removido, agora o fundo é colorido */}
 
                     <div className="pr-4">
-                      <p className="font-semibold text-sm">{pedido.nomeCliente}</p>
+                      <p className="font-semibold text-sm">{formatarResumoPedido(pedido)}</p>
+                      <p className="text-xs text-muted-foreground">{pedido.nomeCliente || "Sem cliente"}</p>
                       <p className="text-xs text-muted-foreground mb-2">Valor: R$ {(pedido.valorTotal / 100).toFixed(2)}</p>
                       {(pedido.composicaoItens?.length > 0 || pedido.composicaoKits?.length > 0) && (
                         <div className="rounded-md bg-white/60 dark:bg-black/20 p-2 space-y-1 mb-2">

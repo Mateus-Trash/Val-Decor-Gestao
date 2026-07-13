@@ -26,6 +26,7 @@ export const dashboardRouter = router({
           data: pedidos.data,
           nomeCliente: pedidos.nomeCliente,
           nomeColaborador: colaboradores.nome,
+          bairroEntrega: pedidos.bairroEntrega,
           valorTotal: pedidos.valorTotal,
         })
         .from(pedidos)

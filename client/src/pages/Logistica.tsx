@@ -23,10 +23,12 @@ import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { formatarResumoPedido } from "@/lib/pedidoFormat";
 
 type Pedido = {
   id: number;
   nomeCliente: string;
+  nomeColaborador: string;
   ruaEntrega: string;
   bairroEntrega: string;
   numeroEntrega: string;
@@ -150,7 +152,10 @@ function GrupoDesktop({
                           />
                         </TableCell>
                       )}
-                      <TableCell className="font-medium">{p.nomeCliente}</TableCell>
+                      <TableCell className="font-medium">{formatarResumoPedido(p)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {p.nomeCliente || "Sem cliente"}
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {p.ruaEntrega}, {p.numeroEntrega}
                       </TableCell>
@@ -237,7 +242,7 @@ function GrupoMobile({
                             className="shrink-0"
                           />
                         )}
-                        <span className="font-medium text-sm truncate">{p.nomeCliente}</span>
+                        <span className="font-medium text-sm truncate">{formatarResumoPedido(p)}</span>
                       </div>
                       <Badge
                         className={`text-xs border shrink-0 ${statusColors[p.status] ?? ""}`}
@@ -246,7 +251,7 @@ function GrupoMobile({
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {p.ruaEntrega}, {p.numeroEntrega} — {p.bairroEntrega}
+                      {p.nomeCliente || "Sem cliente"} · {p.ruaEntrega}, {p.numeroEntrega} — {p.bairroEntrega}
                     </p>
                     {((p.composicaoItens?.length ?? 0) > 0 || (p.composicaoKits?.length ?? 0) > 0) && (
                       <p className="text-xs text-muted-foreground truncate">
