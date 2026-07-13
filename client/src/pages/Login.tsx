@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
 
 const CHAVE_LEMBRAR = "valdecor:lembrarLogin";
 
@@ -14,7 +13,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [lembrar, setLembrar] = useState(false);
-  const [, navigate] = useLocation();
 
   useEffect(() => {
     const salvo = localStorage.getItem(CHAVE_LEMBRAR);
@@ -37,8 +35,11 @@ export default function Login() {
       } else {
         localStorage.removeItem(CHAVE_LEMBRAR);
       }
-      navigate("/");
-      window.location.reload();
+      // Navegação completa única (em vez de navigate() + reload() em sequência).
+      // No Safari/iOS, disparar um reload logo após o navigate pode competir com
+      // o cookie de sessão ainda sendo persistido, fazendo a página recarregada
+      // achar que não há sessão. Uma única navegação evita essa corrida.
+      window.location.href = "/";
     },
     onError: (error) => {
       toast.error(error.message);
