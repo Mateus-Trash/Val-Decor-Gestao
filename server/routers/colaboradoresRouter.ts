@@ -76,21 +76,34 @@ export const colaboradoresRouter = router({
       if (!db) throw new Error("Database not available");
       const { id, novaSenha, ...updates } = input;
 
+      // Busca o colaborador ANTES de atualizar, para saber o e-mail antigo e o userId vinculado
+      const colBefore = await db.select().from(colaboradores).where(eq(colaboradores.id, id)).limit(1);
+      if (colBefore.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Colaborador não encontrado" });
+      }
+
+      // Se o e-mail está mudando, garante que não está em uso por outro usuário
+      if (input.email && input.email !== colBefore[0].email) {
+        const existingUser = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        if (existingUser.length > 0 && existingUser[0].id !== colBefore[0].userId) {
+          throw new TRPCError({ code: "CONFLICT", message: "Email já está em uso" });
+        }
+      }
+
       // Update colaborador fields
       await db.update(colaboradores).set(updates).where(eq(colaboradores.id, id));
 
       // Sync email and password to the linked user table (used for login)
-      const col = await db.select().from(colaboradores).where(eq(colaboradores.id, id)).limit(1);
-      if (col.length > 0 && col[0].userId) {
+      if (colBefore[0].userId) {
         const userUpdates: { email?: string; passwordHash?: string } = {};
-        if (input.email && input.email !== col[0].email) {
+        if (input.email && input.email !== colBefore[0].email) {
           userUpdates.email = input.email;
         }
         if (novaSenha) {
           userUpdates.passwordHash = await hashPassword(novaSenha);
         }
         if (Object.keys(userUpdates).length > 0) {
-          await db.update(users).set(userUpdates).where(eq(users.id, col[0].userId));
+          await db.update(users).set(userUpdates).where(eq(users.id, colBefore[0].userId));
         }
       }
 
