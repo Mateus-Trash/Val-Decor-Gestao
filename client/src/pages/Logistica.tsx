@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight } from "lucide-react";
+import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight, CheckCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -325,6 +325,23 @@ export default function Logistica() {
     postergarMutation.mutate({ pedidoIds: Array.from(selectedColetas) });
   }
 
+  const marcarRecolhidoMutation = trpc.pedidos.updateStatus.useMutation();
+
+  async function handleMarcarRecolhido() {
+    if (selectedColetas.size === 0) return;
+    const ids = Array.from(selectedColetas);
+    try {
+      await Promise.all(
+        ids.map((id) => marcarRecolhidoMutation.mutateAsync({ id, status: "Concluido" }))
+      );
+      toast.success(`${ids.length} coleta(s) marcada(s) como recolhida(s)`);
+      setSelectedColetas(new Set());
+      utils.pedidos.listByDataLogistica.invalidate();
+    } catch (err) {
+      toast.error(`Erro ao marcar como recolhido: ${(err as Error).message}`);
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -386,6 +403,16 @@ export default function Logistica() {
                     </span>
                     <Button
                       size="sm"
+                      variant="default"
+                      onClick={handleMarcarRecolhido}
+                      disabled={marcarRecolhidoMutation.isPending}
+                      className="gap-1.5"
+                    >
+                      <CheckCheck className="h-4 w-4" />
+                      Marcar como recolhido
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={handlePostergar}
                       disabled={postergarMutation.isPending}
@@ -428,15 +455,26 @@ export default function Logistica() {
                   onToggle={toggleColeta}
                 />
                 {selectedColetas.size > 0 && (
-                  <Button
-                    className="w-full gap-2"
-                    variant="outline"
-                    onClick={handlePostergar}
-                    disabled={postergarMutation.isPending}
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                    Postergar {selectedColetas.size} selecionada(s) para amanhã
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      className="w-full gap-2"
+                      variant="default"
+                      onClick={handleMarcarRecolhido}
+                      disabled={marcarRecolhidoMutation.isPending}
+                    >
+                      <CheckCheck className="h-4 w-4" />
+                      Marcar {selectedColetas.size} como recolhido
+                    </Button>
+                    <Button
+                      className="w-full gap-2"
+                      variant="outline"
+                      onClick={handlePostergar}
+                      disabled={postergarMutation.isPending}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                      Postergar {selectedColetas.size} selecionada(s) para amanhã
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
