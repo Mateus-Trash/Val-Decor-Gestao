@@ -113,11 +113,18 @@ export default function Pedidos() {
     }
     if (busca.trim()) {
       const termo = busca.toLowerCase();
-      resultado = resultado.filter(
-        (p) =>
-          (p.nomeCliente && p.nomeCliente.toLowerCase().includes(termo)) ||
-          p.nomeColaborador.toLowerCase().includes(termo)
-      );
+      resultado = resultado.filter((p) => {
+        const conteudoAluguel = [...(p.composicaoItens ?? []), ...(p.composicaoKits ?? [])]
+          .map((c) => c.nome)
+          .join(" ")
+          .toLowerCase();
+        return (
+          conteudoAluguel.includes(termo) ||
+          p.bairroEntrega.toLowerCase().includes(termo) ||
+          p.nomeColaborador.toLowerCase().includes(termo) ||
+          (p.nomeCliente && p.nomeCliente.toLowerCase().includes(termo))
+        );
+      });
     }
     return resultado;
   }, [pedidosList, filtroStatus, busca, filtroColaborador, filtroDataInicio, filtroDataFim]);
