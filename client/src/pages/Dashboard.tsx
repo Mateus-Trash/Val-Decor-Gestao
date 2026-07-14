@@ -204,6 +204,15 @@ export default function Dashboard() {
             footerNote="vs. mês anterior"
           />
           <StatCard
+            title="Faturamento até Hoje"
+            value={kpis ? kpis.faturamentoAteHoje : null}
+            formatFn={formatCentavos}
+            icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
+            loading={kpisLoading}
+            accentClassName="border-l-4 border-l-emerald-500"
+            footerNote="Aluguéis já realizados no período, sem contar o restante do mês"
+          />
+          <StatCard
             title="Saldo do Mês"
             value={kpis ? kpis.saldo : null}
             formatFn={formatCentavos}

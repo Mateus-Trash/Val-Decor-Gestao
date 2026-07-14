@@ -91,6 +91,7 @@ export const dashboardRouter = router({
       const db = await getDb();
       if (!db) return {
         faturamentoTotal: 0,
+        faturamentoAteHoje: 0,
         taxasEntrega: 0,
         totalDespesas: 0,
         saldo: 0,
@@ -101,25 +102,62 @@ export const dashboardRouter = router({
         top5Itens: [] as { nome: string; totalQuantidade: number }[],
       };
 
-      // Faturamento, taxas e despesas no período
-      const financeiro = await db
+      // Despesas no período: mantém baseado na data de criação da transação — despesas
+      // nem sempre têm um pedido vinculado com data de aluguel confiável.
+      const [despesasRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            gte(transacoesFinanceiras.data, input.dataInicio),
+            lte(transacoesFinanceiras.data, input.dataFim)
+          )
+        );
+      const totalDespesas = Number(despesasRow?.total ?? 0);
+
+      // Faturamento (receita) e taxas de entrega no período: baseado na DATA DO ALUGUEL
+      // (pedidos.data), via join com a tabela pedidos — não mais na data de criação da
+      // transação. Evita contar, no mês errado, um pedido criado no fim de um mês com
+      // aluguel marcado pro mês seguinte.
+      const receitaETaxasPeriodo = await db
         .select({
           tipo: transacoesFinanceiras.tipo,
           total: sum(transacoesFinanceiras.valor),
         })
         .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
         .where(
           and(
-            gte(transacoesFinanceiras.data, input.dataInicio),
-            lte(transacoesFinanceiras.data, input.dataFim)
+            inArray(transacoesFinanceiras.tipo, ["receita", "taxa_entrega"]),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
           )
         )
         .groupBy(transacoesFinanceiras.tipo);
 
-      const faturamentoTotal = Number(financeiro.find(f => f.tipo === "receita")?.total ?? 0);
-      const taxasEntrega = Number(financeiro.find(f => f.tipo === "taxa_entrega")?.total ?? 0);
-      const totalDespesas = Number(financeiro.find(f => f.tipo === "despesa")?.total ?? 0);
+      const faturamentoTotal = Number(receitaETaxasPeriodo.find(f => f.tipo === "receita")?.total ?? 0);
+      const taxasEntrega = Number(receitaETaxasPeriodo.find(f => f.tipo === "taxa_entrega")?.total ?? 0);
       const saldo = faturamentoTotal + taxasEntrega - totalDespesas;
+
+      // Faturamento até hoje: mesma base do faturamentoTotal, mas limitando o fim do
+      // período ao menor valor entre o fim selecionado e a data de hoje — exclui
+      // aluguéis com data futura dentro do período (ainda não aconteceram).
+      const hoje = new Date();
+      const cutoffAteHoje = input.dataFim < hoje ? input.dataFim : hoje;
+
+      const [receitaAteHojeRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "receita"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, cutoffAteHoje)
+          )
+        );
+      const faturamentoAteHoje = Number(receitaAteHojeRow?.total ?? 0);
 
       // Pedidos por status no período
       const pedidosStatus = await db
@@ -183,6 +221,7 @@ export const dashboardRouter = router({
 
       return {
         faturamentoTotal,
+        faturamentoAteHoje,
         taxasEntrega,
         totalDespesas,
         saldo,
@@ -218,22 +257,24 @@ export const dashboardRouter = router({
       const [receitaAtual] = await db
         .select({ total: sum(transacoesFinanceiras.valor) })
         .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
         .where(
           and(
             eq(transacoesFinanceiras.tipo, "receita"),
-            gte(transacoesFinanceiras.data, inicioAtual),
-            lte(transacoesFinanceiras.data, fimAtual)
+            gte(pedidos.data, inicioAtual),
+            lte(pedidos.data, fimAtual)
           )
         );
 
       const [receitaAnterior] = await db
         .select({ total: sum(transacoesFinanceiras.valor) })
         .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
         .where(
           and(
             eq(transacoesFinanceiras.tipo, "receita"),
-            gte(transacoesFinanceiras.data, inicioAnterior),
-            lte(transacoesFinanceiras.data, fimAnterior)
+            gte(pedidos.data, inicioAnterior),
+            lte(pedidos.data, fimAnterior)
           )
         );
 
@@ -258,18 +299,35 @@ export const dashboardRouter = router({
       const dataInicio = new Date(input.ano, input.mes - 1, 1);
       const dataFim = new Date(input.ano, input.mes, 0, 23, 59, 59);
 
-      // Buscar transações do mês
-      const transacoes = await db
+      // Despesas: mantém agrupado pela data de criação da transação
+      const despesasSemana = await db
         .select({
-          tipo: transacoesFinanceiras.tipo,
           valor: transacoesFinanceiras.valor,
           data: transacoesFinanceiras.data,
         })
         .from(transacoesFinanceiras)
         .where(
           and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
             gte(transacoesFinanceiras.data, dataInicio),
             lte(transacoesFinanceiras.data, dataFim)
+          )
+        );
+
+      // Receitas e taxas de entrega: agrupadas pela DATA DO ALUGUEL (pedidos.data),
+      // via join com pedidos — não mais pela data de criação da transação.
+      const receitasSemana = await db
+        .select({
+          valor: transacoesFinanceiras.valor,
+          data: pedidos.data,
+        })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            inArray(transacoesFinanceiras.tipo, ["receita", "taxa_entrega"]),
+            gte(pedidos.data, dataInicio),
+            lte(pedidos.data, dataFim)
           )
         );
 
@@ -282,14 +340,15 @@ export const dashboardRouter = router({
         { semana: 5, receitas: 0, despesas: 0 },
       ];
 
-      for (const t of transacoes) {
+      for (const t of receitasSemana) {
         const dia = new Date(t.data).getDate();
         const semanaIdx = Math.min(Math.ceil(dia / 7), 5) - 1;
-        if (t.tipo === "receita" || t.tipo === "taxa_entrega") {
-          semanas[semanaIdx].receitas += t.valor;
-        } else if (t.tipo === "despesa") {
-          semanas[semanaIdx].despesas += t.valor;
-        }
+        semanas[semanaIdx].receitas += t.valor;
+      }
+      for (const t of despesasSemana) {
+        const dia = new Date(t.data).getDate();
+        const semanaIdx = Math.min(Math.ceil(dia / 7), 5) - 1;
+        semanas[semanaIdx].despesas += t.valor;
       }
 
       return semanas;
