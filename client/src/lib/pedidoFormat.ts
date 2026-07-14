@@ -11,16 +11,18 @@ export interface PedidoParaResumo {
 }
 
 /**
- * Monta o texto padrão de identificação de um pedido: quantidade + item + colaborador + bairro.
- * Ex: "10 Conjuntos com toalha Duda Sabiazal". Usado em Calendario, Pedidos e Logistica
- * pra manter o mesmo padrão visual em todo o site.
+ * Monta o texto padrão de identificação de um pedido: conteúdo completo do aluguel
+ * (itens + kits, cada um como "Nx Nome") separados por " + ", seguido do colaborador
+ * e do bairro, separados por " | ".
+ * Ex: "10x Conjuntos sem Toalha + 1x Kit Simples Barbie Antigo | Brenda Eduarda | Santa Luzia"
+ * Usado em Calendario, Pedidos e Logistica pra manter o mesmo padrão visual em todo o site.
+ * O nome do cliente NÃO entra nesse resumo — deixou de ser o identificador principal do pedido.
  */
 export function formatarResumoPedido(pedido: PedidoParaResumo): string {
   const composicao = [...(pedido.composicaoItens ?? []), ...(pedido.composicaoKits ?? [])];
-  if (composicao.length === 0) {
-    return `${pedido.nomeColaborador} ${pedido.bairroEntrega}`;
-  }
-  const primeiro = composicao[0];
-  const base = `${primeiro.quantidade} ${primeiro.nome} ${pedido.nomeColaborador} ${pedido.bairroEntrega}`;
-  return composicao.length > 1 ? `${base} +${composicao.length - 1}` : base;
+  const conteudo =
+    composicao.length > 0
+      ? composicao.map((c) => `${c.quantidade}x ${c.nome}`).join(" + ")
+      : "Sem itens";
+  return `${conteudo} | ${pedido.nomeColaborador} | ${pedido.bairroEntrega}`;
 }
