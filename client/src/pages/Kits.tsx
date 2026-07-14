@@ -34,7 +34,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Layers, Plus, Pencil, Trash2, X, MoreVertical, DollarSign } from "lucide-react";
+import { Layers, Plus, Pencil, Trash2, X, MoreVertical, DollarSign, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
@@ -46,6 +47,12 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
+
+const CATEGORIA_LABELS: Record<string, string> = {
+  Decoracoes: "Decorações",
+  "Cadeiras e Mesas": "Cadeiras e Mesas",
+  Toalhas: "Toalhas",
+};
 
 const kitSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
@@ -66,6 +73,7 @@ export default function Kits() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
   const [composicao, setComposicao] = useState<ItemComposicao[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
   const [qtdItem, setQtdItem] = useState<string>("1");
@@ -74,6 +82,22 @@ export default function Kits() {
 
   const { data: kits = [], isLoading } = trpc.kits.list.useQuery();
   const { data: itensDisponiveis = [] } = trpc.itens.list.useQuery();
+
+  function toggleCategoria(cat: string) {
+    setAbertas((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
+
+  const kitsFiltrados = (filtroCategoria === "todas" ? kits : kits.filter((k) => (k.categoria ?? "Decoracoes") === filtroCategoria));
+
+  const kitsPorCategoria = CATEGORIAS.map((cat) => ({
+    categoria: cat,
+    kits: kitsFiltrados.filter((k) => (k.categoria ?? "Decoracoes") === cat),
+  })).filter((g) => g.kits.length > 0);
 
   const createMutation = trpc.kits.create.useMutation({
     onSuccess: () => {
@@ -220,68 +244,78 @@ export default function Kits() {
           </SelectContent>
         </Select>
 
-        {/* Tabela Desktop */}
-        <Card className="gap-2 hidden sm:block">
-          <CardHeader>
-            <CardTitle>Catálogo de Kits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).length === 0 ? (
-              <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
-                      <TableHead className="text-center">Itens (tipos)</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).map((kit) => (
-                      <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
-                        <TableCell className="font-medium">{kit.nome}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">{kit.categoria ?? "Decoracoes"}</Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{kit.descricao ?? "—"}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(kit.valorAluguel)}</TableCell>
-                        <TableCell className="text-center">{kit.itens.length}</TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => abrirEditar(kit)}>
-                                <Pencil className="h-4 w-4 mr-2" /> Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
-                                <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tabela Desktop com Accordion por Categoria */}
+        <div className="hidden sm:block">
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : kitsFiltrados.length === 0 ? (
+            <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
+          ) : (
+            <div className="space-y-2">
+              {kitsPorCategoria.map((grupo) => (
+                <Collapsible key={grupo.categoria} open={abertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(grupo.categoria)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${abertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.kits.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2">
+                      <CardContent className="pt-6">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
+                                <TableHead className="text-center">Itens (tipos)</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {grupo.kits.map((kit) => (
+                                <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
+                                  <TableCell className="font-medium">{kit.nome}</TableCell>
+                                  <TableCell className="max-w-xs truncate">{kit.descricao ?? "—"}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(kit.valorAluguel)}</TableCell>
+                                  <TableCell className="text-center">{kit.itens.length}</TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => abrirEditar(kit)}>
+                                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
+                                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Cards Mobile */}
+        {/* Cards Mobile com Accordion por Categoria */}
         <div className="block sm:hidden space-y-2">
           {isLoading ? (
             <div className="space-y-3">
@@ -289,36 +323,53 @@ export default function Kits() {
                 <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
-            ) : kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).length === 0 ? (
-              <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
-            ) : (
-              kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).map((kit) => (
-                <EntityCard
-                  key={kit.id}
-                  title={kit.nome}
-                  subtitle={kit.categoria ? `${kit.categoria}${kit.descricao ? " · " + kit.descricao.substring(0, 30) : ""}` : (kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—")}
-                badge={<span className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</span>}
-                fields={[
-                  { icon: DollarSign, label: "Valor", value: formatCurrency(kit.valorAluguel) },
-                  { icon: Layers, label: "Itens", value: String(kit.itens.length) },
-                ]}
-                actions={
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => abrirEditar(kit)}>
-                        <Pencil className="h-4 w-4 mr-2" /> Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                }
-              />
-            ))
+          ) : kitsFiltrados.length === 0 ? (
+            <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
+          ) : (
+            <div className="space-y-2">
+              {kitsPorCategoria.map((grupo) => (
+                <Collapsible key={grupo.categoria} open={abertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(grupo.categoria)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${abertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.kits.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2 mt-2">
+                      {grupo.kits.map((kit) => (
+                        <EntityCard
+                          key={kit.id}
+                          title={kit.nome}
+                          subtitle={kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—"}
+                          badge={<span className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</span>}
+                          fields={[
+                            { icon: DollarSign, label: "Valor", value: formatCurrency(kit.valorAluguel) },
+                            { icon: Layers, label: "Itens", value: String(kit.itens.length) },
+                          ]}
+                          actions={
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => abrirEditar(kit)}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => confirmarDelete(kit.id)} className="text-destructive">
+                                  <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          }
+                        />
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
           )}
         </div>
       </div>

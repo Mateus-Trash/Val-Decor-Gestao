@@ -29,7 +29,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
-import { Package, Plus, Pencil, Trash2, MoreVertical, DollarSign, Hash } from "lucide-react";
+import { Package, Plus, Pencil, Trash2, MoreVertical, DollarSign, Hash, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,12 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
+
+const CATEGORIA_LABELS: Record<string, string> = {
+  Decoracoes: "Decorações",
+  "Cadeiras e Mesas": "Cadeiras e Mesas",
+  Toalhas: "Toalhas",
+};
 
 const itemSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
@@ -58,6 +65,16 @@ export default function Itens() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [abertas, setAbertas] = useState<Set<string>>(new Set());
+
+  function toggleCategoria(cat: string) {
+    setAbertas((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }
 
   const utils = trpc.useUtils();
 
@@ -107,6 +124,14 @@ export default function Itens() {
     }
     return result;
   }, [itens, busca, filtroCategoria]);
+
+  const itensPorCategoria = useMemo(
+    () => CATEGORIAS.map((cat) => ({
+      categoria: cat,
+      itens: itensFiltrados.filter((i) => (i.categoria ?? "Decoracoes") === cat),
+    })).filter((g) => g.itens.length > 0),
+    [itensFiltrados]
+  );
 
   function abrirCriar() {
     setEditandoId(null);
@@ -207,78 +232,88 @@ export default function Itens() {
           </Select>
         </div>
 
-        {/* Tabela Desktop */}
-        <Card className="gap-2 hidden sm:block">
-          <CardHeader>
-            <CardTitle>Catálogo de Itens</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : itensFiltrados.length === 0 ? (
-              <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
-                      <TableHead className="text-right">Custo Aquisição (R$)</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="text-right">Disponível</TableHead>
-                      <TableHead className="text-center">Situação</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {itensFiltrados.map((item) => (
-                      <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
-                        <TableCell className="font-medium">{item.nome}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">{item.categoria ?? "Decoracoes"}</Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{item.descricao ?? "—"}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.valorAluguel)}</TableCell>
-                        <TableCell className="text-right">
-                          {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
-                        <TableCell className="text-right">{item.quantidadeDisponivel}</TableCell>
-                        <TableCell className="text-center">
-                          {getSituacao(item.quantidadeDisponivel)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => abrirEditar(item)}>
-                                <Pencil className="h-4 w-4 mr-2" /> Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
-                                <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Tabela Desktop com Accordion por Categoria */}
+        <div className="hidden sm:block">
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : itensFiltrados.length === 0 ? (
+            <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
+          ) : (
+            <div className="space-y-2">
+              {itensPorCategoria.map((grupo) => (
+                <Collapsible key={grupo.categoria} open={abertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(grupo.categoria)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${abertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.itens.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <Card className="mt-2">
+                      <CardContent className="pt-6">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Descrição</TableHead>
+                                <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
+                                <TableHead className="text-right">Custo Aquisição (R$)</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">Disponível</TableHead>
+                                <TableHead className="text-center">Situação</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {grupo.itens.map((item) => (
+                                <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
+                                  <TableCell className="font-medium">{item.nome}</TableCell>
+                                  <TableCell className="max-w-xs truncate">{item.descricao ?? "—"}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(item.valorAluguel)}</TableCell>
+                                  <TableCell className="text-right">
+                                    {item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—"}
+                                  </TableCell>
+                                  <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
+                                  <TableCell className="text-right">{item.quantidadeDisponivel}</TableCell>
+                                  <TableCell className="text-center">
+                                    {getSituacao(item.quantidadeDisponivel)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => abrirEditar(item)}>
+                                          <Pencil className="h-4 w-4 mr-2" /> Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
+                                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          )}
+        </div>
 
-        {/* Cards Mobile */}
+        {/* Cards Mobile com Accordion por Categoria */}
         <div className="block sm:hidden space-y-2">
           {isLoading ? (
             <div className="space-y-3">
@@ -289,35 +324,52 @@ export default function Itens() {
           ) : itensFiltrados.length === 0 ? (
             <EmptyState icon={Package} message="Nenhum item cadastrado ainda." actionLabel="Novo Item" onAction={abrirCriar} />
           ) : (
-            itensFiltrados.map((item) => (
-              <EntityCard
-                key={item.id}
-                title={item.nome}
-                subtitle={item.categoria ? `${item.categoria}${item.descricao ? " · " + item.descricao.substring(0, 30) : ""}` : (item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—")}
-                badge={getSituacao(item.quantidadeDisponivel)}
-                fields={[
-                  { icon: DollarSign, label: "Aluguel", value: formatCurrency(item.valorAluguel) },
-                  { icon: DollarSign, label: "Custo", value: item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—" },
-                  { icon: Hash, label: "Total", value: String(item.quantidadeTotal) },
-                  { icon: Package, label: "Disponível", value: String(item.quantidadeDisponivel) },
-                ]}
-                actions={
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => abrirEditar(item)}>
-                        <Pencil className="h-4 w-4 mr-2" /> Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                }
-              />
-            ))
+            <div className="space-y-2">
+              {itensPorCategoria.map((grupo) => (
+                <Collapsible key={grupo.categoria} open={abertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(grupo.categoria)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${abertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.itens.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-2 mt-2">
+                      {grupo.itens.map((item) => (
+                        <EntityCard
+                          key={item.id}
+                          title={item.nome}
+                          subtitle={item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}
+                          badge={getSituacao(item.quantidadeDisponivel)}
+                          fields={[
+                            { icon: DollarSign, label: "Aluguel", value: formatCurrency(item.valorAluguel) },
+                            { icon: DollarSign, label: "Custo", value: item.custoAquisicao ? formatCurrency(item.custoAquisicao) : "—" },
+                            { icon: Hash, label: "Total", value: String(item.quantidadeTotal) },
+                            { icon: Package, label: "Disponível", value: String(item.quantidadeDisponivel) },
+                          ]}
+                          actions={
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => abrirEditar(item)}>
+                                  <Pencil className="h-4 w-4 mr-2" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => confirmarDelete(item.id)} className="text-destructive">
+                                  <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          }
+                        />
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
           )}
         </div>
       </div>
