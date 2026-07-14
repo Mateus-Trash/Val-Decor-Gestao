@@ -290,11 +290,17 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
     const dataPedido = new Date(data.data);
     const valorTaxaEntrega = data.valorTaxaEntrega || 0;
 
+    // Colaborador não-admin nunca pode mudar o dono do pedido — nem ao criar,
+    // nem ao editar. Ignora o valor do formulário e usa sempre o dono correto.
+    const colaboradorIdFinal = colaboradorVinculado
+      ? (isEditing && pedidoParaEditar ? pedidoParaEditar.colaboradorId : colaboradorVinculado)
+      : Number(data.colaboradorId);
+
     if (isEditing && pedidoParaEditar) {
       await updateMutation.mutateAsync({
         id: pedidoParaEditar.id,
         nomeCliente: data.nomeCliente,
-        colaboradorId: Number(data.colaboradorId),
+        colaboradorId: colaboradorIdFinal,
         data: dataPedido,
         ruaEntrega: data.ruaEntrega,
         bairroEntrega: data.bairroEntrega,
@@ -307,7 +313,7 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
     } else {
       await createMutation.mutateAsync({
         nomeCliente: data.nomeCliente,
-        colaboradorId: Number(data.colaboradorId),
+        colaboradorId: colaboradorIdFinal,
         data: dataPedido,
         ruaEntrega: data.ruaEntrega,
         bairroEntrega: data.bairroEntrega,
@@ -352,7 +358,9 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
                 <Label htmlFor="colaboradorId" className="text-xs">Colaborador</Label>
                 {colaboradorVinculado ? (
                   <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-sm">
-                    {colaboradorNome || "Colaborador vinculado"}
+                    {isEditing && pedidoParaEditar
+                      ? (colaboradoresList.find((c) => c.id === pedidoParaEditar.colaboradorId)?.nome ?? "Colaborador")
+                      : (colaboradorNome || "Colaborador vinculado")}
                   </div>
                 ) : (
                   <Controller
