@@ -62,6 +62,7 @@ export default function Pedidos() {
   const [filtroColaborador, setFiltroColaborador] = useState<string>("todos");
   const [filtroDataInicio, setFiltroDataInicio] = useState<string>("");
   const [filtroDataFim, setFiltroDataFim] = useState<string>("");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importarOpen, setImportarOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -111,6 +112,15 @@ export default function Pedidos() {
       const fim = new Date(filtroDataFim + "T23:59:59");
       resultado = resultado.filter((p) => new Date(p.data) <= fim);
     }
+    if (filtroCategoria !== "todas") {
+      resultado = resultado.filter((p) => {
+        const itensDoPedido = p.composicaoItens ?? [];
+        const kitsDoPedido = p.composicaoKits ?? [];
+        const temItemNaCategoria = itensDoPedido.some((i) => (i.categoria ?? "Decoracoes") === filtroCategoria);
+        const temKitNaCategoria = kitsDoPedido.some((k) => (k.categoria ?? "Decoracoes") === filtroCategoria);
+        return temItemNaCategoria || temKitNaCategoria;
+      });
+    }
     if (busca.trim()) {
       const termo = busca.toLowerCase();
       resultado = resultado.filter((p) => {
@@ -127,7 +137,7 @@ export default function Pedidos() {
       });
     }
     return resultado;
-  }, [pedidosList, filtroStatus, busca, filtroColaborador, filtroDataInicio, filtroDataFim]);
+  }, [pedidosList, filtroStatus, busca, filtroColaborador, filtroDataInicio, filtroDataFim, filtroCategoria]);
 
   function abrirCriar() {
     setEditandoId(null);
@@ -195,6 +205,17 @@ export default function Pedidos() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as categorias</SelectItem>
+                <SelectItem value="Decoracoes">Decorações</SelectItem>
+                <SelectItem value="Cadeiras e Mesas">Cadeiras e Mesas</SelectItem>
+                <SelectItem value="Toalhas">Toalhas</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={filtroColaborador} onValueChange={setFiltroColaborador}>
               <SelectTrigger className="w-full sm:w-44">
                 <SelectValue placeholder="Colaborador" />
@@ -223,12 +244,12 @@ export default function Pedidos() {
                 className="flex-1 text-sm"
               />
             </div>
-            {(filtroDataInicio || filtroDataFim || filtroColaborador !== "todos") && (
+            {(filtroDataInicio || filtroDataFim || filtroColaborador !== "todos" || filtroCategoria !== "todas") && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="text-xs"
-                onClick={() => { setFiltroDataInicio(""); setFiltroDataFim(""); setFiltroColaborador("todos"); }}
+                onClick={() => { setFiltroDataInicio(""); setFiltroDataFim(""); setFiltroColaborador("todos"); setFiltroCategoria("todas"); }}
               >
                 Limpar filtros
               </Button>

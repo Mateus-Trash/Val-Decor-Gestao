@@ -30,18 +30,22 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { Package, Plus, Pencil, Trash2, MoreVertical, DollarSign, Hash } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
+const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
+
 const itemSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
   descricao: z.string().optional(),
+  categoria: z.enum(CATEGORIAS).default("Decoracoes"),
   valorAluguel: z.number().positive("Valor de aluguel deve ser positivo"),
   custoAquisicao: z.number().optional(),
   quantidadeTotal: z.number().int().positive("Quantidade total deve ser positiva"),
@@ -51,6 +55,7 @@ type ItemForm = z.infer<typeof itemSchema>;
 
 export default function Itens() {
   const [busca, setBusca] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
 
@@ -87,19 +92,25 @@ export default function Itens() {
     onError: (error) => toast.error(`Erro ao remover item: ${error.message}`),
   });
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ItemForm>({
-    resolver: zodResolver(itemSchema),
+  const { register, handleSubmit, reset, watch, control, formState: { errors } } = useForm<ItemForm>({
+    resolver: zodResolver(itemSchema) as any,
   });
 
   const itensFiltrados = useMemo(() => {
-    if (!busca.trim()) return itens;
-    const termo = busca.toLowerCase();
-    return itens.filter((i) => i.nome.toLowerCase().includes(termo));
-  }, [itens, busca]);
+    let result = itens;
+    if (filtroCategoria !== "todas") {
+      result = result.filter((i) => i.categoria === filtroCategoria);
+    }
+    if (busca.trim()) {
+      const termo = busca.toLowerCase();
+      result = result.filter((i) => i.nome.toLowerCase().includes(termo));
+    }
+    return result;
+  }, [itens, busca, filtroCategoria]);
 
   function abrirCriar() {
     setEditandoId(null);
-    reset({ nome: "", descricao: "", valorAluguel: 0, custoAquisicao: 0, quantidadeTotal: 1 });
+    reset({ nome: "", descricao: "", categoria: "Decoracoes", valorAluguel: 0, custoAquisicao: 0, quantidadeTotal: 1 });
     setDialogOpen(true);
   }
 
@@ -108,6 +119,7 @@ export default function Itens() {
     reset({
       nome: item.nome,
       descricao: item.descricao ?? "",
+      categoria: item.categoria ?? "Decoracoes",
       valorAluguel: item.valorAluguel / 100,
       custoAquisicao: item.custoAquisicao ? item.custoAquisicao / 100 : 0,
       quantidadeTotal: item.quantidadeTotal,
@@ -125,6 +137,7 @@ export default function Itens() {
     const payload = {
       nome: data.nome,
       descricao: data.descricao,
+      categoria: data.categoria,
       valorAluguel: Math.round(data.valorAluguel * 100),
       custoAquisicao: data.custoAquisicao ? Math.round(data.custoAquisicao * 100) : undefined,
       quantidadeTotal: data.quantidadeTotal,
@@ -173,13 +186,26 @@ export default function Itens() {
           </Button>
         </PageHeading>
 
-        {/* Busca */}
-        <Input
-          placeholder="Buscar por nome..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-full"
-        />
+        {/* Busca e Filtro */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Input
+            placeholder="Buscar por nome..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full"
+          />
+          <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as categorias</SelectItem>
+              {CATEGORIAS.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Tabela Desktop */}
         <Card className="gap-2 hidden sm:block">
@@ -201,6 +227,7 @@ export default function Itens() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
                       <TableHead className="text-right">Custo Aquisição (R$)</TableHead>
@@ -214,6 +241,9 @@ export default function Itens() {
                     {itensFiltrados.map((item) => (
                       <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-medium">{item.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{item.categoria ?? "Decoracoes"}</Badge>
+                        </TableCell>
                         <TableCell className="max-w-xs truncate">{item.descricao ?? "—"}</TableCell>
                         <TableCell className="text-right">{formatCurrency(item.valorAluguel)}</TableCell>
                         <TableCell className="text-right">
@@ -263,7 +293,7 @@ export default function Itens() {
               <EntityCard
                 key={item.id}
                 title={item.nome}
-                subtitle={item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—"}
+                subtitle={item.categoria ? `${item.categoria}${item.descricao ? " · " + item.descricao.substring(0, 30) : ""}` : (item.descricao ? item.descricao.substring(0, 40) + (item.descricao.length > 40 ? "..." : "") : "—")}
                 badge={getSituacao(item.quantidadeDisponivel)}
                 fields={[
                   { icon: DollarSign, label: "Aluguel", value: formatCurrency(item.valorAluguel) },
@@ -302,6 +332,26 @@ export default function Itens() {
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="categoria">Categoria *</Label>
+                <Controller
+                  control={control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
               <div className="space-y-1">
                 <Label htmlFor="nome">Nome *</Label>
                 <Input id="nome" {...register("nome")} placeholder="Nome do item" />

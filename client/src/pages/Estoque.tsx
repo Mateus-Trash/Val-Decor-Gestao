@@ -23,6 +23,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
+
 export default function Estoque() {
   const [dataConsulta, setDataConsulta] = useState<Date>(new Date());
 
@@ -47,6 +49,14 @@ export default function Estoque() {
     [itensList, itensDisponibilidade]
   );
 
+  const itensPorCategoria = useMemo(
+    () => CATEGORIAS.map((cat) => ({
+      categoria: cat,
+      itens: itensComDisponibilidade.filter((i) => (i.categoria ?? "Decoracoes") === cat),
+    })).filter((g) => g.itens.length > 0),
+    [itensComDisponibilidade]
+  );
+
   const kitsComDisponibilidade = useMemo(
     () =>
       kitsList.map((kit) => {
@@ -58,6 +68,14 @@ export default function Estoque() {
         };
       }),
     [kitsList, kitsDisponibilidade]
+  );
+
+  const kitsPorCategoria = useMemo(
+    () => CATEGORIAS.map((cat) => ({
+      categoria: cat,
+      kits: kitsComDisponibilidade.filter((k) => (k.categoria ?? "Decoracoes") === cat),
+    })).filter((g) => g.kits.length > 0),
+    [kitsComDisponibilidade]
   );
 
   function getSituacao(disponivel: number) {
@@ -122,164 +140,156 @@ export default function Estoque() {
         {/* Itens Section */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold mb-3">Itens</h2>
-          <Card className="hidden sm:block">
-            <CardContent className="pt-6">
-              {itensLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : itensComDisponibilidade.length === 0 ? (
-                <EmptyState icon={Package} message="Nenhum item cadastrado." />
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-right">Disponível em {format(dataConsulta, "dd/MM")}</TableHead>
-                        <TableHead className="text-center">Situação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {itensComDisponibilidade.map((item) => (
-                        <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
-                          <TableCell className="font-medium">
-                            {item.nome}
-                            {item.avisoRecolherDiaAnterior && (
-                              <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
-                                ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
-                          <TableCell className="text-right">{item.disponivel}</TableCell>
-                          <TableCell className="text-center">{getSituacao(item.disponivel)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Mobile Cards */}
-          <div className="block sm:hidden space-y-3">
-            {itensLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
-            ) : itensComDisponibilidade.length === 0 ? (
-              <EmptyState icon={Package} message="Nenhum item cadastrado." />
-            ) : (
-              itensComDisponibilidade.map((item) => (
-                <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="font-semibold">{item.nome}</p>
-                        {item.avisoRecolherDiaAnterior && (
-                          <p className="text-xs text-amber-700 dark:text-amber-400">
-                            ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
-                          </p>
-                        )}
+          {itensLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          ) : itensComDisponibilidade.length === 0 ? (
+            <EmptyState icon={Package} message="Nenhum item cadastrado." />
+          ) : (
+            <div className="space-y-4">
+              {itensPorCategoria.map((grupo) => (
+                <div key={grupo.categoria}>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{grupo.categoria}</h3>
+                  <Card className="hidden sm:block">
+                    <CardContent className="pt-6">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome</TableHead>
+                              <TableHead className="text-right">Total</TableHead>
+                              <TableHead className="text-right">Disponível em {format(dataConsulta, "dd/MM")}</TableHead>
+                              <TableHead className="text-center">Situação</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {grupo.itens.map((item) => (
+                              <TableRow key={item.id} className="transition-colors duration-200 hover:bg-muted/50">
+                                <TableCell className="font-medium">
+                                  {item.nome}
+                                  {item.avisoRecolherDiaAnterior && (
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
+                                      ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
+                                    </p>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">{item.quantidadeTotal}</TableCell>
+                                <TableCell className="text-right">{item.disponivel}</TableCell>
+                                <TableCell className="text-center">{getSituacao(item.disponivel)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                      <div>{getSituacao(item.disponivel)}</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
-                      <div><span className="font-medium">Disponível:</span> {item.disponivel}</div>
-                    </div>
+                    </CardContent>
+                  </Card>
+                  {/* Mobile Cards */}
+                  <div className="block sm:hidden space-y-3">
+                    {grupo.itens.map((item) => (
+                      <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <p className="font-semibold">{item.nome}</p>
+                              {item.avisoRecolherDiaAnterior && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  ⚠️ Recolher {item.avisoRecolherDiaAnterior} do dia {diaAnteriorLabel} pra suprir hoje
+                                </p>
+                              )}
+                            </div>
+                            <div>{getSituacao(item.disponivel)}</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div><span className="font-medium">Total:</span> {item.quantidadeTotal}</div>
+                            <div><span className="font-medium">Disponível:</span> {item.disponivel}</div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
-              ))
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Kits Section */}
         <div>
           <h2 className="text-lg sm:text-xl font-semibold mb-3">Kits</h2>
-          <Card className="hidden sm:block">
-            <CardContent className="pt-6">
-              {kitsLoading ? (
-                <div className="space-y-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : kitsComDisponibilidade.length === 0 ? (
-                <EmptyState icon={Layers} message="Nenhum kit cadastrado." />
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead className="text-right">Disponível em {format(dataConsulta, "dd/MM")}</TableHead>
-                        <TableHead className="text-center">Situação</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {kitsComDisponibilidade.map((kit) => (
-                        <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
-                          <TableCell className="font-medium">
-                            {kit.nome}
-                            {kit.avisoRecolherDiaAnterior !== null && (
-                              <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
-                                ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
-                              </p>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">{kit.disponivel}</TableCell>
-                          <TableCell className="text-center">{getSituacao(kit.disponivel)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Mobile Cards */}
-          <div className="block sm:hidden space-y-3">
-            {kitsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
-                ))}
-              </div>
-            ) : kitsComDisponibilidade.length === 0 ? (
-              <EmptyState icon={Layers} message="Nenhum kit cadastrado." />
-            ) : (
-              kitsComDisponibilidade.map((kit) => (
-                <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <p className="font-semibold">{kit.nome}</p>
-                        {kit.avisoRecolherDiaAnterior !== null && (
-                          <p className="text-xs text-amber-700 dark:text-amber-400">
-                            ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
-                          </p>
-                        )}
+          {kitsLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          ) : kitsComDisponibilidade.length === 0 ? (
+            <EmptyState icon={Layers} message="Nenhum kit cadastrado." />
+          ) : (
+            <div className="space-y-4">
+              {kitsPorCategoria.map((grupo) => (
+                <div key={grupo.categoria}>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{grupo.categoria}</h3>
+                  <Card className="hidden sm:block">
+                    <CardContent className="pt-6">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome</TableHead>
+                              <TableHead className="text-right">Disponível em {format(dataConsulta, "dd/MM")}</TableHead>
+                              <TableHead className="text-center">Situação</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {grupo.kits.map((kit) => (
+                              <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
+                                <TableCell className="font-medium">
+                                  {kit.nome}
+                                  {kit.avisoRecolherDiaAnterior !== null && (
+                                    <p className="text-xs text-amber-700 dark:text-amber-400 font-normal mt-0.5">
+                                      ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
+                                    </p>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">{kit.disponivel}</TableCell>
+                                <TableCell className="text-center">{getSituacao(kit.disponivel)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                      <div>{getSituacao(kit.disponivel)}</div>
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-medium">Disponível:</span> {kit.disponivel}
-                    </div>
+                    </CardContent>
+                  </Card>
+                  {/* Mobile Cards */}
+                  <div className="block sm:hidden space-y-3">
+                    {grupo.kits.map((kit) => (
+                      <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <p className="font-semibold">{kit.nome}</p>
+                              {kit.avisoRecolherDiaAnterior !== null && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  ⚠️ Recolher kits do dia {diaAnteriorLabel} pra suprir hoje (até {kit.avisoRecolherDiaAnterior} disponíveis com coleta)
+                                </p>
+                              )}
+                            </div>
+                            <div>{getSituacao(kit.disponivel)}</div>
+                          </div>
+                          <div className="text-xs">
+                            <span className="font-medium">Disponível:</span> {kit.disponivel}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
-              ))
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

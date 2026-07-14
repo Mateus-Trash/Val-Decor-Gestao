@@ -38,6 +38,7 @@ export const kitsRouter = router({
       z.object({
         nome: z.string().min(1, "Nome é obrigatório"),
         descricao: z.string().optional(),
+        categoria: z.enum(["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).optional(),
         valorAluguel: z.number().int().positive("Valor de aluguel deve ser positivo"),
         itens: z.array(
           z.object({
@@ -54,6 +55,7 @@ export const kitsRouter = router({
       const result = await db.insert(kits).values({
         nome: input.nome,
         descricao: input.descricao,
+        categoria: input.categoria,
         valorAluguel: input.valorAluguel,
       });
 
@@ -78,6 +80,7 @@ export const kitsRouter = router({
         id: z.number().int().positive(),
         nome: z.string().min(1).optional(),
         descricao: z.string().optional(),
+        categoria: z.enum(["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).optional(),
         valorAluguel: z.number().int().positive().optional(),
         itens: z
           .array(

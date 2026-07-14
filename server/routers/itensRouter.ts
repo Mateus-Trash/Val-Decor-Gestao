@@ -17,6 +17,7 @@ export const itensRouter = router({
       z.object({
         nome: z.string().min(1, "Nome é obrigatório"),
         descricao: z.string().optional(),
+        categoria: z.enum(["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).optional(),
         valorAluguel: z.number().int().positive("Valor de aluguel deve ser positivo"),
         custoAquisicao: z.number().int().optional(),
         quantidadeTotal: z.number().int().positive("Quantidade total deve ser positiva"),
@@ -32,6 +33,7 @@ export const itensRouter = router({
       return db.insert(itens).values({
         nome: input.nome,
         descricao: input.descricao,
+        categoria: input.categoria,
         valorAluguel: input.valorAluguel,
         custoAquisicao: input.custoAquisicao,
         quantidadeTotal: input.quantidadeTotal,
@@ -45,6 +47,7 @@ export const itensRouter = router({
         id: z.number().int().positive(),
         nome: z.string().min(1).optional(),
         descricao: z.string().optional(),
+        categoria: z.enum(["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).optional(),
         valorAluguel: z.number().int().positive().optional(),
         custoAquisicao: z.number().int().optional(),
         quantidadeTotal: z.number().int().positive().optional(),

@@ -39,14 +39,18 @@ import EntityCard from "@/components/EntityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import { Badge } from "@/components/ui/badge";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
+const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
+
 const kitSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
   descricao: z.string().optional(),
+  categoria: z.enum(CATEGORIAS).default("Decoracoes"),
   valorAluguel: z.number().positive("Valor de aluguel deve ser positivo"),
 });
 
@@ -61,6 +65,7 @@ type ItemComposicao = {
 export default function Kits() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
   const [composicao, setComposicao] = useState<ItemComposicao[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
   const [qtdItem, setQtdItem] = useState<string>("1");
@@ -96,8 +101,8 @@ export default function Kits() {
     onError: (error) => toast.error(`Erro ao remover kit: ${error.message}`),
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<KitForm>({
-    resolver: zodResolver(kitSchema),
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<KitForm>({
+    resolver: zodResolver(kitSchema) as any,
   });
 
   function fecharDialog() {
@@ -112,7 +117,7 @@ export default function Kits() {
   function abrirCriar() {
     setEditandoId(null);
     setComposicao([]);
-    reset({ nome: "", descricao: "", valorAluguel: 0 });
+    reset({ nome: "", descricao: "", categoria: "Decoracoes", valorAluguel: 0 });
     setDialogOpen(true);
   }
 
@@ -121,6 +126,7 @@ export default function Kits() {
     reset({
       nome: kit.nome,
       descricao: kit.descricao ?? "",
+      categoria: kit.categoria ?? "Decoracoes",
       valorAluguel: kit.valorAluguel / 100,
     });
     setComposicao(
@@ -172,6 +178,7 @@ export default function Kits() {
     const payload = {
       nome: data.nome,
       descricao: data.descricao,
+      categoria: data.categoria,
       valorAluguel: Math.round(data.valorAluguel * 100),
       itens: composicao.map((c) => ({ itemId: c.itemId, quantidade: c.quantidade })),
     };
@@ -200,6 +207,19 @@ export default function Kits() {
           </Button>
         </PageHeading>
 
+        {/* Filtro de categoria */}
+        <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as categorias</SelectItem>
+            {CATEGORIAS.map((cat) => (
+              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {/* Tabela Desktop */}
         <Card className="gap-2 hidden sm:block">
           <CardHeader>
@@ -212,7 +232,7 @@ export default function Kits() {
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
               </div>
-            ) : kits.length === 0 ? (
+            ) : kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).length === 0 ? (
               <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
             ) : (
               <div className="overflow-x-auto">
@@ -220,6 +240,7 @@ export default function Kits() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead className="text-right">Valor Aluguel (R$)</TableHead>
                       <TableHead className="text-center">Itens (tipos)</TableHead>
@@ -227,9 +248,12 @@ export default function Kits() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {kits.map((kit) => (
+                    {kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).map((kit) => (
                       <TableRow key={kit.id} className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-medium">{kit.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">{kit.categoria ?? "Decoracoes"}</Badge>
+                        </TableCell>
                         <TableCell className="max-w-xs truncate">{kit.descricao ?? "—"}</TableCell>
                         <TableCell className="text-right">{formatCurrency(kit.valorAluguel)}</TableCell>
                         <TableCell className="text-center">{kit.itens.length}</TableCell>
@@ -265,14 +289,14 @@ export default function Kits() {
                 <Skeleton key={i} className="h-32 w-full" />
               ))}
             </div>
-          ) : kits.length === 0 ? (
-            <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
-          ) : (
-            kits.map((kit) => (
-              <EntityCard
-                key={kit.id}
-                title={kit.nome}
-                subtitle={kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—"}
+            ) : kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).length === 0 ? (
+              <EmptyState icon={Layers} message="Nenhum kit cadastrado ainda." actionLabel="Novo Kit" onAction={abrirCriar} />
+            ) : (
+              kits.filter(k => filtroCategoria === "todas" || k.categoria === filtroCategoria).map((kit) => (
+                <EntityCard
+                  key={kit.id}
+                  title={kit.nome}
+                  subtitle={kit.categoria ? `${kit.categoria}${kit.descricao ? " · " + kit.descricao.substring(0, 30) : ""}` : (kit.descricao ? kit.descricao.substring(0, 40) + (kit.descricao.length > 40 ? "..." : "") : "—")}
                 badge={<span className="text-xs font-medium bg-primary/10 px-2 py-1 rounded">{kit.itens.length} itens</span>}
                 fields={[
                   { icon: DollarSign, label: "Valor", value: formatCurrency(kit.valorAluguel) },
@@ -310,6 +334,26 @@ export default function Kits() {
           <form onSubmit={handleSubmit(onSubmit)} onKeyDown={dismissKeyboardOnEnter} className="space-y-4">
             {/* Campos básicos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="categoria">Categoria *</Label>
+                <Controller
+                  control={control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIAS.map((cat) => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+
               <div className="space-y-1">
                 <Label htmlFor="nome">Nome *</Label>
                 <Input id="nome" {...register("nome")} placeholder="Nome do kit" />

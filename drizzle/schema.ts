@@ -53,6 +53,7 @@ export const itens = mysqlTable("itens", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
+  categoria: mysqlEnum("categoria", ["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).default("Decoracoes").notNull(),
   valorAluguel: int("valorAluguel").notNull(), // em centavos
   custoAquisicao: int("custoAquisicao"), // em centavos, nullable
   quantidadeTotal: int("quantidadeTotal").notNull(),
@@ -72,6 +73,7 @@ export const kits = mysqlTable("kits", {
   id: int("id").autoincrement().primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
+  categoria: mysqlEnum("categoria", ["Decoracoes", "Cadeiras e Mesas", "Toalhas"]).default("Decoracoes").notNull(),
   valorAluguel: int("valorAluguel").notNull(), // em centavos
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
