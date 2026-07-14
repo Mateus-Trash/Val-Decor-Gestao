@@ -4,8 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { trpc } from "@/lib/trpc";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,6 +81,8 @@ export default function NovoPedidoDialog({ open, onOpenChange, dataInicial, pedi
   const [erroQtdItem, setErroQtdItem] = useState<string>("");
   const [kitSelecionado, setKitSelecionado] = useState<string>("");
   const [qtdKit, setQtdKit] = useState<string>("1");
+  const [openItemCombobox, setOpenItemCombobox] = useState(false);
+  const [openKitCombobox, setOpenKitCombobox] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: meData } = trpc.auth.me.useQuery();
@@ -474,34 +485,64 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
             <div className="space-y-2">
               <p className="text-xs font-medium">Adicionar Itens</p>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={itemSelecionado} onValueChange={setItemSelecionado}>
-                  <SelectTrigger className="w-full sm:w-48 text-sm">
-                    <SelectValue placeholder="Selecione item..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {itensList.map((i) => {
-                      const qtdAtualNoPedido = isEditing && pedidoParaEditar
-                        ? (pedidoParaEditar.itens.find((ip) => ip.itemId === i.id)?.quantidade ?? 0)
-                        : 0;
-                      const disp = (disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0) + qtdAtualNoPedido;
-                      const dispColor = disp <= 0
-                        ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-                        : disp <= 2
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
-                          : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
-                      return (
-                        <SelectItem key={i.id} value={String(i.id)} disabled={disp <= 0}>
-                          <span className="flex items-center gap-2">
-                            <span className="truncate">{i.nome}</span>
-                            <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
-                              {disp}
-                            </Badge>
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <Popover open={openItemCombobox} onOpenChange={setOpenItemCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openItemCombobox}
+                      className="w-full sm:w-48 justify-between text-sm font-normal"
+                    >
+                      <span className="truncate">
+                        {itemSelecionado
+                          ? itensList.find((i) => String(i.id) === itemSelecionado)?.nome
+                          : "Selecione item..."}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar item..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {itensList.map((i) => {
+                            const qtdAtualNoPedido = isEditing && pedidoParaEditar
+                              ? (pedidoParaEditar.itens.find((ip) => ip.itemId === i.id)?.quantidade ?? 0)
+                              : 0;
+                            const disp = (disponibilidadeItens.find(d => d.id === i.id)?.disponivel ?? 0) + qtdAtualNoPedido;
+                            const dispColor = disp <= 0
+                              ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                              : disp <= 2
+                                ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                                : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+                            return (
+                              <CommandItem
+                                key={i.id}
+                                value={i.nome}
+                                disabled={disp <= 0}
+                                onSelect={() => {
+                                  setItemSelecionado(String(i.id));
+                                  setOpenItemCombobox(false);
+                                }}
+                              >
+                                <Check
+                                  className={`h-4 w-4 ${itemSelecionado === String(i.id) ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <span className="flex-1 truncate">{i.nome}</span>
+                                <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
+                                  {disp}
+                                </Badge>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <div className="flex gap-2 items-center">
                   {dataValue && (
                     <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:inline">
@@ -533,34 +574,64 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
             <div className="space-y-2">
               <p className="text-xs font-medium">Adicionar Kits</p>
               <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={kitSelecionado} onValueChange={setKitSelecionado}>
-                  <SelectTrigger className="w-full sm:w-48 text-sm">
-                    <SelectValue placeholder="Selecione kit..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kitsList.map((k) => {
-                      const qtdAtualNoPedido = isEditing && pedidoParaEditar
-                        ? (pedidoParaEditar.kits.find((kp) => kp.kitId === k.id)?.quantidade ?? 0)
-                        : 0;
-                      const disp = (disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0) + qtdAtualNoPedido;
-                      const dispColor = disp <= 0
-                        ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
-                        : disp <= 2
-                          ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
-                          : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
-                      return (
-                        <SelectItem key={k.id} value={String(k.id)} disabled={disp <= 0}>
-                          <span className="flex items-center gap-2">
-                            <span className="truncate">{k.nome}</span>
-                            <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
-                              {disp}
-                            </Badge>
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <Popover open={openKitCombobox} onOpenChange={setOpenKitCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openKitCombobox}
+                      className="w-full sm:w-48 justify-between text-sm font-normal"
+                    >
+                      <span className="truncate">
+                        {kitSelecionado
+                          ? kitsList.find((k) => String(k.id) === kitSelecionado)?.nome
+                          : "Selecione kit..."}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar kit..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum kit encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {kitsList.map((k) => {
+                            const qtdAtualNoPedido = isEditing && pedidoParaEditar
+                              ? (pedidoParaEditar.kits.find((kp) => kp.kitId === k.id)?.quantidade ?? 0)
+                              : 0;
+                            const disp = (disponibilidadeKits.find(d => d.id === k.id)?.disponivel ?? 0) + qtdAtualNoPedido;
+                            const dispColor = disp <= 0
+                              ? "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800"
+                              : disp <= 2
+                                ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
+                                : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+                            return (
+                              <CommandItem
+                                key={k.id}
+                                value={k.nome}
+                                disabled={disp <= 0}
+                                onSelect={() => {
+                                  setKitSelecionado(String(k.id));
+                                  setOpenKitCombobox(false);
+                                }}
+                              >
+                                <Check
+                                  className={`h-4 w-4 ${kitSelecionado === String(k.id) ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <span className="flex-1 truncate">{k.nome}</span>
+                                <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
+                                  {disp}
+                                </Badge>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <div className="flex gap-2 items-center">
                   <Input
                     type="number"
