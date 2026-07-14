@@ -1,9 +1,31 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
+
+// Load .env from multiple possible locations (including Hostinger default and home directory)
+const homeDir = process.env.HOME || process.env.USERPROFILE || "/root";
+const envPaths = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "..", ".env"),
+  path.resolve(process.cwd(), ".builds", "config", ".env"),
+  path.resolve(process.cwd(), "..", ".builds", "config", ".env"),
+  path.resolve(homeDir, ".env"),
+  "/files/domains/valdecoracoes.com/public_html/.builds/config/.env",
+  `/home/${process.env.USER || "u984101939"}/.env`,
+];
+
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`[ENV] Loaded from: ${envPath}`);
+    break;
+  }
+}
+
 import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -35,7 +57,6 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
-  registerOAuthRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

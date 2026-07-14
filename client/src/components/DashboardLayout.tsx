@@ -19,17 +19,25 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent, Sun, Moon } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Calendar, label: "Calendário", path: "/calendario" },
+  { icon: ShoppingCart, label: "Pedidos", path: "/pedidos" },
+  { icon: Package, label: "Itens", path: "/itens" },
+  { icon: Shirt, label: "Kits", path: "/kits" },
+  { icon: Package, label: "Estoque", path: "/estoque" },
+  { icon: Users, label: "Colaboradores", path: "/colaboradores" },
+  { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
+  { icon: Truck, label: "Logística", path: "/logistica" },
+  { icon: Percent, label: "Comissões", path: "/comissoes" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -46,7 +54,7 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
-  const { loading, user } = useAuth();
+  const { loading, user } = useAuth({ redirectOnUnauthenticated: true });
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -57,27 +65,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
-            </h1>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
-            </p>
-          </div>
-          <Button
-            onClick={() => startLogin()}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            Sign in
-          </Button>
-        </div>
-      </div>
-    );
+    return <DashboardLayoutSkeleton />;
   }
 
   return (
@@ -112,6 +100,7 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (isCollapsed) {
@@ -130,20 +119,38 @@ function DashboardLayoutContent({
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isResizing) return;
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
+      const newWidth = touch.clientX - sidebarLeft;
+      if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
     const handleMouseUp = () => {
       setIsResizing(false);
     };
 
     if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("touchmove", handleTouchMove);
       document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mouseleave", handleMouseUp);
+      document.addEventListener("touchend", handleMouseUp);
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
     }
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseleave", handleMouseUp);
+      document.removeEventListener("touchend", handleMouseUp);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
@@ -168,11 +175,22 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src="/val-decor-logo-nav-small.png"
+                    alt="Val Decor"
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
                   <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                    Val Decor
                   </span>
                 </div>
-              ) : null}
+              ) : (
+                <img
+                  src="/val-decor-logo-nav-small.png"
+                  alt="Val Decor"
+                  className="h-8 w-8 shrink-0 object-contain mx-auto"
+                />
+              )}
             </div>
           </SidebarHeader>
 
@@ -200,6 +218,18 @@ function DashboardLayoutContent({
           </SidebarContent>
 
           <SidebarFooter className="p-3">
+            <div className="flex items-center gap-2 mb-2 group-data-[collapsible=icon]:justify-center">
+              <button
+                onClick={toggleTheme}
+                className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                aria-label="Alternar tema"
+              >
+                {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+              <div className="flex-1 group-data-[collapsible=icon]:hidden">
+                <span className="text-xs text-muted-foreground">{theme === "light" ? "Modo escuro" : "Modo claro"}</span>
+              </div>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -236,6 +266,10 @@ function DashboardLayoutContent({
             if (isCollapsed) return;
             setIsResizing(true);
           }}
+          onTouchStart={() => {
+            if (isCollapsed) return;
+            setIsResizing(true);
+          }}
           style={{ zIndex: 50 }}
         />
       </div>
@@ -246,6 +280,11 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
               <div className="flex items-center gap-3">
+                <img
+                  src="/val-decor-logo-nav-small.png"
+                  alt="Val Decor"
+                  className="h-7 w-7 shrink-0 object-contain"
+                />
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
                     {activeMenuItem?.label ?? "Menu"}
@@ -253,6 +292,13 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            <button
+              onClick={toggleTheme}
+              className="h-9 w-9 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Alternar tema"
+            >
+              {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+            </button>
           </div>
         )}
         <main className="flex-1 p-4">{children}</main>
