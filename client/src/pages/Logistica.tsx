@@ -17,6 +17,13 @@ import {
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
 import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight, CheckCheck } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -36,8 +43,8 @@ type Pedido = {
   coletaAdiadaPara?: Date | string | null;
   status: string;
   observacoes?: string | null;
-  composicaoItens?: { nome: string; quantidade: number }[];
-  composicaoKits?: { nome: string; quantidade: number }[];
+  composicaoItens?: { nome: string; quantidade: number; categoria?: string | null }[];
+  composicaoKits?: { nome: string; quantidade: number; categoria?: string | null }[];
 };
 
 const statusColors: Record<string, string> = {
@@ -373,6 +380,7 @@ function GrupoMobile({
 export default function Logistica() {
   const [dataConsulta, setDataConsulta] = useState<Date>(new Date());
   const [selectedColetas, setSelectedColetas] = useState<Set<number>>(new Set());
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
 
   const utils = trpc.useUtils();
 
@@ -396,8 +404,22 @@ export default function Logistica() {
     },
   });
 
-  const entregas: Pedido[] = (data?.entregas ?? []) as Pedido[];
-  const coletas: Pedido[] = (data?.coletas ?? []) as Pedido[];
+  const todasEntregas: Pedido[] = (data?.entregas ?? []) as Pedido[];
+  const todasColetas: Pedido[] = (data?.coletas ?? []) as Pedido[];
+
+  const filtrarPorCategoria = (pedidos: Pedido[]) => {
+    if (filtroCategoria === "todas") return pedidos;
+    return pedidos.filter((p) => {
+      const itensDoPedido = p.composicaoItens ?? [];
+      const kitsDoPedido = p.composicaoKits ?? [];
+      const temItemNaCategoria = itensDoPedido.some((i) => (i.categoria ?? "Decoracoes") === filtroCategoria);
+      const temKitNaCategoria = kitsDoPedido.some((k) => (k.categoria ?? "Decoracoes") === filtroCategoria);
+      return temItemNaCategoria || temKitNaCategoria;
+    });
+  };
+
+  const entregas = filtrarPorCategoria(todasEntregas);
+  const coletas = filtrarPorCategoria(todasColetas);
   const totalDia = entregas.length + coletas.length;
 
   function toggleColeta(id: number) {
@@ -452,28 +474,41 @@ export default function Logistica() {
           )}
         </PageHeading>
 
-        {/* Date Selector */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {format(dataConsulta, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={dataConsulta}
-              onSelect={(date) => {
-                if (date) {
-                  setDataConsulta(date);
-                  setSelectedColetas(new Set());
-                }
-              }}
-              locale={ptBR}
-            />
-          </PopoverContent>
-        </Popover>
+        {/* Date Selector + Filtro Categoria */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dataConsulta, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dataConsulta}
+                onSelect={(date) => {
+                  if (date) {
+                    setDataConsulta(date);
+                    setSelectedColetas(new Set());
+                  }
+                }}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+          <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as categorias</SelectItem>
+              <SelectItem value="Decoracoes">Decorações</SelectItem>
+              <SelectItem value="Cadeiras e Mesas">Cadeiras e Mesas</SelectItem>
+              <SelectItem value="Toalhas">Toalhas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {isLoading ? (
           <div className="space-y-3">

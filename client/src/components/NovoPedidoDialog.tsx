@@ -518,10 +518,11 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
                               : disp <= 2
                                 ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
                                 : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+                            const cat = i.categoria ?? "Decoracoes";
                             return (
                               <CommandItem
                                 key={i.id}
-                                value={i.nome}
+                                value={`${cat} ${i.nome}`}
                                 disabled={disp <= 0}
                                 onSelect={() => {
                                   setItemSelecionado(String(i.id));
@@ -531,7 +532,10 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
                                 <Check
                                   className={`h-4 w-4 ${itemSelecionado === String(i.id) ? "opacity-100" : "opacity-0"}`}
                                 />
-                                <span className="flex-1 truncate">{i.nome}</span>
+                                <span className="flex-1 truncate">
+                                  <span className="text-[10px] text-muted-foreground mr-1">{cat === "Decoracoes" ? "Decor" : cat === "Cadeiras e Mesas" ? "C&M" : "Toalhas"}</span>
+                                  {i.nome}
+                                </span>
                                 <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
                                   {disp}
                                 </Badge>
@@ -607,10 +611,11 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
                               : disp <= 2
                                 ? "bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800"
                                 : "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800";
+                            const cat = k.categoria ?? "Decoracoes";
                             return (
                               <CommandItem
                                 key={k.id}
-                                value={k.nome}
+                                value={`${cat} ${k.nome}`}
                                 disabled={disp <= 0}
                                 onSelect={() => {
                                   setKitSelecionado(String(k.id));
@@ -620,7 +625,10 @@ function atualizarValorKit(idx: number, novoValorCentavos: number) {
                                 <Check
                                   className={`h-4 w-4 ${kitSelecionado === String(k.id) ? "opacity-100" : "opacity-0"}`}
                                 />
-                                <span className="flex-1 truncate">{k.nome}</span>
+                                <span className="flex-1 truncate">
+                                  <span className="text-[10px] text-muted-foreground mr-1">{cat === "Decoracoes" ? "Decor" : cat === "Cadeiras e Mesas" ? "C&M" : "Toalhas"}</span>
+                                  {k.nome}
+                                </span>
                                 <Badge className={`text-[10px] px-1.5 py-0 border ${dispColor}`}>
                                   {disp}
                                 </Badge>
