@@ -5,8 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -43,6 +54,7 @@ export default function Calendario() {
   const [diaAberto, setDiaAberto] = useState<Date | null>(null);
   const [novoPedidoOpen, setNovoPedidoOpen] = useState(false);
   const [dataParaNovoPedido, setDataParaNovoPedido] = useState<Date | undefined>(undefined);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
   const utils = trpc.useUtils();
 
   const mes = mesAtual.getMonth() + 1; // 1-12
@@ -60,6 +72,19 @@ export default function Calendario() {
       utils.pedidos.list.invalidate();
     },
     onError: () => toast.error("Erro ao atualizar status"),
+  });
+
+  const { data: pedidoParaEditar } = trpc.pedidos.getById.useQuery(
+    { id: editandoId! },
+    { enabled: editandoId !== null }
+  );
+
+  const deleteMutation = trpc.pedidos.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Pedido removido!");
+      utils.dashboard.getPedidosCalendario.invalidate();
+    },
+    onError: (error) => toast.error(`Erro ao remover pedido: ${error.message}`),
   });
 
   // Gerar dias do calendário
@@ -91,6 +116,18 @@ export default function Calendario() {
 
   function voltarHoje() {
     setMesAtual(new Date());
+  }
+
+  function abrirEditarPedido(id: number) {
+    setDiaAberto(null);
+    setEditandoId(id);
+    setNovoPedidoOpen(true);
+  }
+
+  function confirmarDeletePedido(id: number) {
+    if (window.confirm("Deseja remover este pedido? O estoque será devolvido.")) {
+      deleteMutation.mutate({ id });
+    }
   }
 
   function obterEventosDia(dia: Date) {
@@ -318,13 +355,46 @@ export default function Calendario() {
 
                 return (
                   <div key={pedido.id} className={`border rounded-lg p-3 relative ${badge.className}`}>
-                    {/* Badge de status no canto - removido, agora o fundo é colorido */}
+                    <div className="absolute top-2 right-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => abrirEditarPedido(pedido.id)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>Mudar Status</DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuRadioGroup
+                                value={pedido.status}
+                                onValueChange={(novoStatus) =>
+                                  updateStatusMutation.mutate({ id: pedido.id, status: novoStatus as any })
+                                }
+                              >
+                                <DropdownMenuRadioItem value="Pendente">Pendente</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="Confirmado">Confirmado</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="EntregueNaoPago">Entregue (Não Pago)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="EntreguePago">Entregue (Pago)</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="Concluido">Concluído</DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuItem onClick={() => confirmarDeletePedido(pedido.id)} className="text-destructive">
+                            <Trash2 className="h-4 w-4 mr-2" /> Apagar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
 
-                    <div className="pr-4">
+                    <div className="pr-8">
                       <p className="font-semibold text-sm">{formatarResumoPedido(pedido)}</p>
                       <p className="text-xs text-muted-foreground mb-2">Valor: R$ {(pedido.valorTotal / 100).toFixed(2)}</p>
                       {(pedido.composicaoItens?.length > 0 || pedido.composicaoKits?.length > 0) && (
-                        <div className="rounded-md bg-white/60 dark:bg-black/20 p-2 space-y-1 mb-2">
+                        <div className="rounded-md bg-white/60 dark:bg-black/20 p-2 space-y-1">
                           <p className="text-xs font-semibold text-muted-foreground">Composição</p>
                           {pedido.composicaoItens?.map((item: any, idx: number) => (
                             <div key={`item-${idx}`} className="flex justify-between text-xs">
@@ -340,30 +410,6 @@ export default function Calendario() {
                           ))}
                         </div>
                       )}
-
-                      <div className="space-y-2">
-                        <label className="text-xs font-medium">Status:</label>
-                        <Select
-                          value={pedido.status}
-                          onValueChange={(novoStatus) => {
-                            updateStatusMutation.mutate({
-                              id: pedido.id,
-                              status: novoStatus as any,
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="w-full h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Pendente">Pendente</SelectItem>
-                            <SelectItem value="Confirmado">Confirmado</SelectItem>
-                            <SelectItem value="EntregueNaoPago">Entregue (Não Pago)</SelectItem>
-                            <SelectItem value="EntreguePago">Entregue (Pago)</SelectItem>
-                            <SelectItem value="Concluido">Concluído</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
                     </div>
                   </div>
                 );
@@ -388,11 +434,28 @@ export default function Calendario() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog - Novo Pedido */}
+      {/* Dialog - Novo Pedido / Editar Pedido */}
       <NovoPedidoDialog
         open={novoPedidoOpen}
-        onOpenChange={setNovoPedidoOpen}
+        onOpenChange={(open) => {
+          setNovoPedidoOpen(open);
+          if (!open) setEditandoId(null);
+        }}
         dataInicial={dataParaNovoPedido}
+        pedidoParaEditar={editandoId !== null && pedidoParaEditar ? {
+          id: pedidoParaEditar.id,
+          nomeCliente: pedidoParaEditar.nomeCliente,
+          colaboradorId: pedidoParaEditar.colaboradorId,
+          data: pedidoParaEditar.data,
+          ruaEntrega: pedidoParaEditar.ruaEntrega,
+          bairroEntrega: pedidoParaEditar.bairroEntrega,
+          numeroEntrega: pedidoParaEditar.numeroEntrega,
+          valorTotal: pedidoParaEditar.valorTotal,
+          valorTaxaEntrega: pedidoParaEditar.valorTaxaEntrega,
+          observacoes: pedidoParaEditar.observacoes,
+          itens: pedidoParaEditar.itens,
+          kits: pedidoParaEditar.kits,
+        } : null}
       />
     </DashboardLayout>
   );
