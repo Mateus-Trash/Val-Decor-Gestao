@@ -56,10 +56,107 @@ const statusLabels: Record<string, string> = {
   Concluido: "Concluído",
 };
 
+// ─── Detecção de bairros parecidos (erro de digitação/acentuação) ──────────
+
+const LIMIAR_SIMILARIDADE_BAIRRO = 0.4; // 0 a 1 — bem baixo de propósito: abrangente, agrupa mesmo nomes que não se parecem muito
+
+function normalizarBairro(bairro: string): string {
+  return bairro
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function distanciaLevenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] =
+        a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+function similaridadeBairro(a: string, b: string): number {
+  const na = normalizarBairro(a);
+  const nb = normalizarBairro(b);
+  if (na === nb) return 1;
+  const maxLen = Math.max(na.length, nb.length);
+  if (maxLen === 0) return 1;
+  return 1 - distanciaLevenshtein(na, nb) / maxLen;
+}
+
+/**
+ * Recebe os nomes de bairro "crus" (como estão no pedido) e devolve um mapa
+ * de cada nome pra seu nome "canônico" de exibição: o nome mais frequente
+ * dentro do grupo de nomes parecidos (empate = ordem alfabética).
+ * "Sem Bairro" nunca é agrupado com outro nome.
+ */
+function mapearBairrosParaCanonico(nomesBrutos: string[]): Map<string, string> {
+  const contagem = new Map<string, number>();
+  nomesBrutos.forEach((n) => contagem.set(n, (contagem.get(n) || 0) + 1));
+
+  const distintos = Array.from(contagem.keys());
+  const pai: Record<string, string> = {};
+  distintos.forEach((n) => (pai[n] = n));
+
+  function encontrar(n: string): string {
+    if (pai[n] !== n) pai[n] = encontrar(pai[n]);
+    return pai[n];
+  }
+  function unir(a: string, b: string) {
+    const ra = encontrar(a);
+    const rb = encontrar(b);
+    if (ra !== rb) pai[ra] = rb;
+  }
+
+  for (let i = 0; i < distintos.length; i++) {
+    for (let j = i + 1; j < distintos.length; j++) {
+      const a = distintos[i];
+      const b = distintos[j];
+      if (a === "Sem Bairro" || b === "Sem Bairro") continue;
+      if (similaridadeBairro(a, b) >= LIMIAR_SIMILARIDADE_BAIRRO) {
+        unir(a, b);
+      }
+    }
+  }
+
+  const clusters = new Map<string, string[]>();
+  distintos.forEach((n) => {
+    const raiz = encontrar(n);
+    if (!clusters.has(raiz)) clusters.set(raiz, []);
+    clusters.get(raiz)!.push(n);
+  });
+
+  const resultado = new Map<string, string>();
+  clusters.forEach((membros) => {
+    const vencedor = [...membros].sort((a, b) => {
+      const diff = (contagem.get(b) || 0) - (contagem.get(a) || 0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    })[0];
+    membros.forEach((m) => resultado.set(m, vencedor));
+  });
+
+  return resultado;
+}
+
 function groupByBairro(pedidos: Pedido[]): Record<string, Pedido[]> {
+  const nomesBrutos = pedidos.map((p) => p.bairroEntrega || "Sem Bairro");
+  const canonico = mapearBairrosParaCanonico(nomesBrutos);
+
   return pedidos.reduce(
     (acc, p) => {
-      const bairro = p.bairroEntrega || "Sem Bairro";
+      const bruto = p.bairroEntrega || "Sem Bairro";
+      const bairro = canonico.get(bruto) ?? bruto;
       if (!acc[bairro]) acc[bairro] = [];
       acc[bairro].push(p);
       return acc;
