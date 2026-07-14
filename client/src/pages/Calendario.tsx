@@ -322,7 +322,6 @@ export default function Calendario() {
 
                     <div className="pr-4">
                       <p className="font-semibold text-sm">{formatarResumoPedido(pedido)}</p>
-                      <p className="text-xs text-muted-foreground">{pedido.nomeCliente || "Sem cliente"}</p>
                       <p className="text-xs text-muted-foreground mb-2">Valor: R$ {(pedido.valorTotal / 100).toFixed(2)}</p>
                       {(pedido.composicaoItens?.length > 0 || pedido.composicaoKits?.length > 0) && (
                         <div className="rounded-md bg-white/60 dark:bg-black/20 p-2 space-y-1 mb-2">

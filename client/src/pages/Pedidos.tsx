@@ -172,7 +172,7 @@ export default function Pedidos() {
         <div className="space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             <Input
-              placeholder="Buscar cliente ou colaborador..."
+              placeholder="Buscar por conteúdo, colaborador, bairro ou cliente..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               className="flex-1"
@@ -249,7 +249,7 @@ export default function Pedidos() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Cliente</TableHead>
+                      <TableHead>Conteúdo do Aluguel</TableHead>
                       <TableHead>Colaborador</TableHead>
                       <TableHead>Data Evento</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
@@ -263,7 +263,7 @@ export default function Pedidos() {
                       <Fragment key={p.id}>
                       <TableRow className="transition-colors duration-200 hover:bg-muted/50">
                         <TableCell className="font-mono">#{p.id}</TableCell>
-                        <TableCell>{p.nomeCliente ?? "—"}</TableCell>
+                        <TableCell>{formatarResumoPedido(p)}</TableCell>
                         <TableCell>{p.nomeColaborador}</TableCell>
                         <TableCell>
                           {p.data ? format(new Date(p.data), "dd/MM/yyyy") : "—"}
@@ -345,7 +345,7 @@ export default function Pedidos() {
               <EntityCard
                 key={p.id}
                 title={formatarResumoPedido(p)}
-                subtitle={`#${p.id} · ${p.nomeCliente || "Sem cliente"}`}
+                subtitle={`#${p.id}`}
                 badge={
                   <Select
                     value={p.status}

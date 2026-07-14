@@ -133,7 +133,7 @@ function GrupoDesktop({
                         />
                       </TableHead>
                     )}
-                    <TableHead>Cliente</TableHead>
+                    <TableHead>Conteúdo do Aluguel</TableHead>
                     <TableHead>Endereço</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead>Composição</TableHead>
@@ -148,14 +148,11 @@ function GrupoDesktop({
                           <Checkbox
                             checked={selectedIds?.has(p.id) ?? false}
                             onCheckedChange={() => onToggle?.(p.id)}
-                            aria-label={`Selecionar ${p.nomeCliente}`}
+                            aria-label={`Selecionar ${formatarResumoPedido(p)}`}
                           />
                         </TableCell>
                       )}
                       <TableCell className="font-medium">{formatarResumoPedido(p)}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.nomeCliente || "Sem cliente"}
-                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {p.ruaEntrega}, {p.numeroEntrega}
                       </TableCell>
@@ -238,7 +235,7 @@ function GrupoMobile({
                           <Checkbox
                             checked={selectedIds?.has(p.id) ?? false}
                             onCheckedChange={() => onToggle?.(p.id)}
-                            aria-label={`Selecionar ${p.nomeCliente}`}
+                            aria-label={`Selecionar ${formatarResumoPedido(p)}`}
                             className="shrink-0"
                           />
                         )}
@@ -251,7 +248,7 @@ function GrupoMobile({
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {p.nomeCliente || "Sem cliente"} · {p.ruaEntrega}, {p.numeroEntrega} — {p.bairroEntrega}
+                      {p.ruaEntrega}, {p.numeroEntrega} — {p.bairroEntrega}
                     </p>
                     {((p.composicaoItens?.length ?? 0) > 0 || (p.composicaoKits?.length ?? 0) > 0) && (
                       <p className="text-xs text-muted-foreground truncate">
