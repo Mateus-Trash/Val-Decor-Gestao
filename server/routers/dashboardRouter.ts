@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNotNull, lte, sql, sum, inArray } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lte, sql, sum, inArray, like } from "drizzle-orm";
 import { z } from "zod";
 import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens, kitsPedido, kits, comissoes } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -94,6 +94,10 @@ export const dashboardRouter = router({
         faturamentoAteHoje: 0,
         taxasEntrega: 0,
         totalDespesas: 0,
+        totalDespesasNormais: 0,
+        totalDespesasNormaisAteHoje: 0,
+        totalComissoes: 0,
+        totalComissoesAteHoje: 0,
         saldo: 0,
         totalPedidosNoPeriodo: 0,
         taxaConclusao: 0,
@@ -102,19 +106,38 @@ export const dashboardRouter = router({
         top5Itens: [] as { nome: string; totalQuantidade: number }[],
       };
 
-      // Despesas no período: mantém baseado na data de criação da transação — despesas
-      // nem sempre têm um pedido vinculado com data de aluguel confiável.
-      const [despesasRow] = await db
+      // Despesas normais (gasolina, oficina, etc.): NÃO têm pedidoId, continuam
+      // filtradas pela data de criação da transação.
+      const [despesasNormaisRow] = await db
         .select({ total: sum(transacoesFinanceiras.valor) })
         .from(transacoesFinanceiras)
         .where(
           and(
             eq(transacoesFinanceiras.tipo, "despesa"),
+            sql`NOT (${transacoesFinanceiras.descricao} LIKE 'Comissão%')`,
             gte(transacoesFinanceiras.data, input.dataInicio),
             lte(transacoesFinanceiras.data, input.dataFim)
           )
         );
-      const totalDespesas = Number(despesasRow?.total ?? 0);
+      const totalDespesasNormais = Number(despesasNormaisRow?.total ?? 0);
+
+      // Comissões: têm pedidoId, filtradas pela DATA DO ALUGUEL (pedidos.data) via
+      // join — mesmo critério do faturamento, para bater com o mês do aluguel.
+      const [comissoesRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            like(transacoesFinanceiras.descricao, "Comissão%"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
+          )
+        );
+      const totalComissoes = Number(comissoesRow?.total ?? 0);
+
+      const totalDespesas = totalDespesasNormais + totalComissoes;
 
       // Faturamento (receita) e taxas de entrega no período: baseado na DATA DO ALUGUEL
       // (pedidos.data), via join com a tabela pedidos — não mais na data de criação da
@@ -158,6 +181,35 @@ export const dashboardRouter = router({
           )
         );
       const faturamentoAteHoje = Number(receitaAteHojeRow?.total ?? 0);
+
+      // Despesas normais até hoje: mesma query mas limitando ao cutoffAteHoje
+      const [despesasNormaisAteHojeRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            sql`NOT (${transacoesFinanceiras.descricao} LIKE 'Comissão%')`,
+            gte(transacoesFinanceiras.data, input.dataInicio),
+            lte(transacoesFinanceiras.data, cutoffAteHoje)
+          )
+        );
+      const totalDespesasNormaisAteHoje = Number(despesasNormaisAteHojeRow?.total ?? 0);
+
+      // Comissões até hoje: filtradas pela data do aluguel até cutoffAteHoje
+      const [comissoesAteHojeRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            like(transacoesFinanceiras.descricao, "Comissão%"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, cutoffAteHoje)
+          )
+        );
+      const totalComissoesAteHoje = Number(comissoesAteHojeRow?.total ?? 0);
 
       // Pedidos por status no período
       const pedidosStatus = await db
@@ -224,6 +276,10 @@ export const dashboardRouter = router({
         faturamentoAteHoje,
         taxasEntrega,
         totalDespesas,
+        totalDespesasNormais,
+        totalDespesasNormaisAteHoje,
+        totalComissoes,
+        totalComissoesAteHoje,
         saldo,
         totalPedidosNoPeriodo,
         taxaConclusao,

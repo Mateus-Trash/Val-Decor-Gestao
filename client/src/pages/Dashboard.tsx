@@ -224,14 +224,24 @@ export default function Dashboard() {
             footerNote="Receitas menos despesas no período"
           />
           <StatCard
-            title="Total de Despesas"
-            value={kpis ? kpis.totalDespesas : null}
+            title="Despesas Normais"
+            value={kpis ? kpis.totalDespesasNormais : null}
             formatFn={formatCentavos}
             icon={<TrendingDown className="h-5 w-5 text-red-600" />}
             loading={kpisLoading}
             accentClassName="border-l-4 border-l-red-500"
             valueClassName="text-red-600"
-            footerNote="No período selecionado"
+            footerNote={kpis ? `Até hoje: ${formatCentavos(kpis.totalDespesasNormaisAteHoje)}` : undefined}
+          />
+          <StatCard
+            title="Comissões"
+            value={kpis ? kpis.totalComissoes : null}
+            formatFn={formatCentavos}
+            icon={<TrendingDown className="h-5 w-5 text-orange-600" />}
+            loading={kpisLoading}
+            accentClassName="border-l-4 border-l-orange-500"
+            valueClassName="text-red-600"
+            footerNote={kpis ? `Até hoje: ${formatCentavos(kpis.totalComissoesAteHoje)}` : undefined}
           />
           <StatCard
             title="Taxas de Entrega"
