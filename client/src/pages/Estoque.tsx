@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { formatarResumoPedido } from "@/lib/pedidoFormat";
-import { Warehouse, CalendarIcon, Package, Layers } from "lucide-react";
+import { Warehouse, CalendarIcon, Package, Layers, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
@@ -25,8 +26,23 @@ import { ptBR } from "date-fns/locale";
 
 const CATEGORIAS = ["Decoracoes", "Cadeiras e Mesas", "Toalhas"] as const;
 
+const CATEGORIA_LABELS: Record<string, string> = {
+  Decoracoes: "Decorações",
+  "Cadeiras e Mesas": "Cadeiras e Mesas",
+  Toalhas: "Toalhas",
+};
+
 export default function Estoque() {
   const [dataConsulta, setDataConsulta] = useState<Date>(new Date());
+  const [itensAbertas, setItensAbertas] = useState<Set<string>>(new Set());
+  const [kitsAbertas, setKitsAbertas] = useState<Set<string>>(new Set());
+
+  function toggleCategoria(set: Set<string>, cat: string, setter: (s: Set<string>) => void) {
+    const next = new Set(set);
+    if (next.has(cat)) next.delete(cat);
+    else next.add(cat);
+    setter(next);
+  }
 
   const { data: itensDisponibilidade = [] } = trpc.itens.getDisponibilidadePorData.useQuery({ data: dataConsulta });
   const { data: kitsDisponibilidade = [] } = trpc.kits.getDisponibilidadePorData.useQuery({ data: dataConsulta });
@@ -149,11 +165,19 @@ export default function Estoque() {
           ) : itensComDisponibilidade.length === 0 ? (
             <EmptyState icon={Package} message="Nenhum item cadastrado." />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {itensPorCategoria.map((grupo) => (
-                <div key={grupo.categoria}>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{grupo.categoria}</h3>
-                  <Card className="hidden sm:block">
+                <Collapsible key={grupo.categoria} open={itensAbertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(itensAbertas, grupo.categoria, setItensAbertas)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${itensAbertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.itens.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2">
+                    <Card className="hidden sm:block">
                     <CardContent className="pt-6">
                       <div className="overflow-x-auto">
                         <Table>
@@ -187,7 +211,7 @@ export default function Estoque() {
                     </CardContent>
                   </Card>
                   {/* Mobile Cards */}
-                  <div className="block sm:hidden space-y-3">
+                  <div className="block sm:hidden space-y-3 mt-2">
                     {grupo.itens.map((item) => (
                       <Card key={item.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                         <div className="space-y-2 text-sm">
@@ -210,7 +234,9 @@ export default function Estoque() {
                       </Card>
                     ))}
                   </div>
-                </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               ))}
             </div>
           )}
@@ -228,11 +254,19 @@ export default function Estoque() {
           ) : kitsComDisponibilidade.length === 0 ? (
             <EmptyState icon={Layers} message="Nenhum kit cadastrado." />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {kitsPorCategoria.map((grupo) => (
-                <div key={grupo.categoria}>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">{grupo.categoria}</h3>
-                  <Card className="hidden sm:block">
+                <Collapsible key={grupo.categoria} open={kitsAbertas.has(grupo.categoria)} onOpenChange={() => toggleCategoria(kitsAbertas, grupo.categoria, setKitsAbertas)}>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${kitsAbertas.has(grupo.categoria) ? "rotate-0" : "-rotate-90"}`} />
+                      <span className="text-sm font-semibold">{CATEGORIA_LABELS[grupo.categoria] ?? grupo.categoria}</span>
+                      <Badge variant="secondary" className="ml-1 text-xs">{grupo.kits.length}</Badge>
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2">
+                    <Card className="hidden sm:block">
                     <CardContent className="pt-6">
                       <div className="overflow-x-auto">
                         <Table>
@@ -264,7 +298,7 @@ export default function Estoque() {
                     </CardContent>
                   </Card>
                   {/* Mobile Cards */}
-                  <div className="block sm:hidden space-y-3">
+                  <div className="block sm:hidden space-y-3 mt-2">
                     {grupo.kits.map((kit) => (
                       <Card key={kit.id} className="p-3 transition-colors duration-200 hover:bg-muted/50">
                         <div className="space-y-2 text-sm">
@@ -286,7 +320,9 @@ export default function Estoque() {
                       </Card>
                     ))}
                   </div>
-                </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               ))}
             </div>
           )}
