@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { formatarResumoPedido } from "@/lib/pedidoFormat";
 import {
   TrendingUp,
   TrendingDown,
@@ -298,7 +299,7 @@ export default function Dashboard() {
                 .slice(0, 3)
                 .map((alerta: any) => (
                   <p key={alerta.pedidoId} className="text-xs text-amber-800 dark:text-amber-300">
-                    <strong>{alerta.nomeCliente}</strong> — entregue há {alerta.diasAtraso} dias
+                    <strong>{formatarResumoPedido(alerta)}</strong> — entregue há {alerta.diasAtraso} dias
                   </p>
                 ))}
               {alertasColeta.length > 3 && (

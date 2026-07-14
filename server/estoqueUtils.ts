@@ -1,5 +1,5 @@
 import { eq, inArray, ne, sql, and } from "drizzle-orm";
-import { itens, itensPedido, kitsPedido, kitItens, pedidos } from "../drizzle/schema";
+import { itens, itensPedido, kitsPedido, kitItens, kits, pedidos, colaboradores } from "../drizzle/schema";
 /**
  * Retorna um Map<itemId, quantidadeReservada> somando reservas diretas (itensPedido)
  * e via kits (kitsPedido expandido por kitItens) de todos os pedidos cujo:
@@ -53,8 +53,12 @@ const DIAS_LIMITE_ALERTA_COLETA = 3;
 export interface AlertaColeta {
   pedidoId: number;
   nomeCliente: string;
+  nomeColaborador: string;
+  bairroEntrega: string;
   data: Date;
   diasAtraso: number;
+  composicaoItens: { nome: string; quantidade: number }[];
+  composicaoKits: { nome: string; quantidade: number }[];
   itensAfetados: {
     itemId: number;
     nome: string;
@@ -73,9 +77,12 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
     .select({
       id: pedidos.id,
       nomeCliente: pedidos.nomeCliente,
+      bairroEntrega: pedidos.bairroEntrega,
+      nomeColaborador: colaboradores.nome,
       data: pedidos.data,
     })
     .from(pedidos)
+    .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
     .where(
       and(
         inArray(pedidos.status, ["EntregueNaoPago", "EntreguePago"]),
@@ -88,6 +95,8 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
   const disponibilidadeHoje = await getReservadoPorItemNaData(db, hoje);
   const todosItens = await db.select().from(itens);
   const itensMap = new Map<number, any>(todosItens.map((i: any) => [i.id as number, i]));
+  const todosKits = await db.select().from(kits);
+  const kitsMap = new Map<number, any>(todosKits.map((k: any) => [k.id as number, k]));
 
   const alertas: AlertaColeta[] = [];
 
@@ -128,11 +137,24 @@ export async function getAlertasColetaAtrasada(db: any): Promise<AlertaColeta[]>
       };
     });
 
+    const composicaoItens = itensDiretos.map((i: { itemId: number; quantidade: number }) => ({
+      nome: itensMap.get(i.itemId)?.nome ?? "Item removido",
+      quantidade: i.quantidade,
+    }));
+    const composicaoKits = kitsDoP.map((k: { kitId: number; quantidade: number }) => ({
+      nome: kitsMap.get(k.kitId)?.nome ?? "Kit removido",
+      quantidade: k.quantidade,
+    }));
+
     alertas.push({
       pedidoId: pedido.id,
       nomeCliente: pedido.nomeCliente,
+      nomeColaborador: pedido.nomeColaborador,
+      bairroEntrega: pedido.bairroEntrega,
       data: pedido.data,
       diasAtraso,
+      composicaoItens,
+      composicaoKits,
       itensAfetados,
     });
   }

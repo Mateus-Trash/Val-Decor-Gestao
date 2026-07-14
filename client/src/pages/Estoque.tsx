@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
+import { formatarResumoPedido } from "@/lib/pedidoFormat";
 import { Warehouse, CalendarIcon, Package, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
@@ -104,7 +105,7 @@ export default function Estoque() {
               <Card key={alerta.pedidoId} className="border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
                 <CardContent className="pt-4 pb-4 text-sm space-y-1">
                   <p className="font-medium text-amber-900 dark:text-amber-200">
-                    ⚠️ Pedido de {alerta.nomeCliente} entregue há {alerta.diasAtraso} dias e ainda não coletado
+                    ⚠️ Pedido de {formatarResumoPedido(alerta)} entregue há {alerta.diasAtraso} dias e ainda não coletado
                   </p>
                   {alerta.itensAfetados.map((ia) => (
                     <p key={ia.itemId} className="text-amber-800 dark:text-amber-300">
