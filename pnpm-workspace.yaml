@@ -4,6 +4,7 @@
 allowBuilds:
   esbuild: false
   "@tailwindcss/oxide": true
+  core-js: set this to true or false
 
 # pnpm 10.x compatibility
 onlyBuiltDependencies:

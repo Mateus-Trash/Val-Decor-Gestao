@@ -36,7 +36,8 @@ import { format } from "date-fns";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
 import ImportarPedidosDialog from "@/components/ImportarPedidosDialog";
 import { ptBR } from "date-fns/locale";
-import { Upload } from "lucide-react";
+import { Upload, FileText } from "lucide-react";
+import { gerarReciboPDF } from "@/lib/reciboPdf";
 
 const statusOptions = ["Pendente", "Confirmado", "EntregueNaoPago", "EntreguePago", "Concluido"] as const;
 
@@ -324,6 +325,25 @@ export default function Pedidos() {
                               <DropdownMenuItem onClick={() => abrirEditar(p.id)}>
                                 <Pencil className="h-4 w-4 mr-2" /> Editar
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => gerarReciboPDF({
+                                numeroRecibo: String(p.id),
+                                data: p.data ? format(new Date(p.data), "dd/MM/yyyy") : undefined,
+                                itens: [
+                                  ...p.composicaoItens.map((item) => ({
+                                    descricao: item.nome,
+                                    quantidade: item.quantidade,
+                                    valorUnitario: 0,
+                                  })),
+                                  ...p.composicaoKits.map((kit) => ({
+                                    descricao: kit.nome,
+                                    quantidade: kit.quantidade,
+                                    valorUnitario: 0,
+                                  })),
+                                ],
+                                valorTotal: p.valorTotal / 100,
+                              })}>
+                                <FileText className="h-4 w-4 mr-2" /> Gerar Recibo
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => confirmarDelete(p.id)} className="text-destructive">
                                 <Trash2 className="h-4 w-4 mr-2" /> Excluir
                               </DropdownMenuItem>
@@ -405,6 +425,25 @@ export default function Pedidos() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => abrirEditar(p.id)}>
                         <Pencil className="h-4 w-4 mr-2" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => gerarReciboPDF({
+                        numeroRecibo: String(p.id),
+                        data: p.data ? format(new Date(p.data), "dd/MM/yyyy") : undefined,
+                        itens: [
+                          ...p.composicaoItens.map((item) => ({
+                            descricao: item.nome,
+                            quantidade: item.quantidade,
+                            valorUnitario: 0,
+                          })),
+                          ...p.composicaoKits.map((kit) => ({
+                            descricao: kit.nome,
+                            quantidade: kit.quantidade,
+                            valorUnitario: 0,
+                          })),
+                        ],
+                        valorTotal: p.valorTotal / 100,
+                      })}>
+                        <FileText className="h-4 w-4 mr-2" /> Gerar Recibo
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => confirmarDelete(p.id)} className="text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" /> Excluir
