@@ -1,6 +1,6 @@
 minimumReleaseAge: 0
 trustLockfile: true
-dangerouslyAllowAllBuilds: true
+strictDepBuilds: false
 allowBuilds:
   core-js: true
   esbuild: false
