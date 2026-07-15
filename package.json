@@ -119,11 +119,10 @@
   },
   "packageManager": "pnpm@11.11.0",
   "pnpm": {
-    "neverBuiltDependencies": [
-      "esbuild"
-    ],
     "onlyBuiltDependencies": [
-      "@tailwindcss/oxide"
+      "@tailwindcss/oxide",
+      "core-js",
+      "esbuild"
     ]
   }
 }
