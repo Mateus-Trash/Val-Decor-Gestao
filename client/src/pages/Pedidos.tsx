@@ -332,12 +332,12 @@ export default function Pedidos() {
                                   ...p.composicaoItens.map((item) => ({
                                     descricao: item.nome,
                                     quantidade: item.quantidade,
-                                    valorUnitario: item.valorUnitario / 100,
+                                    valorUnitario: (item.valorUnitario ?? 0) / 100,
                                   })),
                                   ...p.composicaoKits.map((kit) => ({
                                     descricao: kit.nome,
                                     quantidade: kit.quantidade,
-                                    valorUnitario: kit.valorUnitario / 100,
+                                    valorUnitario: (kit.valorUnitario ?? 0) / 100,
                                   })),
                                 ],
                                 valorTotal: p.valorTotal / 100,
@@ -433,12 +433,12 @@ export default function Pedidos() {
                           ...p.composicaoItens.map((item) => ({
                             descricao: item.nome,
                             quantidade: item.quantidade,
-                            valorUnitario: item.valorUnitario / 100,
+                            valorUnitario: (item.valorUnitario ?? 0) / 100,
                           })),
                           ...p.composicaoKits.map((kit) => ({
                             descricao: kit.nome,
                             quantidade: kit.quantidade,
-                            valorUnitario: kit.valorUnitario / 100,
+                            valorUnitario: (kit.valorUnitario ?? 0) / 100,
                           })),
                         ],
                         valorTotal: p.valorTotal / 100,

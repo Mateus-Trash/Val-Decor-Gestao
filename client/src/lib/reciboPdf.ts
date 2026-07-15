@@ -71,11 +71,13 @@ export function gerarReciboPDF(opcoes?: {
   const itens = opcoes?.itens ?? [];
   if (itens.length > 0) {
     itens.forEach((item) => {
-      const subtotal = item.quantidade * item.valorUnitario;
-      doc.text(String(item.quantidade), margemEsquerda + 3, yAtual + 5.5);
+      const vlr = Number.isFinite(item.valorUnitario) ? item.valorUnitario : 0;
+      const qtd = Number.isFinite(item.quantidade) ? item.quantidade : 0;
+      const subtotal = qtd * vlr;
+      doc.text(String(qtd), margemEsquerda + 3, yAtual + 5.5);
       doc.text(item.descricao.substring(0, 50), margemEsquerda + 20, yAtual + 5.5);
       doc.text(
-        item.valorUnitario.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+        vlr.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
         larguraPagina - margemDireita - 50,
         yAtual + 5.5
       );
@@ -109,8 +111,9 @@ export function gerarReciboPDF(opcoes?: {
   doc.setFont("helvetica", "bold");
   doc.text("VALOR TOTAL:", margemEsquerda, yAtual);
 
-  const valorTotal = opcoes?.valorTotal
-    ? opcoes.valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+  const valorTotalNum = opcoes?.valorTotal && Number.isFinite(opcoes.valorTotal) ? opcoes.valorTotal : 0;
+  const valorTotal = valorTotalNum > 0
+    ? valorTotalNum.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
     : "R$ ___________";
   doc.text(valorTotal, larguraPagina - margemDireita - 3, yAtual, { align: "right" });
 
