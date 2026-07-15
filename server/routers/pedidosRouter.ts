@@ -51,6 +51,7 @@ export const pedidosRouter = router({
         nome: itens.nome,
         quantidade: itensPedido.quantidade,
         categoria: itens.categoria,
+        valorUnitario: itensPedido.valorUnitario,
       })
       .from(itensPedido)
       .innerJoin(itens, eq(itensPedido.itemId, itens.id));
@@ -61,20 +62,21 @@ export const pedidosRouter = router({
         nome: kits.nome,
         quantidade: kitsPedido.quantidade,
         categoria: kits.categoria,
+        valorUnitario: kitsPedido.valorUnitario,
       })
       .from(kitsPedido)
       .innerJoin(kits, eq(kitsPedido.kitId, kits.id));
 
-    const itensMap = new Map<number, { nome: string; quantidade: number; categoria: string | null }[]>();
+    const itensMap = new Map<number, { nome: string; quantidade: number; categoria: string | null; valorUnitario: number }[]>();
     for (const row of itensCompRows) {
       if (!itensMap.has(row.pedidoId)) itensMap.set(row.pedidoId, []);
-      itensMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade, categoria: row.categoria });
+      itensMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade, categoria: row.categoria, valorUnitario: row.valorUnitario });
     }
 
-    const kitsMap = new Map<number, { nome: string; quantidade: number; categoria: string | null }[]>();
+    const kitsMap = new Map<number, { nome: string; quantidade: number; categoria: string | null; valorUnitario: number }[]>();
     for (const row of kitsCompRows) {
       if (!kitsMap.has(row.pedidoId)) kitsMap.set(row.pedidoId, []);
-      kitsMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade, categoria: row.categoria });
+      kitsMap.get(row.pedidoId)!.push({ nome: row.nome, quantidade: row.quantidade, categoria: row.categoria, valorUnitario: row.valorUnitario });
     }
 
     return result.map((p) => ({
