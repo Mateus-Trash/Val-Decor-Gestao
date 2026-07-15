@@ -1,5 +1,6 @@
-onlyBuiltDependencies:
-  - core-js
-  - esbuild
 minimumReleaseAge: 0
 trustLockfile: true
+dangerouslyAllowAllBuilds: true
+allowBuilds:
+  core-js: true
+  esbuild: true
