@@ -315,7 +315,7 @@ export const importacaoRouter = router({
           }
         }
 
-        // Resolver kits: criar os que não existem
+        // Resolver kits: criar os que não existem (com composição automática "Pegue e Monte")
         const kitMap = new Map<string, { id: number; valorCentavos: number }>();
         for (const kitParsed of p.kits) {
           const existente = todosKits.find(
@@ -324,7 +324,7 @@ export const importacaoRouter = router({
           if (existente) {
             kitMap.set(kitParsed.nome, { id: existente.id, valorCentavos: kitParsed.valorCentavos || existente.valorAluguel });
           } else {
-            // Criar kit vazio (sem composição) - o usuário pode adicionar itens depois
+            // Criar kit com composição automática do tipo "Pegue e Monte"
             const valorAluguel = kitParsed.valorCentavos || 5000; // default R$ 50,00
             const result = await db.insert(kits).values({
               nome: kitParsed.nome,
@@ -334,6 +334,64 @@ export const importacaoRouter = router({
             todosKits.push({ id: novoId, nome: kitParsed.nome, valorAluguel } as any);
             kitMap.set(kitParsed.nome, { id: novoId, valorCentavos: valorAluguel });
             kitsCriados.push(kitParsed.nome);
+
+            // Extrair tema do nome do kit e criar composição automática
+            const tema = kitParsed.nome.trim().replace(/^kit\s+(simples|premium|básico|basico|completo|deluxe|luxo)?\s*/i, "");
+            if (tema) {
+              const nomePanos = `Panos ${tema}`;
+
+              // Buscar ou criar Cilindro
+              let cilindro = todosItens.find((i) => i.nome.toLowerCase().includes("cilindro"));
+              if (!cilindro) {
+                const res = await db.insert(itens).values({
+                  nome: "Cilindro",
+                  categoria: "Decoracoes",
+                  valorAluguel: 1500,
+                  quantidadeTotal: 100,
+                  quantidadeDisponivel: 100,
+                });
+                cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                todosItens.push(cilindro!);
+                itensCriados.push("Cilindro");
+              }
+
+              // Buscar ou criar Painel de Ferro
+              let painel = todosItens.find((i) => i.nome.toLowerCase().includes("painel") && i.nome.toLowerCase().includes("ferro"));
+              if (!painel) {
+                const res = await db.insert(itens).values({
+                  nome: "Painel de Ferro",
+                  categoria: "Decoracoes",
+                  valorAluguel: 2000,
+                  quantidadeTotal: 100,
+                  quantidadeDisponivel: 100,
+                });
+                painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                todosItens.push(painel!);
+                itensCriados.push("Painel de Ferro");
+              }
+
+              // Buscar ou criar Panos [tema]
+              let panos = todosItens.find((i) => i.nome.toLowerCase() === nomePanos.toLowerCase());
+              if (!panos) {
+                const res = await db.insert(itens).values({
+                  nome: nomePanos,
+                  categoria: "Decoracoes",
+                  valorAluguel: 1000,
+                  quantidadeTotal: 100,
+                  quantidadeDisponivel: 100,
+                });
+                panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                todosItens.push(panos!);
+                itensCriados.push(nomePanos);
+              }
+
+              // Inserir composição do kit: 3 Cilindros + 1 Painel de Ferro + 1 Panos [tema]
+              await db.insert(kitItens).values([
+                { kitId: novoId, itemId: cilindro!.id, quantidade: 3 },
+                { kitId: novoId, itemId: painel!.id, quantidade: 1 },
+                { kitId: novoId, itemId: panos!.id, quantidade: 1 },
+              ]);
+            }
           }
         }
 

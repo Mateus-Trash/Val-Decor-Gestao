@@ -46,6 +46,8 @@ export const kitsRouter = router({
             quantidade: z.number().int().positive(),
           })
         ),
+        predefinicao: z.enum(["Conjuntos", "Pegue e Monte"]).optional(),
+        tema: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -61,9 +63,62 @@ export const kitsRouter = router({
 
       const kitId = Number(result[0].insertId);
 
-      if (input.itens.length > 0) {
+      let itensComposicao = [...input.itens];
+
+      // Se for predefinição "Pegue e Monte", garantir que os itens padrão existam
+      if (input.predefinicao === "Pegue e Monte" && input.tema) {
+        const todosItens = await db.select().from(itens);
+        const nomePanos = `Panos ${input.tema}`;
+
+        // Buscar ou criar Cilindro
+        let cilindro = todosItens.find((i) => i.nome.toLowerCase().includes("cilindro"));
+        if (!cilindro) {
+          const res = await db.insert(itens).values({
+            nome: "Cilindro",
+            categoria: "Decoracoes",
+            valorAluguel: 1500,
+            quantidadeTotal: 100,
+            quantidadeDisponivel: 100,
+          });
+          cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+        }
+
+        // Buscar ou criar Painel de Ferro
+        let painel = todosItens.find((i) => i.nome.toLowerCase().includes("painel") && i.nome.toLowerCase().includes("ferro"));
+        if (!painel) {
+          const res = await db.insert(itens).values({
+            nome: "Painel de Ferro",
+            categoria: "Decoracoes",
+            valorAluguel: 2000,
+            quantidadeTotal: 100,
+            quantidadeDisponivel: 100,
+          });
+          painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+        }
+
+        // Buscar ou criar Panos [tema]
+        let panos = todosItens.find((i) => i.nome.toLowerCase() === nomePanos.toLowerCase());
+        if (!panos) {
+          const res = await db.insert(itens).values({
+            nome: nomePanos,
+            categoria: "Decoracoes",
+            valorAluguel: 1000,
+            quantidadeTotal: 100,
+            quantidadeDisponivel: 100,
+          });
+          panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+        }
+
+        // Adicionar à composição se ainda não estiver
+        const idsAtuais = new Set(itensComposicao.map((i) => i.itemId));
+        if (!idsAtuais.has(cilindro!.id)) itensComposicao.push({ itemId: cilindro!.id, quantidade: 3 });
+        if (!idsAtuais.has(painel!.id)) itensComposicao.push({ itemId: painel!.id, quantidade: 1 });
+        if (!idsAtuais.has(panos!.id)) itensComposicao.push({ itemId: panos!.id, quantidade: 1 });
+      }
+
+      if (itensComposicao.length > 0) {
         await db.insert(kitItens).values(
-          input.itens.map((item) => ({
+          itensComposicao.map((item) => ({
             kitId,
             itemId: item.itemId,
             quantidade: item.quantidade,
@@ -90,13 +145,15 @@ export const kitsRouter = router({
             })
           )
           .optional(),
+        predefinicao: z.enum(["Conjuntos", "Pegue e Monte"]).optional(),
+        tema: z.string().optional(),
       })
     )
     .mutation(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
-      const { id, itens: novosItens, ...campos } = input;
+      const { id, itens: novosItens, predefinicao, tema, ...campos } = input;
 
       // Atualizar campos do kit se houver
       if (Object.keys(campos).length > 0) {
@@ -105,11 +162,40 @@ export const kitsRouter = router({
 
       // Se itens foram enviados: deletar todos e reinserir
       if (novosItens !== undefined) {
+        let itensComposicao = [...novosItens];
+
+        // Se for predefinição "Pegue e Monte", garantir que os itens padrão existam
+        if (predefinicao === "Pegue e Monte" && tema) {
+          const todosItens = await db.select().from(itens);
+          const nomePanos = `Panos ${tema}`;
+
+          let cilindro = todosItens.find((i) => i.nome.toLowerCase().includes("cilindro"));
+          if (!cilindro) {
+            const res = await db.insert(itens).values({ nome: "Cilindro", categoria: "Decoracoes", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            cilindro = { id: Number(res[0].insertId), nome: "Cilindro" } as any;
+          }
+          let painel = todosItens.find((i) => i.nome.toLowerCase().includes("painel") && i.nome.toLowerCase().includes("ferro"));
+          if (!painel) {
+            const res = await db.insert(itens).values({ nome: "Painel de Ferro", categoria: "Decoracoes", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            painel = { id: Number(res[0].insertId), nome: "Painel de Ferro" } as any;
+          }
+          let panos = todosItens.find((i) => i.nome.toLowerCase() === nomePanos.toLowerCase());
+          if (!panos) {
+            const res = await db.insert(itens).values({ nome: nomePanos, categoria: "Decoracoes", valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            panos = { id: Number(res[0].insertId), nome: nomePanos } as any;
+          }
+
+          const idsAtuais = new Set(itensComposicao.map((i) => i.itemId));
+          if (!idsAtuais.has(cilindro!.id)) itensComposicao.push({ itemId: cilindro!.id, quantidade: 3 });
+          if (!idsAtuais.has(painel!.id)) itensComposicao.push({ itemId: painel!.id, quantidade: 1 });
+          if (!idsAtuais.has(panos!.id)) itensComposicao.push({ itemId: panos!.id, quantidade: 1 });
+        }
+
         await db.delete(kitItens).where(eq(kitItens.kitId, id));
 
-        if (novosItens.length > 0) {
+        if (itensComposicao.length > 0) {
           await db.insert(kitItens).values(
-            novosItens.map((item) => ({
+            itensComposicao.map((item) => ({
               kitId: id,
               itemId: item.itemId,
               quantidade: item.quantidade,

@@ -69,6 +69,8 @@ type ItemComposicao = {
   quantidade: number;
 };
 
+const PREDEFINICOES = ["Nenhuma", "Conjuntos", "Pegue e Monte"] as const;
+
 export default function Kits() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -77,6 +79,8 @@ export default function Kits() {
   const [composicao, setComposicao] = useState<ItemComposicao[]>([]);
   const [itemSelecionado, setItemSelecionado] = useState<string>("");
   const [qtdItem, setQtdItem] = useState<string>("1");
+  const [predefinicao, setPredefinicao] = useState<string>("Nenhuma");
+  const [nomeKit, setNomeKit] = useState<string>("");
 
   const utils = trpc.useUtils();
 
@@ -135,18 +139,24 @@ export default function Kits() {
     setComposicao([]);
     setItemSelecionado("");
     setQtdItem("1");
+    setPredefinicao("Nenhuma");
+    setNomeKit("");
     reset();
   }
 
   function abrirCriar() {
     setEditandoId(null);
     setComposicao([]);
+    setPredefinicao("Nenhuma");
+    setNomeKit("");
     reset({ nome: "", descricao: "", categoria: "Decoracoes", valorAluguel: 0 });
     setDialogOpen(true);
   }
 
   function abrirEditar(kit: (typeof kits)[number]) {
     setEditandoId(kit.id);
+    setNomeKit(kit.nome);
+    setPredefinicao("Nenhuma");
     reset({
       nome: kit.nome,
       descricao: kit.descricao ?? "",
@@ -161,6 +171,45 @@ export default function Kits() {
       }))
     );
     setDialogOpen(true);
+  }
+
+  /** Aplica predefinição "Pegue e Monte": adiciona 3 Cilindros + 1 Painel de Ferro + Panos [tema] */
+  function aplicarPredefinicao(predef: string, nomeDoKit: string) {
+    setPredefinicao(predef);
+    if (predef === "Pegue e Monte" && nomeDoKit.trim()) {
+      // Extrair tema do nome do kit: "Kit Simples Bob Esponja" → "Bob Esponja"
+      const tema = extrairTemaKit(nomeDoKit);
+      if (!tema) return;
+
+      const nomePanos = `Panos ${tema}`;
+      // Buscar itens existentes que correspondem aos itens padrão
+      const cilindro = itensDisponiveis.find((i) => i.nome.toLowerCase().includes("cilindro"));
+      const painel = itensDisponiveis.find((i) => i.nome.toLowerCase().includes("painel") && i.nome.toLowerCase().includes("ferro"));
+      const panos = itensDisponiveis.find((i) => i.nome.toLowerCase() === nomePanos.toLowerCase());
+
+      const novaComposicao: ItemComposicao[] = [];
+      if (cilindro) novaComposicao.push({ itemId: cilindro.id, nome: cilindro.nome, quantidade: 3 });
+      if (painel) novaComposicao.push({ itemId: painel.id, nome: painel.nome, quantidade: 1 });
+      if (panos) novaComposicao.push({ itemId: panos.id, nome: panos.nome, quantidade: 1 });
+
+      if (novaComposicao.length > 0) {
+        setComposicao(novaComposicao);
+        toast.info(`Composição auto-preenchida: ${novaComposicao.map((c) => `${c.quantidade}x ${c.nome}`).join(", ")}`);
+      } else {
+        toast.info(`Itens padrão (Cilindros, Painel de Ferro, Panos ${tema}) serão criados ao salvar.`);
+      }
+    } else if (predef === "Nenhuma") {
+      // Não limpar composição ao mudar para Nenhuma
+    }
+  }
+
+  /** Extrai o tema do nome do kit: "Kit Simples Bob Esponja" → "Bob Esponja", "Kit Premium Frozen" → "Frozen" */
+  function extrairTemaKit(nome: string): string | null {
+    const limpo = nome.trim();
+    // Remover prefixos comuns: "Kit Simples", "Kit Premium", "Kit "
+    const semPrefixo = limpo.replace(/^kit\s+(simples|premium|básico|basico|completo|deluxe|luxo)?\s*/i, "");
+    if (semPrefixo.length > 0) return semPrefixo;
+    return null;
   }
 
   function adicionarItem() {
@@ -199,12 +248,15 @@ export default function Kits() {
   }
 
   function onSubmit(data: KitForm) {
+    const tema = predefinicao === "Pegue e Monte" ? extrairTemaKit(data.nome) : null;
     const payload = {
       nome: data.nome,
       descricao: data.descricao,
       categoria: data.categoria,
       valorAluguel: Math.round(data.valorAluguel * 100),
       itens: composicao.map((c) => ({ itemId: c.itemId, quantidade: c.quantidade })),
+      predefinicao: predefinicao === "Nenhuma" ? undefined : predefinicao as "Conjuntos" | "Pegue e Monte",
+      tema: tema ?? undefined,
     };
 
     if (editandoId !== null) {
@@ -407,7 +459,7 @@ export default function Kits() {
 
               <div className="space-y-1">
                 <Label htmlFor="nome">Nome *</Label>
-                <Input id="nome" {...register("nome")} placeholder="Nome do kit" />
+                <Input id="nome" {...register("nome")} placeholder="Nome do kit" onChange={(e) => { setNomeKit(e.target.value); if (predefinicao === "Pegue e Monte") aplicarPredefinicao("Pegue e Monte", e.target.value); }} />
                 {errors.nome && (
                   <p className="text-sm text-destructive">{errors.nome.message}</p>
                 )}
@@ -437,6 +489,26 @@ export default function Kits() {
                 placeholder="Descrição do kit"
                 rows={3}
               />
+            </div>
+
+            {/* Predefinição */}
+            <div className="space-y-1">
+              <Label htmlFor="predefinicao">Predefinição</Label>
+              <Select value={predefinicao} onValueChange={(v) => aplicarPredefinicao(v, nomeKit)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {PREDEFINICOES.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {predefinicao === "Pegue e Monte" && (
+                <p className="text-xs text-muted-foreground">
+                  Adiciona automaticamente 3 Cilindros, 1 Painel de Ferro e Panos do tema (extraído do nome do kit). Digite o nome do kit primeiro.
+                </p>
+              )}
             </div>
 
             {/* Seção composição */}
