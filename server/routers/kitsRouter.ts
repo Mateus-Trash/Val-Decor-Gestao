@@ -77,10 +77,10 @@ export const kitsRouter = router({
             nome: "Cilindro",
             categoria: "Decoracoes",
             valorAluguel: 1500,
-            quantidadeTotal: 100,
-            quantidadeDisponivel: 100,
+            quantidadeTotal: 1,
+            quantidadeDisponivel: 1,
           });
-          cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+          cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
         }
 
         // Buscar ou criar Painel de Ferro
@@ -90,10 +90,10 @@ export const kitsRouter = router({
             nome: "Painel de Ferro",
             categoria: "Decoracoes",
             valorAluguel: 2000,
-            quantidadeTotal: 100,
-            quantidadeDisponivel: 100,
+            quantidadeTotal: 1,
+            quantidadeDisponivel: 1,
           });
-          painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+          painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
         }
 
         // Buscar ou criar Panos [tema]
@@ -103,10 +103,10 @@ export const kitsRouter = router({
             nome: nomePanos,
             categoria: "Decoracoes",
             valorAluguel: 1000,
-            quantidadeTotal: 100,
-            quantidadeDisponivel: 100,
+            quantidadeTotal: 1,
+            quantidadeDisponivel: 1,
           });
-          panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+          panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
         }
 
         // Adicionar à composição se ainda não estiver
@@ -171,17 +171,17 @@ export const kitsRouter = router({
 
           let cilindro = todosItens.find((i) => i.nome.toLowerCase().includes("cilindro"));
           if (!cilindro) {
-            const res = await db.insert(itens).values({ nome: "Cilindro", categoria: "Decoracoes", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            const res = await db.insert(itens).values({ nome: "Cilindro", categoria: "Decoracoes", valorAluguel: 1500, quantidadeTotal: 1, quantidadeDisponivel: 1 });
             cilindro = { id: Number(res[0].insertId), nome: "Cilindro" } as any;
           }
           let painel = todosItens.find((i) => i.nome.toLowerCase().includes("painel") && i.nome.toLowerCase().includes("ferro"));
           if (!painel) {
-            const res = await db.insert(itens).values({ nome: "Painel de Ferro", categoria: "Decoracoes", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            const res = await db.insert(itens).values({ nome: "Painel de Ferro", categoria: "Decoracoes", valorAluguel: 2000, quantidadeTotal: 1, quantidadeDisponivel: 1 });
             painel = { id: Number(res[0].insertId), nome: "Painel de Ferro" } as any;
           }
           let panos = todosItens.find((i) => i.nome.toLowerCase() === nomePanos.toLowerCase());
           if (!panos) {
-            const res = await db.insert(itens).values({ nome: nomePanos, categoria: "Decoracoes", valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 });
+            const res = await db.insert(itens).values({ nome: nomePanos, categoria: "Decoracoes", valorAluguel: 1000, quantidadeTotal: 1, quantidadeDisponivel: 1 });
             panos = { id: Number(res[0].insertId), nome: nomePanos } as any;
           }
 

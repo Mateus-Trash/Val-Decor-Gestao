@@ -310,11 +310,11 @@ export const importacaoRouter = router({
             const result = await db.insert(itens).values({
               nome: itemParsed.nome,
               valorAluguel,
-              quantidadeTotal: 100,
-              quantidadeDisponivel: 100,
+              quantidadeTotal: 1,
+              quantidadeDisponivel: 1,
             });
             const novoId = Number(result[0].insertId);
-            todosItens.push({ id: novoId, nome: itemParsed.nome, valorAluguel, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any);
+            todosItens.push({ id: novoId, nome: itemParsed.nome, valorAluguel, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any);
             itemMap.set(itemParsed.nome, { id: novoId, valorCentavos: valorAluguel });
             itensCriados.push(itemParsed.nome);
           }
@@ -365,10 +365,10 @@ export const importacaoRouter = router({
                   nome: "Cilindro",
                   categoria: "Decoracoes",
                   valorAluguel: 1500,
-                  quantidadeTotal: 100,
-                  quantidadeDisponivel: 100,
+                  quantidadeTotal: 1,
+                  quantidadeDisponivel: 1,
                 });
-                cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                cilindro = { id: Number(res[0].insertId), nome: "Cilindro", valorAluguel: 1500, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
                 todosItens.push(cilindro!);
                 itensCriados.push("Cilindro");
               }
@@ -380,10 +380,10 @@ export const importacaoRouter = router({
                   nome: "Painel de Ferro",
                   categoria: "Decoracoes",
                   valorAluguel: 2000,
-                  quantidadeTotal: 100,
-                  quantidadeDisponivel: 100,
+                  quantidadeTotal: 1,
+                  quantidadeDisponivel: 1,
                 });
-                painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                painel = { id: Number(res[0].insertId), nome: "Painel de Ferro", valorAluguel: 2000, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
                 todosItens.push(painel!);
                 itensCriados.push("Painel de Ferro");
               }
@@ -395,10 +395,10 @@ export const importacaoRouter = router({
                   nome: nomePanos,
                   categoria: "Decoracoes",
                   valorAluguel: 1000,
-                  quantidadeTotal: 100,
-                  quantidadeDisponivel: 100,
+                  quantidadeTotal: 1,
+                  quantidadeDisponivel: 1,
                 });
-                panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 100, quantidadeDisponivel: 100 } as any;
+                panos = { id: Number(res[0].insertId), nome: nomePanos, valorAluguel: 1000, quantidadeTotal: 1, quantidadeDisponivel: 1 } as any;
                 todosItens.push(panos!);
                 itensCriados.push(nomePanos);
               }
