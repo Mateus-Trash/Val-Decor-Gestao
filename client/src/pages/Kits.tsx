@@ -459,7 +459,12 @@ export default function Kits() {
 
               <div className="space-y-1">
                 <Label htmlFor="nome">Nome *</Label>
-                <Input id="nome" {...register("nome")} placeholder="Nome do kit" onChange={(e) => { setNomeKit(e.target.value); if (predefinicao === "Pegue e Monte") aplicarPredefinicao("Pegue e Monte", e.target.value); }} />
+                <Input id="nome" placeholder="Nome do kit" {...register("nome", {
+                  onChange: (e) => {
+                    setNomeKit(e.target.value);
+                    if (predefinicao === "Pegue e Monte") aplicarPredefinicao("Pegue e Monte", e.target.value);
+                  },
+                })} />
                 {errors.nome && (
                   <p className="text-sm text-destructive">{errors.nome.message}</p>
                 )}
@@ -508,6 +513,11 @@ export default function Kits() {
                 <p className="text-xs text-muted-foreground">
                   Adiciona automaticamente 3 Cilindros, 1 Painel de Ferro e Panos do tema (extraído do nome do kit). Digite o nome do kit primeiro.
                 </p>
+              )}
+              {predefinicao === "Pegue e Monte" && nomeKit.trim() && (
+                <Button type="button" variant="outline" size="sm" onClick={() => aplicarPredefinicao("Pegue e Monte", nomeKit)}>
+                  Aplicar composição automática
+                </Button>
               )}
             </div>
 
