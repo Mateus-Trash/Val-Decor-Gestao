@@ -201,15 +201,19 @@ export const importacaoRouter = router({
       const kitsExistentes = db ? await db.select().from(kits) : [];
       const colaboradoresExistentes = db ? await db.select().from(colaboradores) : [];
 
+      const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
       return pedidos.map((p) => {
         const itensNovos = p.itens.filter(
-          (i) => !itensExistentes.some((ie) => ie.nome.toLowerCase() === i.nome.toLowerCase())
+          (i) => !itensExistentes.some((ie) => normalize(ie.nome) === normalize(i.nome))
         );
+        // Um kit é "novo" se não existe como kit E não existe como item
         const kitsNovos = p.kits.filter(
-          (k) => !kitsExistentes.some((ke) => ke.nome.toLowerCase() === k.nome.toLowerCase())
+          (k) => !kitsExistentes.some((ke) => normalize(ke.nome) === normalize(k.nome))
+            && !itensExistentes.some((ie) => normalize(ie.nome) === normalize(k.nome))
         );
         const colabEncontrado = p.colaboradorNome
-          ? colaboradoresExistentes.find((c) => c.nome.toLowerCase() === p.colaboradorNome!.toLowerCase())
+          ? colaboradoresExistentes.find((c) => normalize(c.nome) === normalize(p.colaboradorNome!))
           : null;
 
         return {
@@ -293,9 +297,10 @@ export const importacaoRouter = router({
 
         // Resolver itens: criar os que não existem
         const itemMap = new Map<string, { id: number; valorCentavos: number }>();
+        const normalizeNomeItem = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
         for (const itemParsed of p.itens) {
           const existente = todosItens.find(
-            (ie) => ie.nome.toLowerCase() === itemParsed.nome.toLowerCase()
+            (ie) => normalizeNomeItem(ie.nome) === normalizeNomeItem(itemParsed.nome)
           );
           if (existente) {
             itemMap.set(itemParsed.nome, { id: existente.id, valorCentavos: itemParsed.valorCentavos || existente.valorAluguel });
@@ -315,15 +320,28 @@ export const importacaoRouter = router({
           }
         }
 
+        // Normalização de nome para matching robusto
+        const normalizeNome = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+
         // Resolver kits: criar os que não existem (com composição automática "Pegue e Monte")
+        // Mas primeiro, se o nome não existe como kit mas existe como item, tratar como item
         const kitMap = new Map<string, { id: number; valorCentavos: number }>();
         for (const kitParsed of p.kits) {
           const existente = todosKits.find(
-            (ke) => ke.nome.toLowerCase() === kitParsed.nome.toLowerCase()
+            (ke) => normalizeNome(ke.nome) === normalizeNome(kitParsed.nome)
           );
           if (existente) {
             kitMap.set(kitParsed.nome, { id: existente.id, valorCentavos: kitParsed.valorCentavos || existente.valorAluguel });
           } else {
+            // Verificar se o nome existe como ITEM — se sim, tratar como item, não criar kit
+            const itemExistente = todosItens.find(
+              (ie) => normalizeNome(ie.nome) === normalizeNome(kitParsed.nome)
+            );
+            if (itemExistente) {
+              // É um item, não um kit — adicionar aos itens do pedido para processamento posterior
+              p.itens.push({ nome: kitParsed.nome, quantidade: kitParsed.quantidade, valorCentavos: kitParsed.valorCentavos || itemExistente.valorAluguel });
+              continue; // pular criação de kit
+            }
             // Criar kit com composição automática do tipo "Pegue e Monte"
             const valorAluguel = kitParsed.valorCentavos || 5000; // default R$ 50,00
             const result = await db.insert(kits).values({
