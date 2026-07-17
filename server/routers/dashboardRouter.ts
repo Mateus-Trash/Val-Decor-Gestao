@@ -98,6 +98,7 @@ export const dashboardRouter = router({
         totalDespesasNormaisAteHoje: 0,
         totalComissoes: 0,
         totalComissoesAteHoje: 0,
+        comissoesEstimadas: 0,
         saldo: 0,
         totalPedidosNoPeriodo: 0,
         taxaConclusao: 0,
@@ -136,6 +137,27 @@ export const dashboardRouter = router({
           )
         );
       const totalComissoes = Number(comissoesRow?.total ?? 0);
+
+      // Comissões estimadas/futuras: pedidos NÃO concluídos no período
+      const pedidosPendentesPeriodo = await db
+        .select({
+          valorTotal: pedidos.valorTotal,
+          percentual: colaboradores.percentualComissao,
+        })
+        .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
+        .where(
+          and(
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim),
+            sql`${pedidos.status} != 'Concluido'`
+          )
+        );
+
+      const comissoesEstimadas = pedidosPendentesPeriodo.reduce(
+        (acc, p) => acc + Math.round(Number(p.valorTotal) * Number(p.percentual) / 100),
+        0
+      );
 
       const totalDespesas = totalDespesasNormais + totalComissoes;
 
@@ -280,6 +302,7 @@ export const dashboardRouter = router({
         totalDespesasNormaisAteHoje,
         totalComissoes,
         totalComissoesAteHoje,
+        comissoesEstimadas,
         saldo,
         totalPedidosNoPeriodo,
         taxaConclusao,
@@ -408,6 +431,141 @@ export const dashboardRouter = router({
       }
 
       return semanas;
+    }),
+
+  getResumoPeriodo: protectedProcedure
+    .input(
+      z.object({
+        dataInicio: z.coerce.date(),
+        dataFim: z.coerce.date(),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return {
+        faturamento: 0,
+        despesasNormais: 0,
+        comissoes: 0,
+        comissoesEstimadas: 0,
+        taxasEntrega: 0,
+        saldo: 0,
+        totalPedidos: 0,
+        pedidosConcluidos: 0,
+        pedidosPendentes: 0,
+      };
+
+      // Faturamento (receita) no período baseado na data do aluguel
+      const [receitaRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "receita"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
+          )
+        );
+      const faturamento = Number(receitaRow?.total ?? 0);
+
+      // Taxas de entrega no período
+      const [taxasRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "taxa_entrega"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
+          )
+        );
+      const taxasEntrega = Number(taxasRow?.total ?? 0);
+
+      // Despesas normais (manuais, sem pedidoId) no período
+      const [despesasNormaisRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            sql`NOT (${transacoesFinanceiras.descricao} LIKE 'Comissão%')`,
+            gte(transacoesFinanceiras.data, input.dataInicio),
+            lte(transacoesFinanceiras.data, input.dataFim)
+          )
+        );
+      const despesasNormais = Number(despesasNormaisRow?.total ?? 0);
+
+      // Comissões realizadas (pedidos concluídos) no período
+      const [comissoesRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            like(transacoesFinanceiras.descricao, "Comissão%"),
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
+          )
+        );
+      const comissoes = Number(comissoesRow?.total ?? 0);
+
+      // Comissões estimadas/futuras: pedidos NÃO concluídos no período
+      // Calcular: valorTotal * percentualComissao / 100
+      const pedidosPendentesPeriodo = await db
+        .select({
+          valorTotal: pedidos.valorTotal,
+          percentual: colaboradores.percentualComissao,
+          status: pedidos.status,
+        })
+        .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
+        .where(
+          and(
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim),
+            sql`${pedidos.status} != 'Concluido'`
+          )
+        );
+
+      const comissoesEstimadas = pedidosPendentesPeriodo.reduce(
+        (acc, p) => acc + Math.round(Number(p.valorTotal) * Number(p.percentual) / 100),
+        0
+      );
+
+      // Contagem de pedidos
+      const totalPedidosRow = await db
+        .select({
+          status: pedidos.status,
+          count: count(),
+        })
+        .from(pedidos)
+        .where(
+          and(
+            gte(pedidos.data, input.dataInicio),
+            lte(pedidos.data, input.dataFim)
+          )
+        )
+        .groupBy(pedidos.status);
+
+      const totalPedidos = totalPedidosRow.reduce((acc, p) => acc + Number(p.count), 0);
+      const pedidosConcluidos = Number(totalPedidosRow.find((p) => p.status === "Concluido")?.count ?? 0);
+      const pedidosPendentes = totalPedidos - pedidosConcluidos;
+
+      const saldo = faturamento + taxasEntrega - despesasNormais - comissoes;
+
+      return {
+        faturamento,
+        despesasNormais,
+        comissoes,
+        comissoesEstimadas,
+        taxasEntrega,
+        saldo,
+        totalPedidos,
+        pedidosConcluidos,
+        pedidosPendentes,
+      };
     }),
 
   getRankingColaboradores: protectedProcedure

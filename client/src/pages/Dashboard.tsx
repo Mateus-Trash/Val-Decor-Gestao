@@ -244,6 +244,16 @@ export default function Dashboard() {
             footerNote={kpis ? `Até hoje: ${formatCentavos(kpis.totalComissoesAteHoje)}` : undefined}
           />
           <StatCard
+            title="Comissões Estimadas"
+            value={kpis ? kpis.comissoesEstimadas : null}
+            formatFn={formatCentavos}
+            icon={<TrendingDown className="h-5 w-5 text-amber-600" />}
+            loading={kpisLoading}
+            accentClassName="border-l-4 border-l-amber-400"
+            valueClassName="text-amber-600"
+            footerNote="Aluguéis pendentes (não concluídos)"
+          />
+          <StatCard
             title="Taxas de Entrega"
             value={kpis ? kpis.taxasEntrega : null}
             formatFn={formatCentavos}

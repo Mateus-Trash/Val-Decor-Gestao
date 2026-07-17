@@ -2,9 +2,8 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,12 +16,12 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Calendar, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, MoreVertical, Pencil, Trash2, TrendingUp, TrendingDown, DollarSign, Truck, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeading } from "@/components/PageHeading";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   format,
   startOfMonth,
@@ -33,6 +32,8 @@ import {
   isToday,
   addMonths,
   subMonths,
+  startOfWeek,
+  endOfWeek,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import NovoPedidoDialog from "@/components/NovoPedidoDialog";
@@ -48,6 +49,10 @@ const statusBadge: Record<string, { label: string; className: string }> = {
 
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
+function formatCentavos(centavos: number): string {
+  return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 export default function Calendario() {
   const hoje = new Date();
   const [mesAtual, setMesAtual] = useState(hoje);
@@ -55,6 +60,7 @@ export default function Calendario() {
   const [novoPedidoOpen, setNovoPedidoOpen] = useState(false);
   const [dataParaNovoPedido, setDataParaNovoPedido] = useState<Date | undefined>(undefined);
   const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [diasSelecionados, setDiasSelecionados] = useState<Set<string>>(new Set());
   const utils = trpc.useUtils();
 
   const mes = mesAtual.getMonth() + 1; // 1-12
@@ -65,10 +71,29 @@ export default function Calendario() {
     ano,
   });
 
+  // Query financial data for selected period
+  const { dataInicio, dataFim } = useMemo(() => {
+    if (diasSelecionados.size === 0) {
+      return { dataInicio: null as Date | null, dataFim: null as Date | null };
+    }
+    const datas = Array.from(diasSelecionados).map((d) => new Date(d + "T00:00:00"));
+    datas.sort((a, b) => a.getTime() - b.getTime());
+    const inicio = datas[0];
+    const fim = new Date(datas[datas.length - 1]);
+    fim.setHours(23, 59, 59, 999);
+    return { dataInicio: inicio, dataFim: fim };
+  }, [diasSelecionados]);
+
+  const { data: resumo, isLoading: resumoLoading } = trpc.dashboard.getResumoPeriodo.useQuery(
+    { dataInicio: dataInicio!, dataFim: dataFim! },
+    { enabled: dataInicio !== null && dataFim !== null }
+  );
+
   const updateStatusMutation = trpc.pedidos.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Status atualizado");
       utils.dashboard.getPedidosCalendario.invalidate();
+      utils.dashboard.getResumoPeriodo.invalidate();
       utils.pedidos.list.invalidate();
     },
     onError: () => toast.error("Erro ao atualizar status"),
@@ -83,6 +108,7 @@ export default function Calendario() {
     onSuccess: () => {
       toast.success("Pedido removido!");
       utils.dashboard.getPedidosCalendario.invalidate();
+      utils.dashboard.getResumoPeriodo.invalidate();
     },
     onError: (error) => toast.error(`Erro ao remover pedido: ${error.message}`),
   });
@@ -108,14 +134,17 @@ export default function Calendario() {
 
   function proximoMes() {
     setMesAtual(addMonths(mesAtual, 1));
+    setDiasSelecionados(new Set());
   }
 
   function mesPrevio() {
     setMesAtual(subMonths(mesAtual, 1));
+    setDiasSelecionados(new Set());
   }
 
   function voltarHoje() {
     setMesAtual(new Date());
+    setDiasSelecionados(new Set());
   }
 
   function abrirEditarPedido(id: number) {
@@ -135,9 +164,51 @@ export default function Calendario() {
     return pedidosPorDia[chave] || [];
   }
 
+  // Toggle day selection
+  const toggleDia = useCallback((dia: Date) => {
+    const chave = format(dia, "yyyy-MM-dd");
+    setDiasSelecionados((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(chave)) {
+        novo.delete(chave);
+      } else {
+        novo.add(chave);
+      }
+      return novo;
+    });
+  }, []);
+
+  // Selecionar todos os dias do mês
+  function selecionarTodos() {
+    const novo = new Set<string>();
+    diasCalendario.forEach((dia) => novo.add(format(dia, "yyyy-MM-dd")));
+    setDiasSelecionados(novo);
+  }
+
+  // Limpar seleção
+  function limparSelecao() {
+    setDiasSelecionados(new Set());
+  }
+
+  // Selecionar semana (segunda a domingo) contendo o dia dado
+  function selecionarSemana(diaRef: Date) {
+    const inicioSemana = startOfWeek(diaRef, { weekStartsOn: 0 });
+    const fimSemana = endOfWeek(diaRef, { weekStartsOn: 0 });
+    const diasSemana = eachDayOfInterval({ start: inicioSemana, end: fimSemana });
+    const novo = new Set<string>();
+    diasSemana.forEach((dia) => {
+      if (isSameMonth(dia, mesAtual)) {
+        novo.add(format(dia, "yyyy-MM-dd"));
+      }
+    });
+    setDiasSelecionados(novo);
+  }
+
   const nomesMeses = Array.from({ length: 12 }, (_, i) =>
     format(new Date(2024, i, 1), "MMMM", { locale: ptBR })
   );
+
+  const temSelecao = diasSelecionados.size > 0;
 
   return (
     <DashboardLayout>
@@ -161,6 +232,31 @@ export default function Calendario() {
             </Button>
           </div>
         </PageHeading>
+
+        {/* Botões de seleção */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={selecionarTodos}>
+            Selecionar Tudo
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => selecionarSemana(mesAtual)}
+            disabled={diasCalendario.length === 0}
+          >
+            Selecionar Semana
+          </Button>
+          {temSelecao && (
+            <>
+              <Button variant="outline" size="sm" onClick={limparSelecao}>
+                Limpar Seleção
+              </Button>
+              <span className="text-sm text-muted-foreground ml-1">
+                {diasSelecionados.size} dia{diasSelecionados.size > 1 ? "s" : ""} selecionado{diasSelecionados.size > 1 ? "s" : ""}
+              </span>
+            </>
+          )}
+        </div>
 
         {/* Calendário Mobile - Grade 7 colunas */}
         <Card className="block md:hidden p-3 sm:p-4">
@@ -192,47 +288,61 @@ export default function Calendario() {
                 {diasCalendario.map((dia) => {
                   const eventos = obterEventosDia(dia);
                   const ehHoje = isToday(dia);
+                  const chave = format(dia, "yyyy-MM-dd");
+                  const selecionado = diasSelecionados.has(chave);
 
                   return (
-                    <button
-                      key={format(dia, "yyyy-MM-dd")}
-                      onClick={() => setDiaAberto(dia)}
-                      className={`min-h-16 sm:min-h-20 border rounded-lg p-1 sm:p-2 overflow-hidden flex flex-col text-left transition-colors hover:bg-muted/50 ${
-                        ehHoje
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-background"
+                    <div
+                      key={chave}
+                      className={`min-h-16 sm:min-h-20 border rounded-lg overflow-hidden flex flex-col transition-colors ${
+                        selecionado
+                          ? "border-primary bg-primary/20 ring-1 ring-primary"
+                          : ehHoje
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-background"
                       }`}
                     >
-                      {/* Número do dia */}
-                      <div className="font-semibold text-[10px] sm:text-xs mb-0.5">{dia.getDate()}</div>
-
-                      {/* Chips de eventos */}
-                      <div className="space-y-0.5 flex-1 overflow-hidden">
-                        {eventos.slice(0, 2).map((evento) => {
-                          const badge = statusBadge[evento.status] || {
-                            label: evento.status,
-                            className: "",
-                          };
-                          const [bgColor, textColor] = badge.className.split(" ").slice(0, 2);
-                          return (
-                            <div
-                              key={evento.id}
-                              className={`text-[8px] sm:text-xs rounded px-1 py-0.5 truncate ${bgColor} ${textColor}`}
-                            >
-                              {formatarResumoPedido(evento).substring(0, 12)}
-                            </div>
-                          );
-                        })}
-                        {eventos.length > 2 && (
-                          <p className="text-[8px] sm:text-xs text-muted-foreground font-medium">
-                            +{eventos.length - 2}
-                          </p>
-                        )}
-                      </div>
-                    </button>
+                      <button
+                        onClick={() => toggleDia(dia)}
+                        onDoubleClick={() => setDiaAberto(dia)}
+                        className="flex-1 p-1 sm:p-2 text-left"
+                      >
+                        <div className="font-semibold text-[10px] sm:text-xs mb-0.5 flex items-center justify-between">
+                          <span>{dia.getDate()}</span>
+                          {eventos.length > 0 && (
+                            <span className="text-[8px] bg-primary/20 rounded px-0.5">{eventos.length}</span>
+                          )}
+                        </div>
+                        <div className="space-y-0.5 flex-1 overflow-hidden">
+                          {eventos.slice(0, 2).map((evento) => {
+                            const badge = statusBadge[evento.status] || {
+                              label: evento.status,
+                              className: "",
+                            };
+                            const [bgColor, textColor] = badge.className.split(" ").slice(0, 2);
+                            return (
+                              <div
+                                key={evento.id}
+                                className={`text-[8px] sm:text-xs rounded px-1 py-0.5 truncate ${bgColor} ${textColor}`}
+                              >
+                                {formatarResumoPedido(evento).substring(0, 12)}
+                              </div>
+                            );
+                          })}
+                          {eventos.length > 2 && (
+                            <p className="text-[8px] sm:text-xs text-muted-foreground font-medium">
+                              +{eventos.length - 2}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Toque para selecionar • Toque duplo para ver pedidos
+              </p>
             </>
           )}
         </Card>
@@ -268,57 +378,181 @@ export default function Calendario() {
                   const eventos = obterEventosDia(dia);
                   const ehHoje = isToday(dia);
                   const ehMesAtual = isSameMonth(dia, mesAtual);
+                  const chave = format(dia, "yyyy-MM-dd");
+                  const selecionado = diasSelecionados.has(chave);
 
                   return (
-                    <button
-                      key={format(dia, "yyyy-MM-dd")}
-                      onClick={() => setDiaAberto(dia)}
-                      className={`min-h-20 border rounded-lg p-2 overflow-hidden flex flex-col text-left transition-colors hover:bg-muted/50 ${
-                        ehHoje
-                          ? "border-primary bg-primary/10"
-                          : ehMesAtual
-                            ? "border-border bg-background"
-                            : "border-border/50 bg-muted/30 opacity-50"
+                    <div
+                      key={chave}
+                      className={`min-h-20 border rounded-lg overflow-hidden flex flex-col transition-colors ${
+                        selecionado
+                          ? "border-primary bg-primary/20 ring-2 ring-primary"
+                          : ehHoje
+                            ? "border-primary bg-primary/10"
+                            : ehMesAtual
+                              ? "border-border bg-background"
+                              : "border-border/50 bg-muted/30 opacity-50"
                       }`}
                     >
-                      {/* Número do dia */}
-                      <div className="font-semibold text-sm mb-1">{dia.getDate()}</div>
-
-                      {/* Eventos */}
-                      <div className="space-y-1 flex-1 overflow-hidden">
-                        {eventos.slice(0, 3).map((evento) => {
-                          const badge = statusBadge[evento.status] || {
-                            label: evento.status,
-                            className: "",
-                          };
-                          return (
-                            <div
-                              key={evento.id}
-                              className="text-xs bg-background border border-border rounded px-1 py-0.5 truncate"
-                            >
-                              <p className="truncate font-medium">{formatarResumoPedido(evento)}</p>
-                              <Badge
-                                variant="outline"
-                                className={`text-xs h-5 ${badge.className}`}
+                      <button
+                        onClick={() => toggleDia(dia)}
+                        onDoubleClick={() => setDiaAberto(dia)}
+                        className="flex-1 p-2 text-left hover:bg-muted/30"
+                      >
+                        <div className="font-semibold text-sm mb-1 flex items-center justify-between">
+                          <span>{dia.getDate()}</span>
+                          {eventos.length > 0 && (
+                            <span className="text-[10px] bg-primary/20 rounded px-1 font-normal">{eventos.length}</span>
+                          )}
+                        </div>
+                        <div className="space-y-1 flex-1 overflow-hidden">
+                          {eventos.slice(0, 3).map((evento) => {
+                            const badge = statusBadge[evento.status] || {
+                              label: evento.status,
+                              className: "",
+                            };
+                            return (
+                              <div
+                                key={evento.id}
+                                className="text-xs bg-background border border-border rounded px-1 py-0.5 truncate"
                               >
-                                {badge.label}
-                              </Badge>
-                            </div>
-                          );
-                        })}
-                        {eventos.length > 3 && (
-                          <p className="text-xs text-muted-foreground font-medium">
-                            +{eventos.length - 3} mais
-                          </p>
-                        )}
-                      </div>
-                    </button>
+                                <p className="truncate font-medium">{formatarResumoPedido(evento)}</p>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs h-5 ${badge.className}`}
+                                >
+                                  {badge.label}
+                                </Badge>
+                              </div>
+                            );
+                          })}
+                          {eventos.length > 3 && (
+                            <p className="text-xs text-muted-foreground font-medium">
+                              +{eventos.length - 3} mais
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Clique para selecionar dias • Duplo clique para ver os pedidos do dia
+              </p>
             </>
           )}
         </Card>
+
+        {/* Dashboard Financeiro do Período Selecionado */}
+        {temSelecao && dataInicio && dataFim && (
+          <Card className="border-primary/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Resumo Financeiro — {diasSelecionados.size} dia{diasSelecionados.size > 1 ? "s" : ""}
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({format(dataInicio, "dd/MM/yyyy")} a {format(dataFim, "dd/MM/yyyy")})
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {resumoLoading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              ) : resumo ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {/* Faturamento */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-green-500">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Faturamento</span>
+                      </div>
+                      <p className="text-lg font-bold text-green-600">{formatCentavos(resumo.faturamento)}</p>
+                    </div>
+
+                    {/* Taxas de Entrega */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-blue-500">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Truck className="h-4 w-4 text-blue-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Taxas de Entrega</span>
+                      </div>
+                      <p className="text-lg font-bold text-blue-600">{formatCentavos(resumo.taxasEntrega)}</p>
+                    </div>
+
+                    {/* Despesas Normais */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-red-500">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Despesas Normais</span>
+                      </div>
+                      <p className="text-lg font-bold text-red-600">{formatCentavos(resumo.despesasNormais)}</p>
+                      <p className="text-[10px] text-muted-foreground">Gasolina, etc. (manuais)</p>
+                    </div>
+
+                    {/* Comissões */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-orange-500">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <TrendingDown className="h-4 w-4 text-orange-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Comissões</span>
+                      </div>
+                      <p className="text-lg font-bold text-orange-600">{formatCentavos(resumo.comissoes)}</p>
+                      <p className="text-[10px] text-muted-foreground">Aluguéis concluídos</p>
+                    </div>
+
+                    {/* Comissões Estimadas */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-amber-400 bg-amber-50/30 dark:bg-amber-950/10">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Clock className="h-4 w-4 text-amber-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Comissões Estimadas</span>
+                      </div>
+                      <p className="text-lg font-bold text-amber-600">{formatCentavos(resumo.comissoesEstimadas)}</p>
+                      <p className="text-[10px] text-muted-foreground">Aluguéis pendentes</p>
+                    </div>
+
+                    {/* Saldo */}
+                    <div className={`border rounded-lg p-3 border-l-4 ${resumo.saldo >= 0 ? "border-l-green-500" : "border-l-red-500"}`}>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <DollarSign className="h-4 w-4" />
+                        <span className="text-xs font-medium text-muted-foreground">Saldo</span>
+                      </div>
+                      <p className={`text-lg font-bold ${resumo.saldo >= 0 ? "text-green-600" : "text-red-600"}`}>
+                        {formatCentavos(resumo.saldo)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Fat. + taxas - desp. - comiss.</p>
+                    </div>
+
+                    {/* Total Pedidos */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-indigo-500">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Calendar className="h-4 w-4 text-indigo-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Total Pedidos</span>
+                      </div>
+                      <p className="text-lg font-bold text-indigo-600">{resumo.totalPedidos}</p>
+                      <p className="text-[10px] text-muted-foreground">{resumo.pedidosConcluidos} concluídos, {resumo.pedidosPendentes} pendentes</p>
+                    </div>
+
+                    {/* Saldo Projetado (com comissões estimadas) */}
+                    <div className="border rounded-lg p-3 border-l-4 border-l-purple-500 bg-purple-50/30 dark:bg-purple-950/10">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <DollarSign className="h-4 w-4 text-purple-600" />
+                        <span className="text-xs font-medium text-muted-foreground">Saldo Projetado</span>
+                      </div>
+                      <p className={`text-lg font-bold ${resumo.saldo - resumo.comissoesEstimadas >= 0 ? "text-purple-600" : "text-red-600"}`}>
+                        {formatCentavos(resumo.saldo - resumo.comissoesEstimadas)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Saldo - comissões estimadas</p>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Legenda */}
         <Card className="p-4">
