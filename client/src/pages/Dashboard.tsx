@@ -73,7 +73,8 @@ const top5ChartConfig = {
 } satisfies ChartConfig;
 
 function formatCentavos(centavos: number): string {
-  return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const v = Number.isFinite(centavos) ? centavos : 0;
+  return (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ interface CountUpProps {
 }
 
 export function CountUp({ end, duration = 800, formatFn, className }: CountUpProps) {
+  const safeEnd = Number.isFinite(end) ? end : 0;
   const [displayValue, setDisplayValue] = useState(0);
   const rafRef = useRef<number | undefined>(undefined);
   const startRef = useRef<number | undefined>(undefined);
@@ -20,12 +21,12 @@ export function CountUp({ end, duration = 800, formatFn, className }: CountUpPro
       const progress = Math.min((timestamp - startRef.current) / duration, 1);
       // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplayValue(end * eased);
+      setDisplayValue(safeEnd * eased);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
-        setDisplayValue(end);
+        setDisplayValue(safeEnd);
       }
     };
 
@@ -37,7 +38,7 @@ export function CountUp({ end, duration = 800, formatFn, className }: CountUpPro
       }
       startRef.current = undefined;
     };
-  }, [end, duration]);
+  }, [safeEnd, duration]);
 
   const formatted = formatFn ? formatFn(displayValue) : String(Math.round(displayValue));
 

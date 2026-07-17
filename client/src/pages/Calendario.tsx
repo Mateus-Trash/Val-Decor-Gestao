@@ -50,7 +50,8 @@ const statusBadge: Record<string, { label: string; className: string }> = {
 const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
 
 function formatCentavos(centavos: number): string {
-  return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const v = Number.isFinite(centavos) ? centavos : 0;
+  return (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 export default function Calendario() {
