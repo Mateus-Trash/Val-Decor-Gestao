@@ -62,6 +62,7 @@ export default function Calendario() {
   const [dataParaNovoPedido, setDataParaNovoPedido] = useState<Date | undefined>(undefined);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [diasSelecionados, setDiasSelecionados] = useState<Set<string>>(new Set());
+  const [modoSelecao, setModoSelecao] = useState(false);
   const utils = trpc.useUtils();
 
   const mes = mesAtual.getMonth() + 1; // 1-12
@@ -236,25 +237,39 @@ export default function Calendario() {
 
         {/* Botões de seleção */}
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={selecionarTodos}>
-            Selecionar Tudo
-          </Button>
           <Button
-            variant="outline"
+            variant={modoSelecao ? "default" : "outline"}
             size="sm"
-            onClick={() => selecionarSemana(mesAtual)}
-            disabled={diasCalendario.length === 0}
+            onClick={() => {
+              setModoSelecao(!modoSelecao);
+              if (modoSelecao) setDiasSelecionados(new Set());
+            }}
           >
-            Selecionar Semana
+            {modoSelecao ? "Sair da Seleção" : "Modo Seleção"}
           </Button>
-          {temSelecao && (
+          {modoSelecao && (
             <>
-              <Button variant="outline" size="sm" onClick={limparSelecao}>
-                Limpar Seleção
+              <Button variant="outline" size="sm" onClick={selecionarTodos}>
+                Selecionar Tudo
               </Button>
-              <span className="text-sm text-muted-foreground ml-1">
-                {diasSelecionados.size} dia{diasSelecionados.size > 1 ? "s" : ""} selecionado{diasSelecionados.size > 1 ? "s" : ""}
-              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selecionarSemana(mesAtual)}
+                disabled={diasCalendario.length === 0}
+              >
+                Selecionar Semana
+              </Button>
+              {temSelecao && (
+                <>
+                  <Button variant="outline" size="sm" onClick={limparSelecao}>
+                    Limpar Seleção
+                  </Button>
+                  <span className="text-sm text-muted-foreground ml-1">
+                    {diasSelecionados.size} dia{diasSelecionados.size > 1 ? "s" : ""} selecionado{diasSelecionados.size > 1 ? "s" : ""}
+                  </span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -304,8 +319,7 @@ export default function Calendario() {
                       }`}
                     >
                       <button
-                        onClick={() => toggleDia(dia)}
-                        onDoubleClick={() => setDiaAberto(dia)}
+                        onClick={() => modoSelecao ? toggleDia(dia) : setDiaAberto(dia)}
                         className="flex-1 p-1 sm:p-2 text-left"
                       >
                         <div className="font-semibold text-[10px] sm:text-xs mb-0.5 flex items-center justify-between">
@@ -342,7 +356,7 @@ export default function Calendario() {
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground mt-2">
-                Toque para selecionar • Toque duplo para ver pedidos
+                {modoSelecao ? "Toque nos dias para selecionar e ver os dados financeiros" : "Toque em um dia para ver os pedidos"}
               </p>
             </>
           )}
@@ -396,8 +410,7 @@ export default function Calendario() {
                       }`}
                     >
                       <button
-                        onClick={() => toggleDia(dia)}
-                        onDoubleClick={() => setDiaAberto(dia)}
+                        onClick={() => modoSelecao ? toggleDia(dia) : setDiaAberto(dia)}
                         className="flex-1 p-2 text-left hover:bg-muted/30"
                       >
                         <div className="font-semibold text-sm mb-1 flex items-center justify-between">
@@ -439,7 +452,7 @@ export default function Calendario() {
                 })}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Clique para selecionar dias • Duplo clique para ver os pedidos do dia
+                {modoSelecao ? "Clique nos dias para selecionar e ver o resumo financeiro" : "Clique em um dia para ver os pedidos"}
               </p>
             </>
           )}
