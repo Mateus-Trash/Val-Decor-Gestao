@@ -16,7 +16,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/lib/trpc";
-import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight, CheckCheck } from "lucide-react";
+import { Truck, CalendarIcon, PackageCheck, PackageOpen, MapPin, ChevronsRight, CheckCheck, Package } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -65,7 +71,7 @@ const statusLabels: Record<string, string> = {
 
 // ─── Detecção de bairros parecidos (erro de digitação/acentuação) ──────────
 
-const LIMIAR_SIMILARIDADE_BAIRRO = 0.4; // 0 a 1 — bem baixo de propósito: abrangente, agrupa mesmo nomes que não se parecem muito
+const LIMIAR_SIMILARIDADE_BAIRRO = 0.85; // 0 a 1 — bem alto: só agrupa erros pequenos de digitação, acentos, maiúsculas/minúsculas
 
 function normalizarBairro(bairro: string): string {
   return bairro
@@ -182,6 +188,7 @@ function GrupoDesktop({
   selectedIds,
   onToggle,
   onToggleAll,
+  onMarcarEntregue,
 }: {
   pedidos: Pedido[];
   titulo: string;
@@ -190,6 +197,7 @@ function GrupoDesktop({
   selectedIds?: Set<number>;
   onToggle?: (id: number) => void;
   onToggleAll?: (ids: number[], checked: boolean) => void;
+  onMarcarEntregue?: (id: number, status: "EntreguePago" | "EntregueNaoPago") => void;
 }) {
   const grupos = useMemo(() => groupByBairro(pedidos), [pedidos]);
   const bairros = Object.keys(grupos).sort();
@@ -242,6 +250,7 @@ function GrupoDesktop({
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead>Composição</TableHead>
                     <TableHead>Observações</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -273,6 +282,30 @@ function GrupoDesktop({
                       <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                         {p.observacoes ?? "—"}
                       </TableCell>
+                      <TableCell className="text-center">
+                        {(p.status === "Pendente" || p.status === "Confirmado") && onMarcarEntregue ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-7 px-2 text-xs gap-1">
+                                <Package className="h-3 w-3" />
+                                Entregar
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onMarcarEntregue(p.id, "EntreguePago")}>
+                                <CheckCheck className="h-4 w-4 mr-2 text-green-600" />
+                                Entregue (Pago)
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => onMarcarEntregue(p.id, "EntregueNaoPago")}>
+                                <Package className="h-4 w-4 mr-2 text-purple-600" />
+                                Entregue (Não Pago)
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -294,6 +327,7 @@ function GrupoMobile({
   showCheckboxes,
   selectedIds,
   onToggle,
+  onMarcarEntregue,
 }: {
   pedidos: Pedido[];
   titulo: string;
@@ -301,6 +335,7 @@ function GrupoMobile({
   showCheckboxes?: boolean;
   selectedIds?: Set<number>;
   onToggle?: (id: number) => void;
+  onMarcarEntregue?: (id: number, status: "EntreguePago" | "EntregueNaoPago") => void;
 }) {
   const grupos = useMemo(() => groupByBairro(pedidos), [pedidos]);
   const bairros = Object.keys(grupos).sort();
@@ -363,6 +398,28 @@ function GrupoMobile({
                     )}
                     {p.observacoes && (
                       <p className="text-xs text-muted-foreground italic">{p.observacoes}</p>
+                    )}
+                    {(p.status === "Pendente" || p.status === "Confirmado") && onMarcarEntregue && (
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1 flex-1"
+                          onClick={() => onMarcarEntregue(p.id, "EntreguePago")}
+                        >
+                          <CheckCheck className="h-3 w-3 text-green-600" />
+                          Pago
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs gap-1 flex-1"
+                          onClick={() => onMarcarEntregue(p.id, "EntregueNaoPago")}
+                        >
+                          <Package className="h-3 w-3 text-purple-600" />
+                          Não Pago
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -446,6 +503,20 @@ export default function Logistica() {
 
   const marcarRecolhidoMutation = trpc.pedidos.updateStatus.useMutation();
 
+  const marcarEntregueMutation = trpc.pedidos.updateStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status atualizado!");
+      utils.pedidos.listByDataLogistica.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Erro ao atualizar status: ${err.message}`);
+    },
+  });
+
+  function handleMarcarEntregue(id: number, status: "EntreguePago" | "EntregueNaoPago") {
+    marcarEntregueMutation.mutate({ id, status });
+  }
+
   async function handleMarcarRecolhido() {
     if (selectedColetas.size === 0) return;
     const ids = Array.from(selectedColetas);
@@ -524,6 +595,7 @@ export default function Logistica() {
                 pedidos={entregas}
                 titulo="Entregas do Dia"
                 icone={<PackageOpen className="h-4 w-4 text-blue-600" />}
+                onMarcarEntregue={handleMarcarEntregue}
               />
 
               {/* Coletas com toolbar de postergar */}
@@ -573,6 +645,7 @@ export default function Logistica() {
                 pedidos={entregas}
                 titulo="Entregas do Dia"
                 icone={<PackageOpen className="h-4 w-4 text-blue-600" />}
+                onMarcarEntregue={handleMarcarEntregue}
               />
               <Separator />
 
