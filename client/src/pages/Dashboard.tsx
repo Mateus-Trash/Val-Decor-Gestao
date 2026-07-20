@@ -60,10 +60,10 @@ import { ptBR } from "date-fns/locale";
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, { label: string; color: string; bgClass: string }> = {
-  Pendente: { label: "Pendente", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" },
-  Confirmado: { label: "Confirmado", color: "#3b82f6", bgClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800" },
-  EntregueNaoPago: { label: "Entregue (Não Pago)", color: "#dc2626", bgClass: "bg-red-200 text-red-900 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
-  EntreguePago: { label: "Entregue (Pago)", color: "#f87171", bgClass: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
+  Pendente: { label: "Pendente", color: "#6C757D", bgClass: "bg-gray-200 text-gray-700 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-600" },
+  Confirmado: { label: "Confirmado", color: "#eab308", bgClass: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800" },
+  EntregueNaoPago: { label: "Entregue (Não Pago)", color: "#9333ea", bgClass: "bg-purple-200 text-purple-900 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800" },
+  EntreguePago: { label: "Entregue (Pago)", color: "#dc2626", bgClass: "bg-red-200 text-red-900 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800" },
   Concluido: { label: "Concluído", color: "#22c55e", bgClass: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800" },
 };
 

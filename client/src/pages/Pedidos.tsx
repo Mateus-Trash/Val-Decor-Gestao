@@ -50,10 +50,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  Pendente: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
-  Confirmado: "bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800",
-  EntregueNaoPago: "bg-red-200 text-red-900 border-red-400 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
-  EntreguePago: "bg-red-100 text-red-700 border-red-300 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+  Pendente: "bg-gray-200 text-gray-700 border-gray-400 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-600",
+  Confirmado: "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
+  EntregueNaoPago: "bg-purple-200 text-purple-900 border-purple-400 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
+  EntreguePago: "bg-red-200 text-red-900 border-red-400 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
   Concluido: "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
 };
 
