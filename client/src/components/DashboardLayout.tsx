@@ -20,7 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Calendar, Package, Shirt, ShoppingCart, DollarSign, Truck, Percent, Sun, Moon, BarChart3 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -38,6 +38,7 @@ const menuItems = [
   { icon: DollarSign, label: "Financeiro", path: "/financeiro" },
   { icon: Truck, label: "Logística", path: "/logistica" },
   { icon: Percent, label: "Comissões", path: "/comissoes" },
+  { icon: BarChart3, label: "Relatórios", path: "/relatorios" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
