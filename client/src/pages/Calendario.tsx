@@ -80,29 +80,30 @@ export default function Calendario() {
     dataFim: dataFimMes,
   });
 
-  // Query financial data for selected period
-  const { dataInicio, dataFim } = useMemo(() => {
+  // Datas dos dias marcados no Modo Seleção (só os dias marcados, não o
+  // intervalo entre o primeiro e o último)
+  const { dataInicio, dataFim, diasParaResumo } = useMemo(() => {
     if (diasSelecionados.size === 0) {
-      return { dataInicio: null as Date | null, dataFim: null as Date | null };
+      return { dataInicio: null as Date | null, dataFim: null as Date | null, diasParaResumo: [] as Date[] };
     }
     const datas = Array.from(diasSelecionados).map((d) => new Date(d + "T00:00:00"));
     datas.sort((a, b) => a.getTime() - b.getTime());
     const inicio = datas[0];
     const fim = new Date(datas[datas.length - 1]);
     fim.setHours(23, 59, 59, 999);
-    return { dataInicio: inicio, dataFim: fim };
+    return { dataInicio: inicio, dataFim: fim, diasParaResumo: datas };
   }, [diasSelecionados]);
 
-  const { data: resumo, isLoading: resumoLoading } = trpc.dashboard.getResumoPeriodo.useQuery(
-    { dataInicio: dataInicio!, dataFim: dataFim! },
-    { enabled: dataInicio !== null && dataFim !== null }
+  const { data: resumo, isLoading: resumoLoading } = trpc.dashboard.getResumoDias.useQuery(
+    { datas: diasParaResumo },
+    { enabled: diasParaResumo.length > 0 }
   );
 
   const updateStatusMutation = trpc.pedidos.updateStatus.useMutation({
     onSuccess: () => {
       toast.success("Status atualizado");
       utils.dashboard.getPedidosCalendario.invalidate();
-      utils.dashboard.getResumoPeriodo.invalidate();
+      utils.dashboard.getResumoDias.invalidate();
       utils.pedidos.list.invalidate();
     },
     onError: () => toast.error("Erro ao atualizar status"),
@@ -117,7 +118,7 @@ export default function Calendario() {
     onSuccess: () => {
       toast.success("Pedido removido!");
       utils.dashboard.getPedidosCalendario.invalidate();
-      utils.dashboard.getResumoPeriodo.invalidate();
+      utils.dashboard.getResumoDias.invalidate();
     },
     onError: (error) => toast.error(`Erro ao remover pedido: ${error.message}`),
   });
@@ -473,7 +474,7 @@ export default function Calendario() {
                 <TrendingUp className="h-5 w-5 text-primary" />
                 Resumo Financeiro — {diasSelecionados.size} dia{diasSelecionados.size > 1 ? "s" : ""}
                 <span className="text-sm font-normal text-muted-foreground">
-                  ({format(dataInicio, "dd/MM/yyyy")} a {format(dataFim, "dd/MM/yyyy")})
+                  ({diasParaResumo.map((d) => format(d, "dd/MM")).join(", ")})
                 </span>
               </CardTitle>
             </CardHeader>
