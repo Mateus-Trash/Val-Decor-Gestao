@@ -15,6 +15,7 @@ import Financeiro from "./pages/Financeiro";
 import Calendario from "./pages/Calendario";
 import Logistica from "./pages/Logistica";
 import Comissoes from "./pages/Comissoes";
+import Relatorios from "./pages/Relatorios";
 import Login from "./pages/Login";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/financeiro"} component={Financeiro} />
       <Route path={"/logistica"} component={Logistica} />
       <Route path={"/comissoes"} component={Comissoes} />
+      <Route path={"/relatorios"} component={Relatorios} />
       <Route path={"/login"} component={Login} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
