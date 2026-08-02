@@ -68,9 +68,16 @@ export default function Calendario() {
   const mes = mesAtual.getMonth() + 1; // 1-12
   const ano = mesAtual.getFullYear();
 
+  const { dataInicioMes, dataFimMes } = useMemo(() => {
+    return {
+      dataInicioMes: new Date(ano, mes - 1, 1),
+      dataFimMes: new Date(ano, mes, 0, 23, 59, 59),
+    };
+  }, [ano, mes]);
+
   const { data: pedidos = [], isLoading } = trpc.dashboard.getPedidosCalendario.useQuery({
-    mes,
-    ano,
+    dataInicio: dataInicioMes,
+    dataFim: dataFimMes,
   });
 
   // Query financial data for selected period
