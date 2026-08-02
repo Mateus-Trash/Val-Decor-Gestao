@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNotNull, lte, sql, sum, inArray, like } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lte, or, sql, sum, inArray, like } from "drizzle-orm";
 import { z } from "zod";
 import { pedidos, colaboradores, transacoesFinanceiras, itensPedido, itens, kitsPedido, kits, comissoes } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -544,6 +544,120 @@ export const dashboardRouter = router({
             lte(pedidos.data, input.dataFim)
           )
         )
+        .groupBy(pedidos.status);
+
+      const totalPedidos = totalPedidosRow.reduce((acc, p) => acc + Number(p.count), 0);
+      const pedidosConcluidos = Number(totalPedidosRow.find((p) => p.status === "Concluido")?.count ?? 0);
+      const pedidosPendentes = totalPedidos - pedidosConcluidos;
+
+      const saldo = faturamento + taxasEntrega - despesasNormais - comissoes;
+
+      return {
+        faturamento,
+        despesasNormais,
+        comissoes,
+        comissoesEstimadas,
+        taxasEntrega,
+        saldo,
+        totalPedidos,
+        pedidosConcluidos,
+        pedidosPendentes,
+      };
+    }),
+
+  // Igual ao getResumoPeriodo, mas para uma lista de dias avulsos (não
+  // necessariamente contínuos) — usado no "Modo Seleção" do Calendário, onde
+  // o usuário pode marcar, por exemplo, só o dia 01 e o dia 27, sem que os
+  // dias 02-26 entrem na conta.
+  getResumoDias: protectedProcedure
+    .input(z.object({ datas: z.array(z.coerce.date()).min(1) }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return {
+        faturamento: 0,
+        despesasNormais: 0,
+        comissoes: 0,
+        comissoesEstimadas: 0,
+        taxasEntrega: 0,
+        saldo: 0,
+        totalPedidos: 0,
+        pedidosConcluidos: 0,
+        pedidosPendentes: 0,
+      };
+
+      // Condição "a coluna cai em algum dos dias selecionados" (início a fim de cada dia)
+      const condicaoDias = (coluna: typeof pedidos.data | typeof transacoesFinanceiras.data) =>
+        or(
+          ...input.datas.map((dia) => {
+            const inicio = new Date(dia);
+            inicio.setHours(0, 0, 0, 0);
+            const fim = new Date(dia);
+            fim.setHours(23, 59, 59, 999);
+            return and(gte(coluna, inicio), lte(coluna, fim));
+          })
+        )!;
+
+      const [receitaRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(and(eq(transacoesFinanceiras.tipo, "receita"), condicaoDias(pedidos.data)));
+      const faturamento = Number(receitaRow?.total ?? 0);
+
+      const [taxasRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(and(eq(transacoesFinanceiras.tipo, "taxa_entrega"), condicaoDias(pedidos.data)));
+      const taxasEntrega = Number(taxasRow?.total ?? 0);
+
+      const [despesasNormaisRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            sql`NOT (${transacoesFinanceiras.descricao} LIKE 'Comissão%')`,
+            condicaoDias(transacoesFinanceiras.data)
+          )
+        );
+      const despesasNormais = Number(despesasNormaisRow?.total ?? 0);
+
+      const [comissoesRow] = await db
+        .select({ total: sum(transacoesFinanceiras.valor) })
+        .from(transacoesFinanceiras)
+        .innerJoin(pedidos, eq(transacoesFinanceiras.pedidoId, pedidos.id))
+        .where(
+          and(
+            eq(transacoesFinanceiras.tipo, "despesa"),
+            like(transacoesFinanceiras.descricao, "Comissão%"),
+            condicaoDias(pedidos.data)
+          )
+        );
+      const comissoes = Number(comissoesRow?.total ?? 0);
+
+      const pedidosPendentesPeriodo = await db
+        .select({
+          valorTotal: pedidos.valorTotal,
+          percentual: colaboradores.percentualComissao,
+          status: pedidos.status,
+        })
+        .from(pedidos)
+        .innerJoin(colaboradores, eq(pedidos.colaboradorId, colaboradores.id))
+        .where(and(condicaoDias(pedidos.data), sql`${pedidos.status} != 'Concluido'`));
+
+      const comissoesEstimadas = pedidosPendentesPeriodo.reduce(
+        (acc, p) => acc + Math.round(Number(p.valorTotal) * Number(p.percentual) / 100),
+        0
+      );
+
+      const totalPedidosRow = await db
+        .select({
+          status: pedidos.status,
+          count: count(),
+        })
+        .from(pedidos)
+        .where(condicaoDias(pedidos.data))
         .groupBy(pedidos.status);
 
       const totalPedidos = totalPedidosRow.reduce((acc, p) => acc + Number(p.count), 0);
