@@ -106,10 +106,14 @@ export default function Dashboard() {
   const [mes, setMes] = useState(hoje.getMonth() + 1);
   const [ano, setAno] = useState(hoje.getFullYear());
 
-  const { dataInicio, dataFim } = useMemo(() => {
+  const { dataInicio, dataFim, dataInicioAnterior, dataFimAnterior } = useMemo(() => {
     const dataInicio = new Date(ano, mes - 1, 1);
     const dataFim = new Date(ano, mes, 0, 23, 59, 59);
-    return { dataInicio, dataFim };
+    const mesAnt = mes === 1 ? 12 : mes - 1;
+    const anoAnt = mes === 1 ? ano - 1 : ano;
+    const dataInicioAnterior = new Date(anoAnt, mesAnt - 1, 1);
+    const dataFimAnterior = new Date(anoAnt, mesAnt, 0, 23, 59, 59);
+    return { dataInicio, dataFim, dataInicioAnterior, dataFimAnterior };
   }, [mes, ano]);
 
   const { data: kpis, isLoading: kpisLoading } = trpc.dashboard.getKPIs.useQuery({
@@ -118,13 +122,15 @@ export default function Dashboard() {
   });
 
   const { data: comparativo, isLoading: compLoading } = trpc.dashboard.getComparativoMensal.useQuery({
-    mes,
-    ano,
+    dataInicio,
+    dataFim,
+    dataInicioAnterior,
+    dataFimAnterior,
   });
 
   const { data: fluxo, isLoading: fluxoLoading } = trpc.dashboard.getFluxoCaixaMensal.useQuery({
-    mes,
-    ano,
+    dataInicio,
+    dataFim,
   });
 
   const { data: ranking, isLoading: rankingLoading } = trpc.dashboard.getRankingColaboradores.useQuery({
